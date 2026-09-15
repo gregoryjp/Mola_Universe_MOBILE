@@ -1,7 +1,10 @@
 export interface Expense {
   id: string;
-  createdAt: string;
-}
-export interface FetchExpenseResponse {
-  data: Expense;
+  householdId: string;
+  description: string;
+  amount: number;
+  category: string;
+  paidBy: string;
+  date: string;
+  status: 'pending' | 'settled';
 }

@@ -1,7 +1,6 @@
-export interface Dashboard {
-  id: string;
-  createdAt: string;
-}
-export interface FetchDashboardResponse {
-  data: Dashboard;
+export interface DashboardSummary {
+  pendingExpenses: number;
+  completedTasks: number;
+  shoppingItems: number;
+  upcomingEvents: number;
 }

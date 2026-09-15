@@ -1,7 +1,7 @@
 export interface Pet {
   id: string;
-  createdAt: string;
-}
-export interface FetchPetResponse {
-  data: Pet;
+  householdId: string;
+  name: string;
+  type: string;
+  birthDate?: string;
 }

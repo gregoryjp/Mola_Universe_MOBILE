@@ -1,7 +1,7 @@
 export interface EmergencyContact {
   id: string;
-  createdAt: string;
-}
-export interface FetchEmergencyContactResponse {
-  data: EmergencyContact;
+  householdId: string;
+  name: string;
+  phone: string;
+  relation?: string;
 }

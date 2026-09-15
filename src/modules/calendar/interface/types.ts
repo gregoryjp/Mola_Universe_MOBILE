@@ -1,7 +1,8 @@
-export interface Event {
+export interface CalendarEvent {
   id: string;
-  createdAt: string;
-}
-export interface FetchEventResponse {
-  data: Event;
+  householdId: string;
+  title: string;
+  date: string;
+  time?: string;
+  description?: string;
 }

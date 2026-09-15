@@ -1,7 +1,6 @@
 export interface Message {
   id: string;
-  createdAt: string;
-}
-export interface FetchMessageResponse {
-  data: Message;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
 }
