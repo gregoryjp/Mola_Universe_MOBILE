@@ -1,2 +1,2 @@
-// USERS-01: Profile, preferences, birthday sharing
-// Implementar en M2
+export * from './interface';
+export * from './hooks';
