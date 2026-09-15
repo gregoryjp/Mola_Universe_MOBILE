@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import { queryClient } from '../shared/providers';
 import { useSessionStore } from '../shared/auth/secure-session-store';
 
@@ -24,9 +24,15 @@ export function Providers({ children }: ProvidersProps) {
     );
   }
 
+  const content = children;
+
+  if (Platform.OS === 'web') {
+    return <>{content}</>;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      {content}
     </QueryClientProvider>
   );
 }
