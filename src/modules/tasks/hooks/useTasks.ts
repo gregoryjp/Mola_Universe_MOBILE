@@ -37,5 +37,10 @@ export function useTasks(householdId?: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY, householdId] }),
   });
 
-  return { tasks: tasksQuery.data || [], createTask: createMutation, updateTask: updateMutation };
+  return {
+    tasks: tasksQuery.data || [],
+    isLoading: tasksQuery.isLoading,
+    createTask: createMutation,
+    updateTask: updateMutation
+  };
 }
