@@ -1,1 +1,2 @@
-// M2 Module Stub
+export * from './interface';
+export * from './hooks';
