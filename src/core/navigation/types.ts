@@ -17,4 +17,7 @@ export type RootStackParamList = {
   Savings: undefined;
   SavingsGoalDetail: { goalId: string };
   SavingsGoalForm: undefined;
+  Calendar: undefined;
+  CalendarEventDetail: { eventId: string };
+  CalendarEventForm: { eventId?: string };
 };

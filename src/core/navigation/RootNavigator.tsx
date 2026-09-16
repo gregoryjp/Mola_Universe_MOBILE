@@ -1,6 +1,9 @@
 import { ForgotPasswordScreen } from '@presentation/auth/screens/ForgotPasswordScreen';
 import { LoginScreen } from '@presentation/auth/screens/LoginScreen';
 import { RegisterScreen } from '@presentation/auth/screens/RegisterScreen';
+import { CalendarEventDetailScreen } from '@presentation/calendar/screens/CalendarEventDetailScreen';
+import { CalendarEventFormScreen } from '@presentation/calendar/screens/CalendarEventFormScreen';
+import { CalendarScreen } from '@presentation/calendar/screens/CalendarScreen';
 import { DashboardScreen } from '@presentation/dashboard/screens/DashboardScreen';
 import { ExpenseDetailScreen } from '@presentation/expenses/screens/ExpenseDetailScreen';
 import { ExpenseFormScreen } from '@presentation/expenses/screens/ExpenseFormScreen';
@@ -47,6 +50,9 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="Savings" component={SavingsScreen} />
             <Stack.Screen name="SavingsGoalDetail" component={SavingsGoalDetailScreen} />
             <Stack.Screen name="SavingsGoalForm" component={SavingsGoalFormScreen} />
+            <Stack.Screen name="Calendar" component={CalendarScreen} />
+            <Stack.Screen name="CalendarEventDetail" component={CalendarEventDetailScreen} />
+            <Stack.Screen name="CalendarEventForm" component={CalendarEventFormScreen} />
           </>
         ) : (
           <>
