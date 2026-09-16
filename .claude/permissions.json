@@ -1,6 +1,14 @@
 {
   "allowed_repos": ["Mola_Universe_MOBILE"],
-  "allowed_paths": ["src/**", "tests/**", "design/**", "docs/**", "scripts/**"],
+  "allowed_paths": [
+    "src/**",
+    "tests/**",
+    "design/**",
+    "docs/**",
+    "scripts/**",
+    "assets/**",
+    "app.json"
+  ],
   "denied_paths": [
     ".env",
     "../Mola_Universe_APP/**",
