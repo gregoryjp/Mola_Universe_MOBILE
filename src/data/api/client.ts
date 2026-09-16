@@ -15,7 +15,7 @@ export const setAccessTokenProvider = (provider: AccessTokenProvider): void => {
 };
 
 /** Registered by the composition root; returns the new access token or null. */
-export const setRefreshHandler = (handler: RefreshHandler): void => {
+export const setRefreshHandler = (handler: RefreshHandler | null): void => {
   refreshHandler = handler;
 };
 
@@ -24,12 +24,13 @@ const request = async <T>(
   path: string,
   body?: unknown,
   isRetry = false,
+  tokenOverride?: string,
 ): Promise<ApiResponse<T>> => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   try {
-    const token = accessTokenProvider();
+    const token = tokenOverride ?? accessTokenProvider();
     const response = await fetch(`${API_URL}${path}`, {
       method,
       headers: {
@@ -43,7 +44,7 @@ const request = async <T>(
     if (response.status === 401 && !isRetry && refreshHandler) {
       const refreshedToken = await refreshHandler();
       if (refreshedToken) {
-        return request<T>(method, path, body, true);
+        return request<T>(method, path, body, true, refreshedToken);
       }
     }
 

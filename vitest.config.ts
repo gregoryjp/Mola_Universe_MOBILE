@@ -20,12 +20,12 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@core/': path.resolve(__dirname, './src/core/'),
-      '@domain/': path.resolve(__dirname, './src/domain/'),
-      '@data/': path.resolve(__dirname, './src/data/'),
-      '@presentation/': path.resolve(__dirname, './src/presentation/'),
-      '@shared/': path.resolve(__dirname, './src/shared/'),
-      '@/': path.resolve(__dirname, './src/'),
+      '@core': path.resolve(__dirname, './src/core'),
+      '@domain': path.resolve(__dirname, './src/domain'),
+      '@data': path.resolve(__dirname, './src/data'),
+      '@presentation': path.resolve(__dirname, './src/presentation'),
+      '@shared': path.resolve(__dirname, './src/shared'),
+      '@': path.resolve(__dirname, './src'),
     },
   },
 });
