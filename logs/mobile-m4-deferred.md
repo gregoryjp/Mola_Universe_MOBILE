@@ -32,21 +32,30 @@ para `calendar-events`) o, si es deliberado, documentarlo como excepción explí
 
 **No es deuda de móvil:** el slice funciona correctamente con la forma actual.
 
-## 2. `recurring-expenses`: 4 rutas en backend, sin slice en móvil — **TD-017 (Media)**
+## 2. `recurring-expenses`: 4 rutas en backend, sin slice en móvil — **TD-017 (Media) — RESUELTO en M5**
 
 El módulo `expenses` de APP expone un sub-recurso completo de gastos recurrentes que
-el slice móvil de `expenses` (M4) **no cubre**:
+el slice móvil de `expenses` (M4) **no cubría**:
 
 | Ruta (rel. a `/api/v1`) | Método | Estado en móvil |
 | --- | --- | --- |
-| `/users/recurring-expenses` | POST, GET | **No implementado** |
-| `/users/recurring-expenses/:id` | PATCH, DELETE | **No implementado** |
+| `/households/:householdId/recurring-expenses` | POST, GET | No implementado en M4 |
+| `/households/:householdId/recurring-expenses/:recurringId/restock` | POST | No implementado en M4 |
+| `/households/:householdId/recurring-expenses/:recurringId` | DELETE | No implementado en M4 |
+
+> **Corrección:** una versión anterior de esta nota citaba las rutas como
+> `/users/recurring-expenses` (con `PATCH`). Es incorrecto: el sub-recurso es
+> **household-scoped** y **no tiene `PATCH`** — el backend no permite renombrar.
+> Verificado en `src/modules/expenses/routes/expenseRoutes.ts` (líneas 110-133).
 
 **Es una feature del PRD**, así que no es deuda opcional: `Expenses` queda incompleto
 sin ella (no se pueden ver ni gestionar las recurrencias que el usuario ha creado en
 otras superficies).
 
-**Estado:** aprobado como el **4.º slice de M5**. Se resuelve en M5, no en V2.
+**Estado:** aprobado como el **4.º slice de M5** y **ya implementado**
+(`src/domain/expenses/recurring/`, `src/data/expenses/recurring/`,
+`src/presentation/expenses/recurring/`; commit `6cea4cb`). Las 4 rutas están
+consumidas y cubiertas por tests.
 
 ## 3. UI de paginación: solo se carga la primera página — **TD-018 (Baja)**
 
