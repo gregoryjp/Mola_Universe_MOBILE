@@ -1,0 +1,28 @@
+{
+  "allowed_repos": ["Mola_Universe_MOBILE"],
+  "allowed_paths": ["src/**", "tests/**", "design/**", "docs/**", "scripts/**"],
+  "denied_paths": [
+    ".env",
+    "../Mola_Universe_APP/**",
+    "../Mola_Universe_PAGE/**",
+    "node_modules/**",
+    "dist/**"
+  ],
+  "allowed_operations": [
+    "read",
+    "write",
+    "create",
+    "modify",
+    "run_tests",
+    "run_lint",
+    "run_typecheck",
+    "create_branch",
+    "commit_local"
+  ],
+  "denied_operations": ["push", "deploy", "modify_env_files", "modify_other_repos"],
+  "database": "no_access",
+  "git": {
+    "push_allowed": false,
+    "commit_allowed": true
+  }
+}

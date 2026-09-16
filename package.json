@@ -9,14 +9,28 @@
     "react-native": "0.86.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@testing-library/react-native": "14.0.1",
     "@types/react": "~19.2.2",
-    "typescript": "~6.0.3"
+    "@vitest/coverage-v8": "5.0.1",
+    "jsdom": "30.0.1",
+    "react-test-renderer": "19.2.3",
+    "typescript": "~6.0.3",
+    "vitest": "5.0.1"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "lint": "biome check --no-errors-on-unmatched src/",
+    "lint:fix": "biome check --apply --no-errors-on-unmatched src/",
+    "format": "biome format --write src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "verify": "npm run lint && npm run typecheck && npm test"
   },
   "private": true
 }
