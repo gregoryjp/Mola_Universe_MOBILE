@@ -9,5 +9,5 @@ export type { SpacingTokens } from './spacing';
 export { spacing } from './spacing';
 export type { TypographyTokens } from './typography';
 export { fontFamily, typography } from './typography';
-export { useTheme } from './useTheme';
+export { useIsDarkScheme, useTheme } from './useTheme';
 export { useThemedStyles } from './useThemedStyles';
