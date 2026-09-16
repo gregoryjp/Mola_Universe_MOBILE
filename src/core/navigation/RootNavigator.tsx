@@ -20,6 +20,8 @@ import { SavingsGoalFormScreen } from '@presentation/savings/screens/SavingsGoal
 import { SavingsScreen } from '@presentation/savings/screens/SavingsScreen';
 import { ShoppingItemFormScreen } from '@presentation/shopping/screens/ShoppingItemFormScreen';
 import { ShoppingListScreen } from '@presentation/shopping/screens/ShoppingListScreen';
+import { SOSActivationScreen } from '@presentation/sos/screens/SOSActivationScreen';
+import { TrustedContactsScreen } from '@presentation/sos/screens/TrustedContactsScreen';
 import { TaskDetailScreen } from '@presentation/tasks/screens/TaskDetailScreen';
 import { TaskFormScreen } from '@presentation/tasks/screens/TaskFormScreen';
 import { TasksListScreen } from '@presentation/tasks/screens/TasksListScreen';
@@ -61,6 +63,8 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="Pets" component={PetsListScreen} />
             <Stack.Screen name="PetDetail" component={PetDetailScreen} />
             <Stack.Screen name="PetForm" component={PetFormScreen} />
+            <Stack.Screen name="SOSActivation" component={SOSActivationScreen} />
+            <Stack.Screen name="TrustedContacts" component={TrustedContactsScreen} />
           </>
         ) : (
           <>

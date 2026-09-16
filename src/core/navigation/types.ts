@@ -24,4 +24,6 @@ export type RootStackParamList = {
   Pets: undefined;
   PetDetail: { petId: string };
   PetForm: { petId?: string };
+  SOSActivation: undefined;
+  TrustedContacts: undefined;
 };
