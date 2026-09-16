@@ -2,6 +2,10 @@ import { ForgotPasswordScreen } from '@presentation/auth/screens/ForgotPasswordS
 import { LoginScreen } from '@presentation/auth/screens/LoginScreen';
 import { RegisterScreen } from '@presentation/auth/screens/RegisterScreen';
 import { DashboardScreen } from '@presentation/dashboard/screens/DashboardScreen';
+import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
+import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
+import { ShoppingItemFormScreen } from '@presentation/shopping/screens/ShoppingItemFormScreen';
+import { ShoppingListScreen } from '@presentation/shopping/screens/ShoppingListScreen';
 import { TaskDetailScreen } from '@presentation/tasks/screens/TaskDetailScreen';
 import { TaskFormScreen } from '@presentation/tasks/screens/TaskFormScreen';
 import { TasksListScreen } from '@presentation/tasks/screens/TasksListScreen';
@@ -25,6 +29,10 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="TasksList" component={TasksListScreen} />
             <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
             <Stack.Screen name="TaskForm" component={TaskFormScreen} />
+            <Stack.Screen name="ShoppingLists" component={ShoppingListScreen} />
+            <Stack.Screen name="ShoppingItemForm" component={ShoppingItemFormScreen} />
+            <Stack.Screen name="InventoryList" component={InventoryListScreen} />
+            <Stack.Screen name="InventoryItemDetail" component={InventoryItemDetailScreen} />
           </>
         ) : (
           <>

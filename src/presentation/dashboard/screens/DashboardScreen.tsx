@@ -61,6 +61,22 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
       >
         <Text style={styles.buttonText}>Ver mis tareas</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('ShoppingLists')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.buttonText}>Compras</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('InventoryList')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.buttonText}>Inventario</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };

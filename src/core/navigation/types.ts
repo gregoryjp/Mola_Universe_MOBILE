@@ -3,7 +3,12 @@ export type RootStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   Dashboard: undefined;
+  CreateHousehold: undefined;
   TasksList: undefined;
   TaskDetail: { taskId: string };
   TaskForm: undefined;
+  ShoppingLists: undefined;
+  ShoppingItemForm: { listId: string };
+  InventoryList: undefined;
+  InventoryItemDetail: { itemId: string };
 };
