@@ -1,7 +1,10 @@
 import { ForgotPasswordScreen } from '@presentation/auth/screens/ForgotPasswordScreen';
 import { LoginScreen } from '@presentation/auth/screens/LoginScreen';
 import { RegisterScreen } from '@presentation/auth/screens/RegisterScreen';
-import { HomeScreen } from '@presentation/screens/HomeScreen';
+import { DashboardScreen } from '@presentation/dashboard/screens/DashboardScreen';
+import { TaskDetailScreen } from '@presentation/tasks/screens/TaskDetailScreen';
+import { TaskFormScreen } from '@presentation/tasks/screens/TaskFormScreen';
+import { TasksListScreen } from '@presentation/tasks/screens/TasksListScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
@@ -17,7 +20,12 @@ export const RootNavigator = (): JSX.Element => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <>
+            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="TasksList" component={TasksListScreen} />
+            <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
+            <Stack.Screen name="TaskForm" component={TaskFormScreen} />
+          </>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />

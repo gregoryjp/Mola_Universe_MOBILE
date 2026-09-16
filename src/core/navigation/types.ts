@@ -2,5 +2,8 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
-  Home: undefined;
+  Dashboard: undefined;
+  TasksList: undefined;
+  TaskDetail: { taskId: string };
+  TaskForm: undefined;
 };
