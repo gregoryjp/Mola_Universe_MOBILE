@@ -109,6 +109,14 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
       >
         <Text style={styles.buttonText}>Notificaciones</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('Pets')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.buttonText}>Mascotas</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };

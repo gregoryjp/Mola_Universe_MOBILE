@@ -12,6 +12,9 @@ import { CreateHouseholdScreen } from '@presentation/households/screens/CreateHo
 import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
 import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
 import { NotificationsListScreen } from '@presentation/notifications/screens/NotificationsListScreen';
+import { PetDetailScreen } from '@presentation/pets/screens/PetDetailScreen';
+import { PetFormScreen } from '@presentation/pets/screens/PetFormScreen';
+import { PetsListScreen } from '@presentation/pets/screens/PetsListScreen';
 import { SavingsGoalDetailScreen } from '@presentation/savings/screens/SavingsGoalDetailScreen';
 import { SavingsGoalFormScreen } from '@presentation/savings/screens/SavingsGoalFormScreen';
 import { SavingsScreen } from '@presentation/savings/screens/SavingsScreen';
@@ -55,6 +58,9 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="CalendarEventDetail" component={CalendarEventDetailScreen} />
             <Stack.Screen name="CalendarEventForm" component={CalendarEventFormScreen} />
             <Stack.Screen name="NotificationsList" component={NotificationsListScreen} />
+            <Stack.Screen name="Pets" component={PetsListScreen} />
+            <Stack.Screen name="PetDetail" component={PetDetailScreen} />
+            <Stack.Screen name="PetForm" component={PetFormScreen} />
           </>
         ) : (
           <>
