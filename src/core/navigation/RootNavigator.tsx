@@ -5,6 +5,8 @@ import { CalendarEventDetailScreen } from '@presentation/calendar/screens/Calend
 import { CalendarEventFormScreen } from '@presentation/calendar/screens/CalendarEventFormScreen';
 import { CalendarScreen } from '@presentation/calendar/screens/CalendarScreen';
 import { DashboardScreen } from '@presentation/dashboard/screens/DashboardScreen';
+import { RecurringExpenseFormScreen } from '@presentation/expenses/recurring/screens/RecurringExpenseFormScreen';
+import { RecurringExpensesListScreen } from '@presentation/expenses/recurring/screens/RecurringExpensesListScreen';
 import { ExpenseDetailScreen } from '@presentation/expenses/screens/ExpenseDetailScreen';
 import { ExpenseFormScreen } from '@presentation/expenses/screens/ExpenseFormScreen';
 import { ExpensesScreen } from '@presentation/expenses/screens/ExpensesScreen';
@@ -53,6 +55,8 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="Expenses" component={ExpensesScreen} />
             <Stack.Screen name="ExpenseDetail" component={ExpenseDetailScreen} />
             <Stack.Screen name="ExpenseForm" component={ExpenseFormScreen} />
+            <Stack.Screen name="RecurringExpenses" component={RecurringExpensesListScreen} />
+            <Stack.Screen name="RecurringExpenseForm" component={RecurringExpenseFormScreen} />
             <Stack.Screen name="Savings" component={SavingsScreen} />
             <Stack.Screen name="SavingsGoalDetail" component={SavingsGoalDetailScreen} />
             <Stack.Screen name="SavingsGoalForm" component={SavingsGoalFormScreen} />

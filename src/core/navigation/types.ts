@@ -14,6 +14,8 @@ export type RootStackParamList = {
   Expenses: undefined;
   ExpenseDetail: { expenseId: string };
   ExpenseForm: undefined;
+  RecurringExpenses: undefined;
+  RecurringExpenseForm: { recurringId?: string };
   Savings: undefined;
   SavingsGoalDetail: { goalId: string };
   SavingsGoalForm: undefined;

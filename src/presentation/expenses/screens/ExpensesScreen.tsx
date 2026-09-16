@@ -78,6 +78,14 @@ export const ExpensesScreen = ({ navigation }: Props): JSX.Element => {
       >
         <Text style={styles.buttonText}>+ Nuevo gasto</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={() => navigation.navigate('RecurringExpenses')}
+        accessibilityRole="button"
+      >
+        <Text style={styles.secondaryText}>Gastos recurrentes</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -139,6 +147,17 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.5,
+  },
+  secondaryButton: {
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  secondaryText: {
+    ...typography.body,
+    color: colors.primary,
   },
   buttonText: {
     ...typography.body,
