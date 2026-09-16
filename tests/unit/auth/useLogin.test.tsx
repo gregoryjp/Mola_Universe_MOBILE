@@ -38,6 +38,20 @@ const Harness = (): null => {
   return null;
 };
 
+/**
+ * Polls until `predicate` holds, flushing timers between attempts. The mutation
+ * settles over several microtasks (async `onSuccess` -> store -> re-render), so
+ * asserting right after a single `act` is a race.
+ */
+const settle = async (predicate: () => boolean): Promise<void> => {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (predicate()) return;
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    });
+  }
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   captured = undefined;
@@ -61,6 +75,12 @@ describe('useLogin', () => {
     await act(async () => {
       captured?.mutate({ email: 'a@b.com', password: 'secret' });
     });
+
+    await settle(
+      () =>
+        useAuthStore.getState().isAuthenticated &&
+        useAuthStore.getState().session?.accessToken === 'at',
+    );
 
     expect(mocks.login).toHaveBeenCalledWith({ email: 'a@b.com', password: 'secret' });
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
