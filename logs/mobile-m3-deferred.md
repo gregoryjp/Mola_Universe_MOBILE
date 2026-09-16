@@ -8,14 +8,33 @@ es la/screen/hook. Pasarlos a `technical-debt.md` en `Mola_Universe_APP`.
 
 | Flujo | Endpoint real (rel. a `/api/v1`) | Método | Estado en móvil |
 | --- | --- | --- | --- |
-| Editar una lista | `/users/shopping-lists/:listId` | — | **No existe endpoint** (no implementar) |
-| Archivar/borrar una lista | `/users/shopping-lists/:listId` | DELETE | Port: `deleteList` (impl ok). **UI: falta** |
 | Detalle de lista | `/users/shopping-lists/:listId` | GET | Port: `getList` (impl ok). **UI: falta** |
+| Borrar una lista | `/users/shopping-lists/:listId` | DELETE | Port: `deleteList` (impl ok). **UI: falta** |
+| Editar una lista (**TD-012**) | — | — | **Puerto ❌ + endpoint ❌** — `updateList` no existe ni en la interfaz ni en el backend |
+| Archivar una lista (**TD-012**) | — | — | **Puerto ❌ + endpoint ❌** — `archiveList` no existe; lo único que hay es `deleteList` (DELETE) |
 | Editar item | `/shopping-lists/:listId/items/:itemId` | PATCH | Port: `updateItem` (impl ok). **UI: falta** |
 | Cancelar item | `/shopping-lists/:listId/items/:itemId/cancel` | PATCH | Port: `cancelItem` + `useCancelItem` (ok, sin uso). **UI: falta** |
 | Copiar item a otra lista | `/shopping-lists/:listId/items/:itemId/copy` | POST | Port: `copyItem` (impl ok) + DTO `CopyShoppingItemRequestDto`. **UI: falta** |
 | Duplicados de una lista | `/shopping-lists/:listId/duplicates` | GET | Port: `getDuplicates` (impl ok) + `DuplicateGroup`. **UI: falta** |
 | Sugerencias de duplicado al añadir | — (vienen en la respuesta de `addItem`) | POST | `CreatedShoppingItem.duplicateSuggestions` se mapea pero **no se muestra** |
+
+### Corrección TD-012 — Shopping, gestión de listas
+
+> Corregido respecto al reporte anterior (que decía "puerto sí, UI no").
+>
+> **El puerto tampoco existe.** `ShoppingRepository` (`src/domain/shopping/repositories/ShoppingRepository.ts`)
+> solo expone `deleteList`. **Faltan `updateList` y `archiveList` en la interfaz** (y no
+> hay implementación para ellas).
+>
+> Verificado contra runtime: `modules/shopping/routes/shoppingRoutes.ts` solo declara
+> `POST/GET /users/shopping-lists`, `GET/DELETE /users/shopping-lists/:listId` — **no hay
+> PATCH** de lista. Por tanto no es solo deuda de UI: es deuda de **contrato**.
+>
+> - `deleteList` → port ✅ / UI ❌
+> - `updateList` → port ❌ / endpoint ❌
+> - `archiveList` → port ❌ / endpoint ❌
+>
+> Acción: para editar/archivar listas hace falta primero el endpoint en APP.
 
 ## Inventory
 
