@@ -1,11 +1,16 @@
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Mascot } from '@presentation/components/brand/Mascot';
 import type { ReactNode } from 'react';
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native';
 import { Button } from './Button';
 
 interface EmptyStateProps {
-  /** A Lucide icon; the caller picks it because the icon set is not fixed here. */
+  /**
+   * Element 1 of states.md. Defaults to Meow, which brand-guide.md uses to
+   * accompany an empty state, and which also fills element 1 where a caller
+   * passed nothing. Pass a Lucide icon to override it.
+   */
   icon?: ReactNode;
   title: string;
   description?: string;
@@ -42,7 +47,7 @@ export const EmptyState = ({
 
   return (
     <View testID={testID} style={[styles.base, style]}>
-      {icon}
+      {icon ?? <Mascot />}
       <Text style={[typography.h4, styles.title]}>{title}</Text>
       {description ? (
         <Text style={[typography.bodySmall, styles.description]}>{description}</Text>

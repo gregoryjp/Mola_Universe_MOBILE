@@ -93,20 +93,50 @@ Tamaño del cambio: 56 ficheros modificados, 10 nuevos, +2573 / −2595 líneas.
 
 ---
 
-## 5. Logo y mascota (Paso 7) — NO REALIZADO
+## 5. Logo y mascota (Paso 7) — HECHO
 
-**No se copió ni se creó ningún asset.** Los tres SVG que pide el prompt no existen en
-`design/brand/`, y los que hay son un *placeholder* explícito (`logo-placeholder.svg`) y
-una descripción en prosa (`mascot-meow.md`). `assets/` sigue solo con los iconos del
-scaffold de Expo.
+Los tres assets llegaron en **`Mola_Universe_MOBILE/design/brand/`** (no en APP, que es
+donde los buscaba el prompt). Estado real de cada uno:
 
-Lo único que sí se tomó del material existente: el wordmark del login ("MOLA") usa ahora
-`typography.display` y `color: primary`, que son los valores literales de
-`logo-placeholder.svg` (`font-size 44`, `fill="#6BC5A8"`).
+| Fuente | Qué es en realidad |
+|---|---|
+| `logo-primary.svg` (10.8 KB) | **No es vector**: es un PNG de 170×39 dentro de `<image href="data:image/png;base64,…">` |
+| `mascot-meow.svg` (354 KB) | **No es vector**: es un PNG de 375×520 dentro del mismo envoltorio |
+| `logo-icon.svg` (532 B) | **Vector real** de 128×128 (un arco con degradado `#FFC4DF → #7357FF → #397CFF → #BFFFD8`) |
 
-**Acción requerida:** entregar `logo-primary.svg`, `logo-icon.svg` y `mascot-meow.svg`; el
-moteado a iconos de app (`icon.png`, `splash-icon.png`) requiere además un rasterizador
-SVG→PNG que no forma parte de este repo.
+Como dos de los tres no son vectores, Metro no podía importarlos como SVG. Se generaron
+los PNG de envío en `src/shared/assets/brand/` (ruta que sí permite `permissions.json` y
+que `design/README.md` recomienda para assets que van en el bundle):
+
+- `logo-primary.png` — extraído del base64 (7.9 KB).
+- `mascot-meow.png` — extraído del base64 (260 KB).
+- `logo-icon-512.png`, `logo-icon-1024.png`, `logo-icon-192.png` — el vector rasterizado
+  con el canvas de un navegador (no hay `rsvg`/`cairosvg`/ImageMagick en el entorno).
+  1024 para el icono de app y el `foregroundImage` de Android, 512 para el splash y el uso
+  en código, 192 para el favicon web.
+
+Se renombró `design/brand/logo-icon (1).svg` → `logo-icon.svg` (el sufijo ` (1)` era un
+artefacto de descarga duplicada).
+
+Integración en código:
+
+- `src/shared/assets/brand/index.ts` — los tres assets como `ImageSourcePropType`.
+- `src/types/images.d.ts` — declaración de `*.png` (el proyecto no tenía `expo-env.d.ts`).
+- `BrandLogo` y `Mascot` en `src/presentation/components/brand/`.
+- **Login**: el wordmark es ahora la imagen real, no texto (`MOLA` se renderizaba como
+  texto con `typography.display`; ya no).
+- **Estados vacíos**: `EmptyState` renderiza a Meow como elemento 1. Ninguno de los 12 usos
+  pasaba `icon`, así que el elemento 1 que exige `states.md` **faltaba en todos** — la
+  mascota lo cubre y cumple `brand-guide.md`. La mascota es decorativa para el lector de
+  pantalla (el título ya explica el estado).
+
+**Verificado en navegador**: el wordmark se sirve (`200 image/png`) y mide 200×46 con
+natural 170×39; la mascota se sirve y mide 120×166 con natural 375×520; cero errores.
+
+**Pendiente (fuera de mis permisos)**: `assets/**` y `app.json` no están en
+`allowed_paths`, así que el icono de app y el splash siguen siendo los del scaffold de
+Expo. Ver GAP 8 para las líneas exactas.
+
 
 ---
 
@@ -145,6 +175,9 @@ Se levantó la app con Expo web y se automatizó el navegador con el protocolo D
 | tab activo (píldora) | `#F0F0ED` + `#1A1A1A` = **15.24:1** | `#232A33` + `#F5F5F5` = **13.28:1** |
 | tab inactivo | `#6B6B6B` sobre blanco = 5.33:1 | `#A0A0A0` sobre `#1A1F26` = 6.33:1 |
 
+- **Logo y mascota**: el wordmark del login carga como imagen real (200×46 mostrados,
+  natural 170×39, `200 image/png`) y la mascota aparece en el estado vacío de Tareas
+  (120×166 mostrados, natural 375×520). Ambos con `resizeMode="contain"`.
 - **Errores de consola: cero** en todas las pantallas y en ambos modos.
 
 ### Accesibilidad (Paso 8)
@@ -176,10 +209,10 @@ token par que se pudo resolver sin inventar valores; el resto de tokens "soft" y
 `secondary`/`accent`/`error`/`success`/`warning`/`info` siguen heredando el valor de light
 en dark mode y **no se han verificado visualmente en dark**.
 
-### GAP 2 — Faltan los assets de marca
+### GAP 2 — Los assets de marca llegaron tarde y en otra carpeta
 
-Ver sección 5. Sin `logo-primary.svg`, `logo-icon.svg` ni `mascot-meow.svg` no se puede
-completar el Paso 7.
+Resuelto: están en `Mola_Universe_MOBILE/design/brand/`, no en APP como decía el prompt.
+Ver sección 5 para el detalle de que dos de los tres no son vectores y de qué se generó.
 
 ### GAP 3 — La paleta del design system no cumple el AA que ella misma exige
 
@@ -229,6 +262,31 @@ alcanzable desde el Dashboard, de modo que nada queda inaccesible.
 `textInverse: #FFFFFF`, que `buttons.md` aplica a primary/danger/success. Es la raíz del
 fallo de contraste anterior.
 
+### GAP 7 — El wordmark de marca no tiene variante clara
+
+`logo-primary` es una marca azul muy oscura. Medido sobre sus píxeles opacos: el **80.4%
+queda por debajo de 3:1** sobre el `background` de dark mode (`#0F1419`), con un contraste
+medio de 2.94:1. Sobre light da 5.86:1, correcto. No existe variante clara y no se ha
+inventado: hace falta un `logo-primary-light` (o una versión monocroma blanca) para que la
+marca sea visible en dark mode.
+
+Nota: hoy este fallo solo se ve en **web**, porque `app.json` fija
+`userInterfaceStyle: "light"` (ver GAP 8). En cuanto se active el modo automático, el login
+en dark mode mostrará un logo invisible.
+
+### GAP 8 — `app.json` desactiva el dark mode en nativo, y sus rutas no son escribibles
+
+Dos cosas sobre `app.json`, que no puedo tocar porque no está en `allowed_paths`:
+
+1. **`userInterfaceStyle: "light"`** hace que `useColorScheme()` devuelva siempre `light`
+   en iOS/Android. Todo el trabajo de dark mode del theme **no se activa en el dispositivo**;
+   solo funciona en web. Para habilitarlo: `"userInterfaceStyle": "automatic"`.
+2. El icono y el splash siguen apuntando a `./assets/*.png` (los del scaffold de Expo), y
+   `assets/**` tampoco está en `allowed_paths`. Para estrenar la marca habría que copiar
+   `src/shared/assets/brand/logo-icon-1024.png` a `./assets/icon.png` y añadir el bloque
+   `"splash"` apuntando al mismo PNG (hoy `app.json` no tiene `splash` configurado, aunque
+   `assets/splash-icon.png` existe sin usar).
+
 ---
 
 ## 8. Cumplimiento y acciones pendientes
@@ -256,10 +314,13 @@ se ha usado solo la API HTTP pública. Si quieres, se puede borrar.
 
 ## 9. Próximo paso
 
-1. Entregar `design/brand/logo-primary.svg`, `logo-icon.svg` y `mascot-meow.svg`; después
-   copiarlos a `assets/` y usarlos en login, splash y empty states.
-2. Decidir los GAP 1 y 3 (tokens de dark mode y contraste de `primary`) y regenerar la
+1. Decidir sobre GAP 8: pasar `userInterfaceStyle` a `"automatic"` (hoy dark mode no se
+   activa en nativo) y apuntar `icon`/`splash` a `logo-icon-1024.png`. Son dos ediciones en
+   `app.json` + una copia a `assets/`, rutas fuera de mis permisos.
+2. Pedir al diseño la variante clara del wordmark (GAP 7) para que el login sea visible en
+   dark mode.
+3. Decidir los GAP 1 y 3 (tokens de dark mode y contraste de `primary`) y regenerar la
    paleta en APP; al llegar, se actualiza `colors.ts` sin cambiar la API.
-3. Verificar visualmente en el simulador iOS las pantallas que el navegador no cubre bien
+4. Verificar visualmente en el simulador iOS las pantallas que el navegador no cubre bien
    (SOS, modales y las 24 pantallas de detalle fuera de las pestañas), en light y en dark.
-4. Decidir el destino del cambio de CORS en APP.
+5. Decidir el destino del cambio de CORS en APP.

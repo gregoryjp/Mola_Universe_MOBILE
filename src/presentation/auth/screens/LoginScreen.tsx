@@ -1,6 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
+import { BrandLogo } from '@presentation/components/brand/BrandLogo';
 import { Button } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
@@ -14,7 +15,7 @@ export const LoginScreen = ({ navigation }: Props): JSX.Element => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>MOLA</Text>
+      <BrandLogo width={200} />
       <Text style={styles.subtitle}>Inicia sesión</Text>
       <LoginForm />
       <Button
@@ -39,10 +40,6 @@ const makeStyles = (theme: ColorTokens) => ({
     backgroundColor: theme.background,
     padding: spacing.s6,
     gap: spacing.s4,
-  },
-  title: {
-    ...typography.display,
-    color: theme.primary,
   },
   subtitle: {
     ...typography.body,
