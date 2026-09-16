@@ -274,18 +274,26 @@ Nota: hoy este fallo solo se ve en **web**, porque `app.json` fija
 `userInterfaceStyle: "light"` (ver GAP 8). En cuanto se active el modo automático, el login
 en dark mode mostrará un logo invisible.
 
-### GAP 8 — `app.json` desactiva el dark mode en nativo, y sus rutas no son escribibles
+### GAP 8 — Dark mode desactivado en nativo y rutas no escribibles — PARCIALMENTE RESUELTO
 
-Dos cosas sobre `app.json`, que no puedo tocar porque no está en `allowed_paths`:
+Se levantó la restricción (`chore(permissions)`, `53af662`: `assets/**` y `app.json` ahora
+están en `allowed_paths`; `app.config.js` no se añadió porque el proyecto no tiene ninguno,
+solo `app.json`).
 
-1. **`userInterfaceStyle: "light"`** hace que `useColorScheme()` devuelva siempre `light`
-   en iOS/Android. Todo el trabajo de dark mode del theme **no se activa en el dispositivo**;
-   solo funciona en web. Para habilitarlo: `"userInterfaceStyle": "automatic"`.
-2. El icono y el splash siguen apuntando a `./assets/*.png` (los del scaffold de Expo), y
-   `assets/**` tampoco está en `allowed_paths`. Para estrenar la marca habría que copiar
-   `src/shared/assets/brand/logo-icon-1024.png` a `./assets/icon.png` y añadir el bloque
-   `"splash"` apuntando al mismo PNG (hoy `app.json` no tiene `splash` configurado, aunque
-   `assets/splash-icon.png` existe sin usar).
+1. **`userInterfaceStyle: "light"` → `"automatic"`** (`fix(app)`, `3570720`). Era la causa de
+   que `useColorScheme()` devolviera siempre `light` en iOS/Android y de que todo el dark
+   mode del theme no se activara nunca en un dispositivo, solo en web.
+   **Pendiente**: la referencia de configuración de SDK 57 dice que `automatic` *"Requires
+   `expo-system-ui` be installed in your project to work on Android"*. `expo-system-ui` no
+   está instalado, así que hoy el cambio solo surte efecto en iOS y web. Falta
+   `npx expo install expo-system-ui`.
+2. **Icono y splash**: siguen apuntando a `./assets/*.png` (scaffold de Expo). Ya se puede
+   escribir en `assets/` y `app.json`, pero no se ha hecho porque:
+   - usar `logo-icon.svg` como icono de app es una decisión de marca, no técnica;
+   - el splash nativo necesita el plugin **`expo-splash-screen`**, que tampoco está
+     instalado (la clave `splash` de nivel raíz está obsoleta en SDK 57; la propia
+     referencia remite a `expo-splash-screen`).
+   Los PNG ya están generados y listos en `src/shared/assets/brand/` (ver sección 5).
 
 ---
 
@@ -294,6 +302,8 @@ Dos cosas sobre `app.json`, que no puedo tocar porque no está en `allowed_paths
 - **Sin `any`**, vertical slice respetado, `npm run verify` verde antes del commit.
 - **NO se ha hecho push.** `permissions.json` lo prohíbe (`push_allowed: false`).
 - **NO se ha tocado `Mola_Universe_PAGE`.**
+- Commits en `ai/night-mobile-2026-09-17`: `dc2e50c` (theme), `abed2f7` (marca),
+  `53af662` (permisos), `3570720` (`userInterfaceStyle`).
 
 ### Aviso: modificación fuera de permisos en el repo de APP
 
@@ -314,13 +324,16 @@ se ha usado solo la API HTTP pública. Si quieres, se puede borrar.
 
 ## 9. Próximo paso
 
-1. Decidir sobre GAP 8: pasar `userInterfaceStyle` a `"automatic"` (hoy dark mode no se
-   activa en nativo) y apuntar `icon`/`splash` a `logo-icon-1024.png`. Son dos ediciones en
-   `app.json` + una copia a `assets/`, rutas fuera de mis permisos.
-2. Pedir al diseño la variante clara del wordmark (GAP 7) para que el login sea visible en
+1. `npx expo install expo-system-ui`, sin lo cual `userInterfaceStyle: "automatic"` no tiene
+   efecto en Android (GAP 8).
+2. Decidir si el icono de app y el splash pasan a la marca: requiere `expo-splash-screen` y
+   una decisión de diseño sobre usar `logo-icon.svg` como icono (GAP 8). Los PNG ya están
+   generados en `src/shared/assets/brand/`.
+3. Pedir al diseño la variante clara del wordmark (GAP 7) para que el login sea visible en
    dark mode.
-3. Decidir los GAP 1 y 3 (tokens de dark mode y contraste de `primary`) y regenerar la
+4. Decidir los GAP 1 y 3 (tokens de dark mode y contraste de `primary`) y regenerar la
    paleta en APP; al llegar, se actualiza `colors.ts` sin cambiar la API.
-4. Verificar visualmente en el simulador iOS las pantallas que el navegador no cubre bien
-   (SOS, modales y las 24 pantallas de detalle fuera de las pestañas), en light y en dark.
-5. Decidir el destino del cambio de CORS en APP.
+5. Reiniciar el servidor de Metro y verificar en el simulador iOS las pantallas que el
+   navegador no cubre bien (SOS, modales y las 24 pantallas de detalle fuera de las
+   pestañas), en light y en dark.
+6. Decidir el destino del cambio de CORS en APP.
