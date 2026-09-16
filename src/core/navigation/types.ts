@@ -11,4 +11,7 @@ export type RootStackParamList = {
   ShoppingItemForm: { listId: string };
   InventoryList: undefined;
   InventoryItemDetail: { itemId: string };
+  Expenses: undefined;
+  ExpenseDetail: { expenseId: string };
+  ExpenseForm: undefined;
 };

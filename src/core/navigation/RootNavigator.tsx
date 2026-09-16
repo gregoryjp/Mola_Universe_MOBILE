@@ -2,6 +2,9 @@ import { ForgotPasswordScreen } from '@presentation/auth/screens/ForgotPasswordS
 import { LoginScreen } from '@presentation/auth/screens/LoginScreen';
 import { RegisterScreen } from '@presentation/auth/screens/RegisterScreen';
 import { DashboardScreen } from '@presentation/dashboard/screens/DashboardScreen';
+import { ExpenseDetailScreen } from '@presentation/expenses/screens/ExpenseDetailScreen';
+import { ExpenseFormScreen } from '@presentation/expenses/screens/ExpenseFormScreen';
+import { ExpensesScreen } from '@presentation/expenses/screens/ExpensesScreen';
 import { CreateHouseholdScreen } from '@presentation/households/screens/CreateHouseholdScreen';
 import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
 import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
@@ -35,6 +38,9 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="ShoppingItemForm" component={ShoppingItemFormScreen} />
             <Stack.Screen name="InventoryList" component={InventoryListScreen} />
             <Stack.Screen name="InventoryItemDetail" component={InventoryItemDetailScreen} />
+            <Stack.Screen name="Expenses" component={ExpensesScreen} />
+            <Stack.Screen name="ExpenseDetail" component={ExpenseDetailScreen} />
+            <Stack.Screen name="ExpenseForm" component={ExpenseFormScreen} />
           </>
         ) : (
           <>
