@@ -72,3 +72,19 @@ feature folder.
   Zustand is reserved for client/UI state only, never as a parallel server-data cache.
 - Before implementing any API call, verify the exact route/payload against
   `Mola_Universe_APP/src/openapi.ts` — see `docs/api-contracts.md`.
+
+## Environment variables
+
+Client-side env vars are read via `process.env.EXPO_PUBLIC_<NAME>` and **must** carry
+the `EXPO_PUBLIC_` prefix — Expo inlines only those into the app bundle at build time.
+Anything without the prefix is unavailable to the client.
+
+Rules:
+- **Client variables** (base API URL, timeout, public SDK keys) → `EXPO_PUBLIC_*`.
+- **Server variables** (secrets, private keys, DB URLs, JWT signing keys) → plain
+  names, **never** `EXPO_PUBLIC_`. They belong to `Mola_Universe_APP`; this repo must
+  never hold or read them.
+- Never put a secret behind `EXPO_PUBLIC_` — that prefix publishes it to the bundle.
+
+The API client reads `process.env.EXPO_PUBLIC_API_URL` (see
+`src/data/api/client.ts`); current client variables are listed in `.env.example`.

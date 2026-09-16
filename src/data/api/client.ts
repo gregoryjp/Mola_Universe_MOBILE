@@ -1,7 +1,7 @@
 import type { ApiResponse } from './types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
-const API_TIMEOUT_MS = 10_000;
+const API_TIMEOUT_MS = Number(process.env.EXPO_PUBLIC_API_TIMEOUT_MS ?? 10_000);
 
 const request = async <T>(
   method: string,
