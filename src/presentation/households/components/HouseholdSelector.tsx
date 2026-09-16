@@ -3,6 +3,7 @@ import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useHouseholds } from '../hooks/useHouseholds';
+import { CreateHouseholdButton } from './CreateHouseholdButton';
 
 interface ChipProps {
   label: string;
@@ -45,6 +46,7 @@ export const HouseholdSelector = (): JSX.Element => {
           onPress={() => setActiveHousehold(household.id)}
         />
       ))}
+      <CreateHouseholdButton />
     </ScrollView>
   );
 };

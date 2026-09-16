@@ -2,6 +2,7 @@ import { ForgotPasswordScreen } from '@presentation/auth/screens/ForgotPasswordS
 import { LoginScreen } from '@presentation/auth/screens/LoginScreen';
 import { RegisterScreen } from '@presentation/auth/screens/RegisterScreen';
 import { DashboardScreen } from '@presentation/dashboard/screens/DashboardScreen';
+import { CreateHouseholdScreen } from '@presentation/households/screens/CreateHouseholdScreen';
 import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
 import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
 import { ShoppingItemFormScreen } from '@presentation/shopping/screens/ShoppingItemFormScreen';
@@ -26,6 +27,7 @@ export const RootNavigator = (): JSX.Element => {
         {isAuthenticated ? (
           <>
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="CreateHousehold" component={CreateHouseholdScreen} />
             <Stack.Screen name="TasksList" component={TasksListScreen} />
             <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
             <Stack.Screen name="TaskForm" component={TaskFormScreen} />

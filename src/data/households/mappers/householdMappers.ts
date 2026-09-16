@@ -1,5 +1,5 @@
-import type { Household } from '@domain/households/entities/Household';
-import type { HouseholdDto } from '../dtos/householdDtos';
+import type { CreateHouseholdInput, Household } from '@domain/households/entities/Household';
+import type { CreateHouseholdRequestDto, HouseholdDto } from '../dtos/householdDtos';
 
 export const toHousehold = (dto: HouseholdDto): Household => ({
   id: dto.id,
@@ -8,4 +8,11 @@ export const toHousehold = (dto: HouseholdDto): Household => ({
   ownerId: dto.ownerId,
   memberCount: dto.memberCount,
   createdAt: dto.createdAt,
+});
+
+export const toCreateHouseholdRequest = (
+  input: CreateHouseholdInput,
+): CreateHouseholdRequestDto => ({
+  name: input.name,
+  ...(input.description !== undefined && { description: input.description }),
 });
