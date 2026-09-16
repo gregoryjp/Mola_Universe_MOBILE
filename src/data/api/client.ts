@@ -136,6 +136,7 @@ export const apiClient = {
   // Raw endpoints (Tasks, Dashboard): success body is the resource itself.
   getRaw: <T>(path: string) => rawRequest<T>('GET', path),
   postRaw: <T>(path: string, body?: unknown) => rawRequest<T>('POST', path, body),
+  putRaw: <T>(path: string, body?: unknown) => rawRequest<T>('PUT', path, body),
   patchRaw: <T>(path: string, body?: unknown) => rawRequest<T>('PATCH', path, body),
   deleteRaw: <T>(path: string) => rawRequest<T>('DELETE', path),
 };

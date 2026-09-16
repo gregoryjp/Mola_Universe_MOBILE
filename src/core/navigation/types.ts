@@ -20,4 +20,5 @@ export type RootStackParamList = {
   Calendar: undefined;
   CalendarEventDetail: { eventId: string };
   CalendarEventForm: { eventId?: string };
+  NotificationsList: undefined;
 };

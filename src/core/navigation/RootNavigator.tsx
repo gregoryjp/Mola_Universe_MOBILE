@@ -11,6 +11,7 @@ import { ExpensesScreen } from '@presentation/expenses/screens/ExpensesScreen';
 import { CreateHouseholdScreen } from '@presentation/households/screens/CreateHouseholdScreen';
 import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
 import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
+import { NotificationsListScreen } from '@presentation/notifications/screens/NotificationsListScreen';
 import { SavingsGoalDetailScreen } from '@presentation/savings/screens/SavingsGoalDetailScreen';
 import { SavingsGoalFormScreen } from '@presentation/savings/screens/SavingsGoalFormScreen';
 import { SavingsScreen } from '@presentation/savings/screens/SavingsScreen';
@@ -53,6 +54,7 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="Calendar" component={CalendarScreen} />
             <Stack.Screen name="CalendarEventDetail" component={CalendarEventDetailScreen} />
             <Stack.Screen name="CalendarEventForm" component={CalendarEventFormScreen} />
+            <Stack.Screen name="NotificationsList" component={NotificationsListScreen} />
           </>
         ) : (
           <>
