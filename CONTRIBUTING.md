@@ -20,6 +20,28 @@ Read `PROJECT_ROOT.md` first.
 5. **Pure functional code.** No `class`/`this` outside of a framework-mandated
    exception (e.g. a React `ErrorBoundary`).
 
+## Local environment (required: Node 22)
+
+The toolchain requires **Node 22** (pinned in `.nvmrc`). On some machines the default
+`node` on `PATH` is far older, which makes `tsc` and `vitest` fail in confusing ways.
+
+Activate the pinned version before doing anything else:
+
+```bash
+nvm use          # reads .nvmrc -> 22.23.2
+node --version   # v22.23.2
+```
+
+If `nvm` is not loaded in the current shell, prepend the version's `bin` directory
+explicitly instead:
+
+```bash
+export PATH="$HOME/.nvm/versions/node/v22.23.2/bin:$PATH"
+```
+
+Always confirm `node --version` before running `npm run verify` — a wrong runtime is
+the most common cause of spurious lint/typecheck failures here.
+
 ## Commits
 
 **Conventional Commits are required** for every commit:
