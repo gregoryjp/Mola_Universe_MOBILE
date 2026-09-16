@@ -1,26 +1,21 @@
-import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { TabScreenProps } from '@core/navigation/types';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, EmptyState, Spinner } from '@presentation/components/ui';
 import { HouseholdSelector } from '@presentation/households/components/HouseholdSelector';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { ExpenseRow } from '../components/ExpenseRow';
 import { useExpenseSummary, useExpenses } from '../hooks/useExpenses';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Expenses'>;
+type Props = TabScreenProps<'Expenses'>;
 
 export const ExpensesScreen = ({ navigation }: Props): JSX.Element => {
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
   const expenses = useExpenses();
   const summary = useExpenseSummary();
+  const styles = useThemedStyles(makeStyles);
 
   const list = expenses.data?.expenses ?? [];
   const balances = summary.data?.balances ?? [];
@@ -34,7 +29,7 @@ export const ExpensesScreen = ({ navigation }: Props): JSX.Element => {
         <Text style={styles.muted}>Selecciona un hogar para ver sus gastos</Text>
       ) : null}
 
-      {summary.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {summary.isLoading ? <Spinner /> : null}
       {summary.isError ? <Text style={styles.error}>{summary.error.message}</Text> : null}
 
       {balances.length > 0 ? (
@@ -53,7 +48,7 @@ export const ExpensesScreen = ({ navigation }: Props): JSX.Element => {
         </View>
       ) : null}
 
-      {expenses.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {expenses.isLoading ? <Spinner /> : null}
       {expenses.isError ? <Text style={styles.error}>{expenses.error.message}</Text> : null}
 
       <View style={styles.list}>
@@ -67,100 +62,75 @@ export const ExpensesScreen = ({ navigation }: Props): JSX.Element => {
       </View>
 
       {expenses.data && list.length === 0 && householdId !== null ? (
-        <Text style={styles.muted}>No hay gastos en este hogar todavía</Text>
+        <EmptyState title="No hay gastos en este hogar todavía" />
       ) : null}
 
-      <TouchableOpacity
-        style={[styles.button, householdId === null ? styles.buttonDisabled : null]}
+      <Button
+        label="+ Nuevo gasto"
         onPress={() => navigation.navigate('ExpenseForm')}
         disabled={householdId === null}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>+ Nuevo gasto</Text>
-      </TouchableOpacity>
+        size="lg"
+        accessibilityHint="Abre el formulario para registrar un gasto"
+      />
 
-      <TouchableOpacity
-        style={styles.secondaryButton}
+      <Button
+        label="Gastos recurrentes"
         onPress={() => navigation.navigate('RecurringExpenses')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.secondaryText}>Gastos recurrentes</Text>
-      </TouchableOpacity>
+        variant="secondary"
+        size="lg"
+        accessibilityHint="Abre la lista de gastos recurrentes"
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   section: {
-    gap: spacing.xs,
+    gap: spacing.s1,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   balanceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s2,
   },
   balanceAmount: {
     ...typography.body,
-    color: colors.text,
+    color: theme.text,
   },
   list: {
-    gap: spacing.sm,
+    gap: spacing.s2,
   },
   meta: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   muted: {
     ...typography.body,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  secondaryButton: {
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  secondaryText: {
-    ...typography.body,
-    color: colors.primary,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

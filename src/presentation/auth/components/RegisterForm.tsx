@@ -1,7 +1,9 @@
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Input } from '@presentation/components/ui';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useRegister } from '../hooks/useRegister';
 
 export const RegisterForm = (): JSX.Element => {
@@ -10,6 +12,7 @@ export const RegisterForm = (): JSX.Element => {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const register = useRegister();
+  const styles = useThemedStyles(makeStyles);
 
   const handleSubmit = (): void => {
     register.mutate({ name, email, password, passwordConfirm });
@@ -17,80 +20,57 @@ export const RegisterForm = (): JSX.Element => {
 
   return (
     <View style={styles.form}>
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Nombre"
         value={name}
         onChangeText={setName}
+        placeholder="Tu nombre"
+        testID="register-name"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="email-address"
+      <Input
+        label="Email"
+        type="email"
         value={email}
         onChangeText={setEmail}
+        placeholder="tu@email.com"
+        testID="register-email"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        placeholderTextColor={colors.textMuted}
-        secureTextEntry
+      <Input
+        label="Contraseña"
+        type="password"
         value={password}
         onChangeText={setPassword}
+        placeholder="Tu contraseña"
+        testID="register-password"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Repite la contraseña"
-        placeholderTextColor={colors.textMuted}
-        secureTextEntry
+      <Input
+        label="Repite la contraseña"
+        type="password"
         value={passwordConfirm}
         onChangeText={setPasswordConfirm}
+        placeholder="Repite la contraseña"
+        testID="register-password-confirm"
       />
       {register.isError ? <Text style={styles.error}>{register.error.message}</Text> : null}
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Crear cuenta"
         onPress={handleSubmit}
-        disabled={register.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>{register.isPending ? 'Creando…' : 'Crear cuenta'}</Text>
-      </TouchableOpacity>
+        loading={register.isPending}
+        size="lg"
+        accessibilityHint="Crea tu cuenta con nombre, email y contraseña"
+        testID="register-submit"
+      />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   form: {
-    width: '100%',
-    gap: spacing.sm,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    width: '100%' as const,
+    gap: spacing.s4,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

@@ -1,17 +1,11 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { SosEventStatus } from '@domain/sos/entities/Sos';
+import { Button, Input, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { type JSX, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSosHistory, useTrustedContacts } from '../hooks/useSos';
 import { useActivateSos, useCancelSos } from '../hooks/useSosMutations';
 
@@ -35,6 +29,7 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
   const [deadline, setDeadline] = useState<number | null>(null);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [remainingMs, setRemainingMs] = useState(0);
+  const styles = useThemedStyles(makeStyles);
 
   useEffect(() => {
     if (deadline === null) return;
@@ -82,20 +77,21 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
           <TouchableOpacity
             onPress={() => navigation.navigate('TrustedContacts')}
             accessibilityRole="button"
+            accessibilityLabel="Añadir contactos de confianza"
           >
             <Text style={styles.link}>Añadir contactos</Text>
           </TouchableOpacity>
         </View>
       ) : null}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Mensaje para tus contactos (opcional)"
-        placeholderTextColor={colors.textMuted}
+      <Input
         value={message}
         onChangeText={setMessage}
-        editable={!isActive}
+        placeholder="Mensaje para tus contactos (opcional)"
         multiline
+        readonly={isActive}
+        accessibilityLabel="Mensaje para tus contactos"
+        testID="sos-message"
       />
 
       {isActive ? (
@@ -106,27 +102,27 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
               ? `Puedes cancelarla durante ${seconds(remainingMs)} s más`
               : 'La ventana de cancelación ha terminado'}
           </Text>
-          <TouchableOpacity
-            style={[styles.cancelButton, cancel.isPending ? styles.buttonDisabled : null]}
-            disabled={cancel.isPending}
+          <Button
+            label="Cancelar alerta"
+            variant="secondary"
+            size="lg"
             onPress={cancelNow}
-            accessibilityRole="button"
-          >
-            <Text style={styles.cancelText}>
-              {cancel.isPending ? 'Cancelando…' : 'Cancelar alerta'}
-            </Text>
-          </TouchableOpacity>
+            loading={cancel.isPending}
+            accessibilityHint="Cancela la alerta SOS activada"
+            testID="sos-cancel"
+          />
           {cancel.isError ? <Text style={styles.error}>{cancel.error.message}</Text> : null}
         </View>
       ) : (
-        <TouchableOpacity
-          style={[styles.sosButton, activate.isPending ? styles.buttonDisabled : null]}
-          disabled={activate.isPending}
+        <Button
+          label="ACTIVAR SOS"
+          variant="danger"
+          size="lg"
           onPress={activateNow}
-          accessibilityRole="button"
-        >
-          <Text style={styles.sosText}>{activate.isPending ? 'Activando…' : 'ACTIVAR SOS'}</Text>
-        </TouchableOpacity>
+          loading={activate.isPending}
+          accessibilityHint="Activa la alerta SOS y avisa a tus contactos de confianza"
+          testID="sos-activate"
+        />
       )}
 
       {activate.isError ? <Text style={styles.error}>{activate.error.message}</Text> : null}
@@ -140,7 +136,7 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Historial</Text>
-        {history.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+        {history.isLoading ? <Spinner /> : null}
         {history.isError ? <Text style={styles.error}>{history.error.message}</Text> : null}
         {(history.data ?? []).map((event) => (
           <View key={event.id} style={styles.historyRow}>
@@ -157,114 +153,76 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s2,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
-  },
-  section: {
-    gap: spacing.xs,
-  },
-  sectionTitle: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.text,
   },
   warningBox: {
-    backgroundColor: colors.surface,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.warning,
-    borderRadius: 8,
-    padding: spacing.md,
-    gap: spacing.xs,
+    backgroundColor: theme.warningSoft,
+    borderRadius: radius.sm,
+    padding: spacing.s4,
+    gap: spacing.s1,
   },
   warningText: {
     ...typography.bodySmall,
-    color: colors.warning,
+    color: theme.text,
   },
   link: {
     ...typography.bodySmall,
-    color: colors.primary,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    minHeight: 64,
-    textAlignVertical: 'top',
-  },
-  sosButton: {
-    backgroundColor: colors.error,
-    borderRadius: 12,
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-  },
-  sosText: {
-    ...typography.h3,
-    color: colors.text,
+    color: theme.primary,
+    paddingVertical: spacing.s2,
   },
   activeBox: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: spacing.md,
-    gap: spacing.sm,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.error,
+    backgroundColor: theme.errorSoft,
+    borderRadius: radius.sm,
+    padding: spacing.s4,
+    gap: spacing.s1,
   },
   activeTitle: {
-    ...typography.h3,
-    color: colors.error,
+    ...typography.body,
+    color: theme.error,
   },
   activeTime: {
-    ...typography.body,
-    color: colors.text,
+    ...typography.bodySmall,
+    color: theme.textMuted,
   },
-  cancelButton: {
-    borderColor: colors.error,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
+  section: {
+    gap: spacing.s1,
+    marginTop: spacing.s2,
   },
-  cancelText: {
-    ...typography.body,
-    color: colors.error,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
+  sectionTitle: {
+    ...typography.bodySmall,
+    color: theme.textMuted,
   },
   muted: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   meta: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
+    color: theme.error,
   },
   historyRow: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: spacing.md,
-    gap: spacing.xs,
+    backgroundColor: theme.surface,
+    borderRadius: radius.sm,
+    padding: spacing.s4,
+    gap: spacing.s1,
   },
   historyStatus: {
     ...typography.body,
-    color: colors.text,
+    color: theme.text,
   },
 });

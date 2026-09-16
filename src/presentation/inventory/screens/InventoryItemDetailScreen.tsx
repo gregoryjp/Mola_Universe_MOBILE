@@ -1,18 +1,12 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { MovementInputType } from '@domain/inventory/entities/InventoryItem';
+import { Button, ErrorState, Input, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useInventoryItem, useInventoryMovements } from '../hooks/useInventoryItem';
 import {
   useArchiveInventoryItem,
@@ -35,6 +29,7 @@ const MovementForm = ({
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState(defaultUnit);
   const createMovement = useCreateMovement();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <View style={styles.form}>
@@ -45,40 +40,40 @@ const MovementForm = ({
             style={[styles.chip, type === value ? styles.chipActive : null]}
             onPress={() => setType(value)}
             accessibilityRole="button"
+            accessibilityState={{ selected: type === value }}
+            accessibilityLabel={`Tipo de movimiento ${value}`}
           >
             <Text style={type === value ? styles.chipTextActive : styles.chipText}>{value}</Text>
           </TouchableOpacity>
         ))}
       </View>
       <View style={styles.row}>
-        <TextInput
-          style={styles.input}
-          placeholder="Cantidad"
-          placeholderTextColor={colors.textMuted}
-          keyboardType="decimal-pad"
+        <Input
           value={quantity}
           onChangeText={setQuantity}
+          placeholder="Cantidad"
+          keyboardType="decimal-pad"
+          style={styles.inputQuantity}
+          accessibilityLabel="Cantidad del movimiento"
         />
-        <TextInput
-          style={styles.inputSmall}
-          placeholder="Unidad"
-          placeholderTextColor={colors.textMuted}
-          autoCapitalize="none"
+        <Input
           value={unit}
           onChangeText={setUnit}
+          placeholder="Unidad"
+          autoCapitalize="none"
+          style={styles.inputUnit}
+          accessibilityLabel="Unidad del movimiento"
         />
       </View>
       {createMovement.isError ? (
         <Text style={styles.error}>{createMovement.error.message}</Text>
       ) : null}
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Registrar movimiento"
         onPress={() => createMovement.mutate({ itemId, input: { type, quantity, unit } })}
-        disabled={createMovement.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Registrar movimiento</Text>
-      </TouchableOpacity>
+        loading={createMovement.isPending}
+        accessibilityHint="Registra el movimiento en el inventario"
+      />
     </View>
   );
 };
@@ -89,11 +84,12 @@ export const InventoryItemDetailScreen = ({ route, navigation }: Props): JSX.Ele
   const movements = useInventoryMovements(itemId);
   const reverse = useReverseMovement();
   const archive = useArchiveInventoryItem();
+  const styles = useThemedStyles(makeStyles);
 
   if (item.isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} />
+        <Spinner />
       </View>
     );
   }
@@ -101,7 +97,7 @@ export const InventoryItemDetailScreen = ({ route, navigation }: Props): JSX.Ele
   if (item.isError || !item.data) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>{item.isError ? item.error.message : 'Item no encontrado'}</Text>
+        <ErrorState message={item.isError ? item.error.message : 'Item no encontrado'} />
       </View>
     );
   }
@@ -118,7 +114,7 @@ export const InventoryItemDetailScreen = ({ route, navigation }: Props): JSX.Ele
       <MovementForm itemId={itemId} defaultUnit={current.unit} />
 
       <Text style={styles.subheading}>Movimientos</Text>
-      {movements.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {movements.isLoading ? <Spinner /> : null}
       {movements.isError ? <Text style={styles.error}>{movements.error.message}</Text> : null}
       {reverse.isError ? <Text style={styles.error}>{reverse.error.message}</Text> : null}
       <View style={styles.list}>
@@ -134,6 +130,7 @@ export const InventoryItemDetailScreen = ({ route, navigation }: Props): JSX.Ele
               <TouchableOpacity
                 onPress={() => reverse.mutate({ itemId, movementId: movement.id })}
                 accessibilityRole="button"
+                accessibilityLabel="Revertir movimiento"
               >
                 <Text style={styles.link}>Revertir</Text>
               </TouchableOpacity>
@@ -143,145 +140,111 @@ export const InventoryItemDetailScreen = ({ route, navigation }: Props): JSX.Ele
       </View>
 
       {archive.isError ? <Text style={styles.error}>{archive.error.message}</Text> : null}
-      <TouchableOpacity
-        style={styles.danger}
+      <Button
+        label="Archivar"
         onPress={() => archive.mutate(itemId, { onSuccess: () => navigation.goBack() })}
-        disabled={archive.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.dangerText}>Archivar</Text>
-      </TouchableOpacity>
+        loading={archive.isPending}
+        variant="danger"
+        size="lg"
+        accessibilityHint="Archiva este item del inventario"
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
-    padding: spacing.lg,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.background,
+    padding: spacing.s6,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   subheading: {
     ...typography.h3,
-    color: colors.text,
+    color: theme.text,
   },
   meta: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   form: {
-    gap: spacing.sm,
+    gap: spacing.s2,
   },
   row: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    gap: spacing.s2,
+    alignItems: 'center' as const,
   },
   chip: {
-    borderColor: colors.border,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s1,
   },
   chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   chipText: {
     ...typography.caption,
-    color: colors.text,
+    color: theme.text,
   },
   chipTextActive: {
     ...typography.caption,
-    color: colors.background,
+    color: theme.textInverse,
   },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+  inputQuantity: {
     flex: 1,
   },
-  inputSmall: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+  inputUnit: {
     width: 80,
   },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
-  },
   list: {
-    gap: spacing.sm,
+    gap: spacing.s2,
   },
   movement: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    backgroundColor: theme.surface,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s2,
   },
   movementBody: {
     gap: 2,
   },
   movementTitle: {
     ...typography.body,
-    color: colors.text,
+    color: theme.text,
   },
   movementMeta: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   link: {
     ...typography.bodySmall,
-    color: colors.primary,
+    color: theme.primary,
+    paddingVertical: spacing.s2,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  danger: {
-    borderColor: colors.error,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  dangerText: {
-    ...typography.body,
-    color: colors.error,
+    color: theme.error,
   },
 });

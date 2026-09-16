@@ -1,47 +1,39 @@
-import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { TabScreenProps } from '@core/navigation/types';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Card, ErrorState, Spinner } from '@presentation/components/ui';
 import type { JSX } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useDashboardSummary } from '../hooks/useDashboardSummary';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
+type Props = TabScreenProps<'Dashboard'>;
 
 interface StatProps {
   label: string;
   value: number;
 }
 
-const Stat = ({ label, value }: StatProps): JSX.Element => (
-  <View style={styles.stat}>
-    <Text style={styles.statValue}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
-  </View>
-);
+const Stat = ({ label, value }: StatProps): JSX.Element => {
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <Card size="sm" style={styles.stat}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </Card>
+  );
+};
 
 export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
   const { data, isLoading, isError, error, refetch } = useDashboardSummary();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Mi día</Text>
 
-      {isLoading ? <ActivityIndicator color={colors.primary} /> : null}
-      {isError ? (
-        <View style={styles.block}>
-          <Text style={styles.error}>{error.message}</Text>
-          <TouchableOpacity onPress={() => void refetch()}>
-            <Text style={styles.link}>Reintentar</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
+      {isLoading ? <Spinner /> : null}
+      {isError ? <ErrorState message={error.message} onRetry={() => void refetch()} /> : null}
 
       {data ? (
         <>
@@ -54,146 +46,104 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
         </>
       ) : null}
 
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Ver mis tareas"
         onPress={() => navigation.navigate('TasksList')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Ver mis tareas</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
+        label="Compras"
         onPress={() => navigation.navigate('ShoppingLists')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Compras</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
+        label="Inventario"
         onPress={() => navigation.navigate('InventoryList')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Inventario</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
+        label="Gastos"
         onPress={() => navigation.navigate('Expenses')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Gastos</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
+        label="Ahorros"
         onPress={() => navigation.navigate('Savings')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Ahorros</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
+        label="Calendario"
         onPress={() => navigation.navigate('Calendar')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Calendario</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
+        label="Notificaciones"
         onPress={() => navigation.navigate('NotificationsList')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Notificaciones</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
+        label="Mascotas"
         onPress={() => navigation.navigate('Pets')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Mascotas</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
+        label="SOS"
         onPress={() => navigation.navigate('SOSActivation')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>SOS</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
+        label="Contactos de confianza"
         onPress={() => navigation.navigate('TrustedContacts')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Contactos de confianza</Text>
-      </TouchableOpacity>
+        size="lg"
+        style={styles.navButton}
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s3,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   summary: {
     ...typography.body,
-    color: colors.textMuted,
-  },
-  block: {
-    gap: spacing.sm,
+    color: theme.textMuted,
   },
   statsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+    flexDirection: 'row' as const,
+    gap: spacing.s2,
   },
   stat: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: spacing.md,
-    alignItems: 'center',
-    gap: spacing.xs,
+    alignItems: 'center' as const,
   },
   statValue: {
     ...typography.h3,
-    color: colors.text,
+    color: theme.text,
   },
   statLabel: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
-  error: {
-    ...typography.body,
-    color: colors.error,
-  },
-  link: {
-    ...typography.bodySmall,
-    color: colors.primary,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+  navButton: {
+    alignSelf: 'stretch' as const,
   },
 });

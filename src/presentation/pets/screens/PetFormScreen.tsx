@@ -1,17 +1,12 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
 import type { CreatePetInput, Pet } from '@domain/pets/entities/Pet';
+import { Button, ErrorState, Input, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-} from 'react-native';
+import { ScrollView, Text } from 'react-native';
 import { useCreatePet, useUpdatePet } from '../hooks/usePetMutations';
 import { usePet } from '../hooks/usePets';
 
@@ -109,6 +104,7 @@ const PetForm = ({
   onSubmit,
 }: FormProps): JSX.Element => {
   const [values, setValues] = useState<PetFormValues>(initial);
+  const styles = useThemedStyles(makeStyles);
 
   const set = (key: keyof PetFormValues) => (value: string) =>
     setValues((current) => ({ ...current, [key]: value }));
@@ -123,115 +119,118 @@ const PetForm = ({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre (ej. Luna)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Nombre"
         value={values.name}
         onChangeText={set('name')}
+        placeholder="Nombre (ej. Luna)"
+        required
+        testID="pet-name"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Especie (ej. Perro)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Especie"
         value={values.species}
         onChangeText={set('species')}
+        placeholder="Especie (ej. Perro)"
+        required
+        testID="pet-species"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Raza"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Raza"
         value={values.breed}
         onChangeText={set('breed')}
+        placeholder="Raza"
+        testID="pet-breed"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Nacimiento (AAAA-MM-DD)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Nacimiento"
         value={values.birthDate}
         onChangeText={set('birthDate')}
+        placeholder="Nacimiento (AAAA-MM-DD)"
         autoCapitalize="none"
+        testID="pet-birth-date"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Peso en kg (ej. 12.5)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Peso"
         value={values.weightKg}
         onChangeText={set('weightKg')}
+        placeholder="Peso en kg (ej. 12.5)"
         keyboardType="decimal-pad"
+        error={weightIsValid ? undefined : 'El peso debe ser un número'}
+        testID="pet-weight"
       />
-      {!weightIsValid ? <Text style={styles.error}>El peso debe ser un número</Text> : null}
 
       <Text style={styles.sectionTitle}>Salud</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Alergias"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Alergias"
         value={values.allergies}
         onChangeText={set('allergies')}
+        placeholder="Alergias"
+        testID="pet-allergies"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Nº de microchip"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Microchip"
         value={values.microchipNumber}
         onChangeText={set('microchipNumber')}
+        placeholder="Nº de microchip"
+        testID="pet-microchip"
       />
-      <TextInput
-        style={[styles.input, styles.multiline]}
-        placeholder="Notas"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Notas"
         value={values.notes}
         onChangeText={set('notes')}
+        placeholder="Notas"
         multiline
+        testID="pet-notes"
       />
 
       <Text style={styles.sectionTitle}>Veterinario</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre del veterinario"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Veterinario"
         value={values.vetName}
         onChangeText={set('vetName')}
+        placeholder="Nombre del veterinario"
+        testID="pet-vet-name"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Teléfono del veterinario"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Teléfono del veterinario"
         value={values.vetPhone}
         onChangeText={set('vetPhone')}
+        placeholder="Teléfono del veterinario"
         keyboardType="phone-pad"
+        testID="pet-vet-phone"
       />
 
       <Text style={styles.sectionTitle}>Contacto de emergencia</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Nombre del contacto"
         value={values.emergencyContactName}
         onChangeText={set('emergencyContactName')}
+        placeholder="Nombre"
+        testID="pet-emergency-name"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Teléfono"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Teléfono del contacto"
         value={values.emergencyContactPhone}
         onChangeText={set('emergencyContactPhone')}
+        placeholder="Teléfono"
         keyboardType="phone-pad"
+        testID="pet-emergency-phone"
       />
 
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.button, canSubmit ? null : styles.buttonDisabled]}
+      <Button
+        label={submitLabel}
         disabled={!canSubmit}
         onPress={() => {
           if (canSubmit) onSubmit(toInput(values));
         }}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>{isPending ? 'Guardando…' : submitLabel}</Text>
-      </TouchableOpacity>
+        loading={isPending}
+        size="lg"
+        accessibilityHint="Guarda los datos de la mascota"
+        testID="pet-submit"
+      />
     </ScrollView>
   );
 };
@@ -242,13 +241,20 @@ export const PetFormScreen = ({ navigation, route }: Props): JSX.Element => {
   const existing = usePet(petId ?? '');
   const create = useCreatePet();
   const update = useUpdatePet(petId ?? '');
+  const styles = useThemedStyles(makeStyles);
 
   if (isEditing && existing.isLoading) {
-    return <ActivityIndicator style={styles.loader} color={colors.primary} />;
+    return <Spinner style={styles.loader} />;
   }
 
   if (isEditing && existing.isError) {
-    return <Text style={[styles.error, styles.loader]}>{existing.error.message}</Text>;
+    return (
+      <ErrorState
+        message={existing.error.message}
+        onRetry={() => void existing.refetch()}
+        style={styles.loader}
+      />
+    );
   }
 
   const initial = existing.data ? toValues(existing.data) : EMPTY_VALUES;
@@ -273,54 +279,26 @@ export const PetFormScreen = ({ navigation, route }: Props): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.sm,
+    padding: spacing.s4,
+    gap: spacing.s2,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  multiline: {
-    minHeight: 72,
-    textAlignVertical: 'top',
+    color: theme.textMuted,
+    marginTop: spacing.s1,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
+    color: theme.error,
   },
   loader: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    backgroundColor: theme.background,
   },
 });

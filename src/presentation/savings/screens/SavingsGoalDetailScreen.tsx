@@ -1,17 +1,11 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Input, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SavingsBoard } from '../components/SavingsBoard';
 import {
   useSavingsCells,
@@ -40,6 +34,7 @@ export const SavingsGoalDetailScreen = ({ route, navigation }: Props): JSX.Eleme
   const contribute = useCreateContribution(goalId);
   const [amount, setAmount] = useState('');
   const [month, setMonth] = useState('');
+  const styles = useThemedStyles(makeStyles);
 
   const isQuota = goal.data?.contributionMode === 'QUOTA';
   const pendingCellId = mark.isPending
@@ -67,7 +62,7 @@ export const SavingsGoalDetailScreen = ({ route, navigation }: Props): JSX.Eleme
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>{goal.data?.name ?? 'Meta de ahorro'}</Text>
 
-      {goal.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {goal.isLoading ? <Spinner /> : null}
       {goal.isError ? <Text style={styles.error}>{goal.error.message}</Text> : null}
 
       {goal.data ? (
@@ -86,7 +81,7 @@ export const SavingsGoalDetailScreen = ({ route, navigation }: Props): JSX.Eleme
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tablero</Text>
-        {cells.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+        {cells.isLoading ? <Spinner /> : null}
         {mark.isError ? <Text style={styles.error}>{mark.error.message}</Text> : null}
         {unmark.isError ? <Text style={styles.error}>{unmark.error.message}</Text> : null}
         {cells.data ? (
@@ -100,7 +95,7 @@ export const SavingsGoalDetailScreen = ({ route, navigation }: Props): JSX.Eleme
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Aportaciones</Text>
-        {contributions.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+        {contributions.isLoading ? <Spinner /> : null}
         {contributions.isError ? (
           <Text style={styles.error}>{contributions.error.message}</Text>
         ) : null}
@@ -112,26 +107,27 @@ export const SavingsGoalDetailScreen = ({ route, navigation }: Props): JSX.Eleme
             </Text>
           </View>
         ))}
-        <TextInput
-          style={styles.input}
-          placeholder="Importe (ej. 25.00)"
-          placeholderTextColor={colors.textMuted}
+        <Input
+          label="Importe"
           value={amount}
           onChangeText={setAmount}
+          placeholder="Importe (ej. 25.00)"
           keyboardType="decimal-pad"
+          required
+          testID="savings-contribution-amount"
         />
         {isQuota ? (
-          <TextInput
-            style={styles.input}
-            placeholder="Mes (YYYY-MM)"
-            placeholderTextColor={colors.textMuted}
+          <Input
+            label="Mes"
             value={month}
             onChangeText={setMonth}
+            placeholder="Mes (YYYY-MM)"
+            testID="savings-contribution-month"
           />
         ) : null}
         {contribute.isError ? <Text style={styles.error}>{contribute.error.message}</Text> : null}
-        <TouchableOpacity
-          style={[styles.button, canContribute ? null : styles.buttonDisabled]}
+        <Button
+          label="Aportar"
           onPress={() =>
             contribute.mutate({
               amount,
@@ -139,10 +135,10 @@ export const SavingsGoalDetailScreen = ({ route, navigation }: Props): JSX.Eleme
             })
           }
           disabled={!canContribute}
-          accessibilityRole="button"
-        >
-          <Text style={styles.buttonText}>{contribute.isPending ? 'Aportando…' : 'Aportar'}</Text>
-        </TouchableOpacity>
+          loading={contribute.isPending}
+          accessibilityHint="Registra una aportación a esta meta de ahorro"
+          testID="savings-contribution-submit"
+        />
       </View>
 
       <View style={styles.section}>
@@ -162,91 +158,61 @@ export const SavingsGoalDetailScreen = ({ route, navigation }: Props): JSX.Eleme
       </View>
 
       {remove.isError ? <Text style={styles.error}>{remove.error.message}</Text> : null}
-      <TouchableOpacity
-        style={[
-          styles.button,
-          styles.dangerButton,
-          remove.isPending ? styles.buttonDisabled : null,
-        ]}
+      <Button
+        label="Eliminar meta"
         onPress={handleDelete}
-        disabled={remove.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>{remove.isPending ? 'Eliminando…' : 'Eliminar meta'}</Text>
-      </TouchableOpacity>
+        loading={remove.isPending}
+        variant="danger"
+        size="lg"
+        accessibilityHint="Elimina esta meta de ahorro definitivamente"
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   summary: {
     gap: 2,
   },
   section: {
-    gap: spacing.xs,
+    gap: spacing.s1,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   entryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s2,
   },
   meta: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   muted: {
     ...typography.body,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  dangerButton: {
-    backgroundColor: colors.error,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

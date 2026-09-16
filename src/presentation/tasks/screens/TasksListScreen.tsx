@@ -1,35 +1,23 @@
-import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { TabScreenProps } from '@core/navigation/types';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, EmptyState, ErrorState, Spinner } from '@presentation/components/ui';
 import type { JSX } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { TaskListItem } from '../components/TaskListItem';
 import { useTasksList } from '../hooks/useTasksList';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'TasksList'>;
+type Props = TabScreenProps<'TasksList'>;
 
 export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
   const { data, isLoading, isError, error, refetch } = useTasksList();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Mis tareas</Text>
-      {isLoading ? <ActivityIndicator color={colors.primary} style={styles.center} /> : null}
-      {isError ? (
-        <View style={styles.center}>
-          <Text style={styles.error}>{error.message}</Text>
-          <TouchableOpacity onPress={() => void refetch()}>
-            <Text style={styles.link}>Reintentar</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
+      {isLoading ? <Spinner /> : null}
+      {isError ? <ErrorState message={error.message} onRetry={() => void refetch()} /> : null}
       {!isLoading && !isError ? (
         <FlatList
           data={data?.tasks ?? []}
@@ -41,66 +29,39 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
             />
           )}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.empty}>No tienes tareas todavía</Text>}
+          ListEmptyComponent={<EmptyState title="No tienes tareas todavía" />}
         />
       ) : null}
-      <TouchableOpacity
-        style={styles.fab}
+      <Button
+        label="+ Nueva tarea"
         onPress={() => navigation.navigate('TaskForm')}
-        accessibilityRole="button"
-      >
-        <Text style={styles.fabText}>+ Nueva tarea</Text>
-      </TouchableOpacity>
+        size="lg"
+        style={styles.fab}
+        accessibilityHint="Abre el formulario para crear una tarea"
+      />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: spacing.md,
-    gap: spacing.md,
+    backgroundColor: theme.background,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   header: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   list: {
-    gap: spacing.sm,
-    paddingBottom: spacing.xxl,
-  },
-  center: {
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  error: {
-    ...typography.body,
-    color: colors.error,
-  },
-  link: {
-    ...typography.bodySmall,
-    color: colors.primary,
-  },
-  empty: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-    paddingVertical: spacing.lg,
+    gap: spacing.s2,
+    paddingBottom: spacing.s12,
   },
   fab: {
-    position: 'absolute',
-    left: spacing.md,
-    right: spacing.md,
-    bottom: spacing.md,
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  fabText: {
-    ...typography.body,
-    color: colors.background,
+    position: 'absolute' as const,
+    left: spacing.s4,
+    right: spacing.s4,
+    bottom: spacing.s4,
   },
 });

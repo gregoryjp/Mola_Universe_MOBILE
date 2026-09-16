@@ -1,8 +1,10 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, ErrorState, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useTaskDetail } from '../hooks/useTaskDetail';
 import { useCompleteTask, useDeleteTask } from '../hooks/useTaskMutations';
 
@@ -13,11 +15,12 @@ export const TaskDetailScreen = ({ route, navigation }: Props): JSX.Element => {
   const { data: task, isLoading, isError, error } = useTaskDetail(taskId);
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
+  const styles = useThemedStyles(makeStyles);
 
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} />
+        <Spinner />
       </View>
     );
   }
@@ -25,7 +28,7 @@ export const TaskDetailScreen = ({ route, navigation }: Props): JSX.Element => {
   if (isError || !task) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>{isError ? error.message : 'Tarea no encontrada'}</Text>
+        <ErrorState message={isError ? error.message : 'Tarea no encontrada'} />
       </View>
     );
   }
@@ -43,79 +46,55 @@ export const TaskDetailScreen = ({ route, navigation }: Props): JSX.Element => {
       {completeTask.isError ? <Text style={styles.error}>{completeTask.error.message}</Text> : null}
       {deleteTask.isError ? <Text style={styles.error}>{deleteTask.error.message}</Text> : null}
 
-      <TouchableOpacity
-        style={styles.primary}
+      <Button
+        label={task.status === 'COMPLETED' ? 'Completada' : 'Completar'}
         onPress={() => completeTask.mutate({ taskId })}
-        disabled={completeTask.isPending || task.status === 'COMPLETED'}
-        accessibilityRole="button"
-      >
-        <Text style={styles.primaryText}>
-          {task.status === 'COMPLETED' ? 'Completada' : 'Completar'}
-        </Text>
-      </TouchableOpacity>
+        loading={completeTask.isPending}
+        disabled={task.status === 'COMPLETED'}
+        size="lg"
+        accessibilityHint="Marca esta tarea como completada"
+      />
 
-      <TouchableOpacity
-        style={styles.danger}
+      <Button
+        label="Eliminar"
         onPress={() => deleteTask.mutate(taskId, { onSuccess: () => navigation.goBack() })}
-        disabled={deleteTask.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.dangerText}>Eliminar</Text>
-      </TouchableOpacity>
+        loading={deleteTask.isPending}
+        variant="danger"
+        size="lg"
+        accessibilityHint="Elimina esta tarea"
+      />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: spacing.md,
-    gap: spacing.sm,
+    backgroundColor: theme.background,
+    padding: spacing.s4,
+    gap: spacing.s3,
   },
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
-    padding: spacing.lg,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.background,
+    padding: spacing.s6,
   },
   title: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   meta: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   description: {
     ...typography.body,
-    color: colors.text,
+    color: theme.text,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  primary: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  primaryText: {
-    ...typography.body,
-    color: colors.background,
-  },
-  danger: {
-    borderColor: colors.error,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  dangerText: {
-    ...typography.body,
-    color: colors.error,
+    color: theme.error,
   },
 });

@@ -1,26 +1,21 @@
-import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { TabScreenProps } from '@core/navigation/types';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, EmptyState, Spinner } from '@presentation/components/ui';
 import { HouseholdSelector } from '@presentation/households/components/HouseholdSelector';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { CalendarEventRow } from '../components/CalendarEventRow';
 import { useHouseholdEvents, usePersonalEvents } from '../hooks/useCalendarEvents';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Calendar'>;
+type Props = TabScreenProps<'Calendar'>;
 
 export const CalendarScreen = ({ navigation }: Props): JSX.Element => {
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
   const householdEvents = useHouseholdEvents();
   const personalEvents = usePersonalEvents();
+  const styles = useThemedStyles(makeStyles);
 
   const events = householdEvents.data ?? [];
   const personal = personalEvents.data ?? [];
@@ -39,7 +34,7 @@ export const CalendarScreen = ({ navigation }: Props): JSX.Element => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Del hogar</Text>
-        {householdEvents.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+        {householdEvents.isLoading ? <Spinner /> : null}
         {householdEvents.isError ? (
           <Text style={styles.error}>{householdEvents.error.message}</Text>
         ) : null}
@@ -47,13 +42,13 @@ export const CalendarScreen = ({ navigation }: Props): JSX.Element => {
           <CalendarEventRow key={event.id} event={event} onPress={() => openEvent(event.id)} />
         ))}
         {householdEvents.data && events.length === 0 && householdId !== null ? (
-          <Text style={styles.muted}>Sin eventos de hogar todavía</Text>
+          <EmptyState title="Sin eventos de hogar todavía" />
         ) : null}
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Personales</Text>
-        {personalEvents.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+        {personalEvents.isLoading ? <Spinner /> : null}
         {personalEvents.isError ? (
           <Text style={styles.error}>{personalEvents.error.message}</Text>
         ) : null}
@@ -61,57 +56,46 @@ export const CalendarScreen = ({ navigation }: Props): JSX.Element => {
           <CalendarEventRow key={event.id} event={event} onPress={() => openEvent(event.id)} />
         ))}
         {personalEvents.data && personal.length === 0 ? (
-          <Text style={styles.muted}>Sin eventos personales todavía</Text>
+          <EmptyState title="Sin eventos personales todavía" />
         ) : null}
       </View>
 
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="+ Nuevo evento"
         onPress={() => navigation.navigate('CalendarEventForm', {})}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>+ Nuevo evento</Text>
-      </TouchableOpacity>
+        size="lg"
+        accessibilityHint="Abre el formulario para crear un evento"
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   section: {
-    gap: spacing.xs,
+    gap: spacing.s1,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   muted: {
     ...typography.body,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

@@ -1,10 +1,12 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Input } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useCreateExpense } from '../hooks/useExpenseMutations';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ExpenseForm'>;
@@ -15,6 +17,7 @@ export const ExpenseFormScreen = ({ navigation }: Props): JSX.Element => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
+  const styles = useThemedStyles(makeStyles);
 
   const canSubmit =
     description.length > 0 && amount.length > 0 && userId !== undefined && !create.isPending;
@@ -36,86 +39,65 @@ export const ExpenseFormScreen = ({ navigation }: Props): JSX.Element => {
     <View style={styles.container}>
       <Text style={styles.heading}>Nuevo gasto</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Descripción"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Descripción"
         value={description}
         onChangeText={setDescription}
+        placeholder="Descripción"
+        required
+        testID="expense-description"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Importe (ej. 42.50)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Importe"
         value={amount}
         onChangeText={setAmount}
+        placeholder="Importe (ej. 42.50)"
         keyboardType="decimal-pad"
+        required
+        testID="expense-amount"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Categoría (opcional)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Categoría"
         value={category}
         onChangeText={setCategory}
+        placeholder="Categoría (opcional)"
+        testID="expense-category"
       />
 
       <Text style={styles.hint}>Tú pagas este gasto; se reparte a partes iguales.</Text>
 
       {create.isError ? <Text style={styles.error}>{create.error.message}</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.button, canSubmit ? null : styles.buttonDisabled]}
+      <Button
+        label="Crear gasto"
         onPress={handleSubmit}
         disabled={!canSubmit}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>{create.isPending ? 'Guardando…' : 'Crear gasto'}</Text>
-      </TouchableOpacity>
+        loading={create.isPending}
+        size="lg"
+        accessibilityHint="Registra el gasto y lo reparte a partes iguales"
+        testID="expense-submit"
+      />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: spacing.md,
-    gap: spacing.sm,
+    backgroundColor: theme.background,
+    padding: spacing.s4,
+    gap: spacing.s2,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    color: theme.text,
   },
   hint: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

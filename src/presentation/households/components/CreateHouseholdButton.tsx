@@ -1,9 +1,8 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import { Button } from '@presentation/components/ui';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -12,26 +11,12 @@ export const CreateHouseholdButton = (): JSX.Element => {
   const navigation = useNavigation<Nav>();
 
   return (
-    <TouchableOpacity
-      style={styles.chip}
+    <Button
+      label="+ Crear hogar"
       onPress={() => navigation.navigate('CreateHousehold')}
-      accessibilityRole="button"
-    >
-      <Text style={styles.chipText}>+ Crear hogar</Text>
-    </TouchableOpacity>
+      variant="secondary"
+      size="sm"
+      accessibilityHint="Abre el formulario para crear un hogar"
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  chip: {
-    borderColor: colors.primary,
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  chipText: {
-    ...typography.caption,
-    color: colors.primary,
-  },
-});

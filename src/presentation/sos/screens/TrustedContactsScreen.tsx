@@ -1,17 +1,11 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, EmptyState, Input, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { TrustedContactRow } from '../components/TrustedContactRow';
 import { useTrustedContacts } from '../hooks/useSos';
 import { useCreateTrustedContact, useDeleteTrustedContact } from '../hooks/useSosMutations';
@@ -26,6 +20,7 @@ export const TrustedContactsScreen = (_props: Props): JSX.Element => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const styles = useThemedStyles(makeStyles);
 
   const canSubmit = name.trim().length > 0 && email.trim().length > 0 && !createContact.isPending;
 
@@ -54,13 +49,59 @@ export const TrustedContactsScreen = (_props: Props): JSX.Element => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Contactos de confianza</Text>
       <Text style={styles.hint}>
-        Recibirán tu alerta SOS con tu mensaje cuando la actives. Deben verificar el email antes de
-        poder recibirla.
+        Estas personas recibirán tu alerta SOS: por push si usan MOLA y tienen los avisos activos,
+        por email en caso contrario.
       </Text>
 
-      <View style={styles.section}>
-        {contacts.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
-        {contacts.isError ? <Text style={styles.error}>{contacts.error.message}</Text> : null}
+      <Input
+        label="Nombre"
+        value={name}
+        onChangeText={setName}
+        placeholder="Nombre"
+        required
+        testID="trusted-contact-name"
+      />
+      <Input
+        label="Email"
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Email"
+        type="email"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        required
+        testID="trusted-contact-email"
+      />
+      <Input
+        label="Teléfono"
+        value={phone}
+        onChangeText={setPhone}
+        placeholder="Teléfono (opcional)"
+        keyboardType="phone-pad"
+        testID="trusted-contact-phone"
+      />
+
+      {createContact.isError ? (
+        <Text style={styles.error}>{createContact.error.message}</Text>
+      ) : null}
+
+      <Button
+        label="Añadir contacto"
+        onPress={submit}
+        disabled={!canSubmit}
+        loading={createContact.isPending}
+        size="lg"
+        accessibilityHint="Añade el contacto a tu lista de confianza"
+        testID="trusted-contact-submit"
+      />
+
+      {contacts.isLoading ? <Spinner /> : null}
+      {contacts.isError ? <Text style={styles.error}>{contacts.error.message}</Text> : null}
+      {deleteContact.isError ? (
+        <Text style={styles.error}>{deleteContact.error.message}</Text>
+      ) : null}
+
+      <View style={styles.list}>
         {items.map((contact) => (
           <TrustedContactRow
             key={contact.id}
@@ -69,110 +110,36 @@ export const TrustedContactsScreen = (_props: Props): JSX.Element => {
           />
         ))}
         {contacts.data && items.length === 0 ? (
-          <Text style={styles.muted}>Todavía no tienes contactos de confianza</Text>
+          <EmptyState title="Sin contactos de confianza todavía" />
         ) : null}
-        {deleteContact.isError ? (
-          <Text style={styles.error}>{deleteContact.error.message}</Text>
-        ) : null}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Añadir contacto</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Nombre"
-          placeholderTextColor={colors.textMuted}
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor={colors.textMuted}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Teléfono (opcional)"
-          placeholderTextColor={colors.textMuted}
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
-        {createContact.isError ? (
-          <Text style={styles.error}>{createContact.error.message}</Text>
-        ) : null}
-        <TouchableOpacity
-          style={[styles.button, canSubmit ? null : styles.buttonDisabled]}
-          disabled={!canSubmit}
-          onPress={submit}
-          accessibilityRole="button"
-        >
-          <Text style={styles.buttonText}>
-            {createContact.isPending ? 'Añadiendo…' : 'Añadir contacto'}
-          </Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s2,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   hint: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
-  section: {
-    gap: spacing.xs,
-  },
-  sectionTitle: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  muted: {
-    ...typography.body,
-    color: colors.textMuted,
+  list: {
+    gap: spacing.s2,
+    marginTop: spacing.s2,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

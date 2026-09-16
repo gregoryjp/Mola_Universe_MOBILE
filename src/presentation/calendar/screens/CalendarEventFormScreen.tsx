@@ -1,11 +1,13 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { CalendarEventType } from '@domain/calendar/entities/CalendarEvent';
+import { Button, Input } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useCalendarEvent } from '../hooks/useCalendarEvents';
 import { useCreateCalendarEvent, useUpdateCalendarEvent } from '../hooks/useCalendarMutations';
 
@@ -40,6 +42,7 @@ export const CalendarEventFormScreen = ({ route, navigation }: Props): JSX.Eleme
   const [endAt, setEndAt] = useState('');
   const [timezone, setTimezone] = useState('');
   const [isHousehold, setIsHousehold] = useState(householdId !== null);
+  const styles = useThemedStyles(makeStyles);
 
   useEffect(() => {
     const event = existing.data;
@@ -96,19 +99,21 @@ export const CalendarEventFormScreen = ({ route, navigation }: Props): JSX.Eleme
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>{isEdit ? 'Editar evento' : 'Nuevo evento'}</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Título"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Título"
         value={title}
         onChangeText={setTitle}
+        placeholder="Título"
+        required
+        testID="calendar-event-title"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Descripción (opcional)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Descripción"
         value={description}
         onChangeText={setDescription}
+        placeholder="Descripción (opcional)"
+        multiline
+        testID="calendar-event-description"
       />
 
       <Text style={styles.sectionTitle}>Tipo</Text>
@@ -120,6 +125,7 @@ export const CalendarEventFormScreen = ({ route, navigation }: Props): JSX.Eleme
             onPress={() => setType(option)}
             accessibilityRole="button"
             accessibilityState={{ selected: type === option }}
+            accessibilityLabel={`Tipo ${option}`}
           >
             <Text style={[styles.chipText, type === option ? styles.chipTextActive : null]}>
               {option}
@@ -128,29 +134,30 @@ export const CalendarEventFormScreen = ({ route, navigation }: Props): JSX.Eleme
         ))}
       </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Inicio (ISO, ej. 2026-09-20T18:00:00Z)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Inicio"
         value={startAt}
         onChangeText={setStartAt}
+        placeholder="Inicio (ISO, ej. 2026-09-20T18:00:00Z)"
         autoCapitalize="none"
+        required
+        testID="calendar-event-start"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Fin (opcional)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Fin"
         value={endAt}
         onChangeText={setEndAt}
+        placeholder="Fin (opcional)"
         autoCapitalize="none"
+        testID="calendar-event-end"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Zona horaria (opcional, ej. Europe/Madrid)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Zona horaria"
         value={timezone}
         onChangeText={setTimezone}
+        placeholder="Zona horaria (opcional, ej. Europe/Madrid)"
         autoCapitalize="none"
+        testID="calendar-event-timezone"
       />
 
       {isEdit ? (
@@ -166,6 +173,7 @@ export const CalendarEventFormScreen = ({ route, navigation }: Props): JSX.Eleme
               onPress={() => setIsHousehold(false)}
               accessibilityRole="button"
               accessibilityState={{ selected: !isHousehold }}
+              accessibilityLabel="Alcance personal"
             >
               <Text style={[styles.chipText, !isHousehold ? styles.chipTextActive : null]}>
                 Personal
@@ -177,6 +185,7 @@ export const CalendarEventFormScreen = ({ route, navigation }: Props): JSX.Eleme
               disabled={householdId === null}
               accessibilityRole="button"
               accessibilityState={{ selected: isHousehold }}
+              accessibilityLabel="Alcance hogar"
             >
               <Text style={[styles.chipText, isHousehold ? styles.chipTextActive : null]}>
                 Hogar
@@ -188,92 +197,71 @@ export const CalendarEventFormScreen = ({ route, navigation }: Props): JSX.Eleme
 
       {mutation.isError ? <Text style={styles.error}>{mutation.error.message}</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.button, canSubmit ? null : styles.buttonDisabled]}
+      <Button
+        label={isEdit ? 'Guardar cambios' : 'Crear evento'}
         onPress={handleSubmit}
         disabled={!canSubmit}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>
-          {mutation.isPending ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear evento'}
-        </Text>
-      </TouchableOpacity>
+        loading={mutation.isPending}
+        size="lg"
+        accessibilityHint={
+          isEdit ? 'Guarda los cambios del evento' : 'Crea el evento con los datos introducidos'
+        }
+        testID="calendar-event-submit"
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.sm,
+    padding: spacing.s4,
+    gap: spacing.s2,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    color: theme.textMuted,
+    marginTop: spacing.s1,
   },
   chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: spacing.s1,
   },
   chip: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s1,
   },
   chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   chipText: {
     ...typography.bodySmall,
-    color: colors.text,
+    color: theme.text,
   },
   chipTextActive: {
-    color: colors.background,
+    color: theme.textInverse,
   },
   hint: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

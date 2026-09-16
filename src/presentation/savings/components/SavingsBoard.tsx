@@ -1,7 +1,8 @@
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { SavingsCell } from '@domain/savings/entities/SavingsGoal';
 import type { JSX } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
   cells: SavingsCell[];
@@ -15,51 +16,58 @@ interface Props {
  * Marking a cell adds its face value to the goal; tapping a marked cell unmarks
  * it (the backend records a REVERSAL movement).
  */
-export const SavingsBoard = ({ cells, pendingCellId, onToggle }: Props): JSX.Element => (
-  <View style={styles.grid}>
-    {cells.map((cell) => (
-      <TouchableOpacity
-        key={cell.id}
-        style={[styles.cell, cell.isMarked ? styles.cellMarked : null]}
-        onPress={() => onToggle(cell)}
-        disabled={pendingCellId !== null}
-        accessibilityRole="button"
-        accessibilityState={{ selected: cell.isMarked }}
-      >
-        <Text style={[styles.cellText, cell.isMarked ? styles.cellTextMarked : null]}>
-          {cell.denomination}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-);
+export const SavingsBoard = ({ cells, pendingCellId, onToggle }: Props): JSX.Element => {
+  const styles = useThemedStyles(makeStyles);
 
-const styles = StyleSheet.create({
+  return (
+    <View style={styles.grid}>
+      {cells.map((cell) => (
+        <TouchableOpacity
+          key={cell.id}
+          style={[styles.cell, cell.isMarked ? styles.cellMarked : null]}
+          onPress={() => onToggle(cell)}
+          disabled={pendingCellId !== null}
+          accessibilityRole="button"
+          accessibilityState={{ selected: cell.isMarked }}
+          accessibilityLabel={`Celda de ${cell.denomination}`}
+          accessibilityHint={cell.isMarked ? 'Desmarca esta celda' : 'Marca esta celda'}
+        >
+          <Text style={[styles.cellText, cell.isMarked ? styles.cellTextMarked : null]}>
+            {cell.denomination}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
+
+const makeStyles = (theme: ColorTokens) => ({
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: spacing.s1,
   },
   cell: {
     minWidth: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    minHeight: 44,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.s2,
+    paddingHorizontal: spacing.s2,
   },
   cellMarked: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   cellText: {
     ...typography.bodySmall,
-    color: colors.text,
+    color: theme.text,
   },
   cellTextMarked: {
-    color: colors.background,
+    color: theme.textInverse,
   },
 });

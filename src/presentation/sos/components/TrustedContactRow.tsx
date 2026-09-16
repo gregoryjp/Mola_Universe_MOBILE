@@ -1,64 +1,65 @@
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { TrustedContact } from '@domain/sos/entities/Sos';
+import { Badge } from '@presentation/components/ui';
 import type { JSX } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
   contact: TrustedContact;
   onDelete: () => void;
 }
 
-export const TrustedContactRow = ({ contact, onDelete }: Props): JSX.Element => (
-  <View style={styles.row}>
-    <View style={styles.header}>
-      <Text style={styles.name}>{contact.name}</Text>
-      <Text style={contact.verified ? styles.verified : styles.pending}>
-        {contact.verified ? 'Verificado' : 'Sin verificar'}
-      </Text>
-    </View>
-    <Text style={styles.meta}>{contact.email}</Text>
-    {contact.phone ? <Text style={styles.meta}>{contact.phone}</Text> : null}
-    <Text style={styles.meta}>
-      {contact.isMolaUser && contact.pushEnabled
-        ? 'Recibe avisos push'
-        : 'Recibe la alerta por email'}
-    </Text>
-    <TouchableOpacity onPress={onDelete} accessibilityRole="button">
-      <Text style={styles.delete}>Eliminar contacto</Text>
-    </TouchableOpacity>
-  </View>
-);
+export const TrustedContactRow = ({ contact, onDelete }: Props): JSX.Element => {
+  const styles = useThemedStyles(makeStyles);
 
-const styles = StyleSheet.create({
+  return (
+    <View style={styles.row}>
+      <View style={styles.header}>
+        <Text style={styles.name}>{contact.name}</Text>
+        <Badge label={contact.verified ? 'Verificado' : 'Sin verificar'} />
+      </View>
+      <Text style={styles.meta}>{contact.email}</Text>
+      {contact.phone ? <Text style={styles.meta}>{contact.phone}</Text> : null}
+      <Text style={styles.meta}>
+        {contact.isMolaUser && contact.pushEnabled
+          ? 'Recibe avisos push'
+          : 'Recibe la alerta por email'}
+      </Text>
+      <TouchableOpacity
+        onPress={onDelete}
+        accessibilityRole="button"
+        accessibilityLabel={`Eliminar contacto ${contact.name}`}
+      >
+        <Text style={styles.delete}>Eliminar contacto</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const makeStyles = (theme: ColorTokens) => ({
   row: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: spacing.md,
-    gap: spacing.xs,
+    backgroundColor: theme.surface,
+    borderRadius: radius.sm,
+    padding: spacing.s4,
+    gap: spacing.s1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
   },
   name: {
     ...typography.body,
-    color: colors.text,
-  },
-  verified: {
-    ...typography.caption,
-    color: colors.success,
-  },
-  pending: {
-    ...typography.caption,
-    color: colors.warning,
+    color: theme.text,
   },
   meta: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   delete: {
     ...typography.caption,
-    color: colors.error,
+    color: theme.error,
+    paddingVertical: spacing.s2,
   },
 });

@@ -1,9 +1,11 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Input } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useForgotPassword } from '../hooks/useForgotPassword';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
@@ -11,6 +13,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 export const ForgotPasswordScreen = ({ navigation }: Props): JSX.Element => {
   const [email, setEmail] = useState('');
   const forgotPassword = useForgotPassword();
+  const styles = useThemedStyles(makeStyles);
 
   const handleSubmit = (): void => {
     forgotPassword.mutate(email);
@@ -20,15 +23,14 @@ export const ForgotPasswordScreen = ({ navigation }: Props): JSX.Element => {
     <View style={styles.container}>
       <Text style={styles.title}>Recuperar contraseña</Text>
       <Text style={styles.subtitle}>Te enviaremos un código a tu email</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="email-address"
+      <Input
+        label="Email"
+        type="email"
         value={email}
         onChangeText={setEmail}
+        placeholder="tu@email.com"
+        required
+        testID="forgot-email"
       />
       {forgotPassword.isError ? (
         <Text style={styles.error}>{forgotPassword.error.message}</Text>
@@ -36,72 +38,46 @@ export const ForgotPasswordScreen = ({ navigation }: Props): JSX.Element => {
       {forgotPassword.isSuccess ? (
         <Text style={styles.success}>{forgotPassword.data.message}</Text>
       ) : null}
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Enviar código"
         onPress={handleSubmit}
-        disabled={forgotPassword.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>
-          {forgotPassword.isPending ? 'Enviando…' : 'Enviar código'}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>Volver a iniciar sesión</Text>
-      </TouchableOpacity>
+        loading={forgotPassword.isPending}
+        size="lg"
+        accessibilityHint="Envía un código de recuperación a tu email"
+        testID="forgot-submit"
+      />
+      <Button
+        label="Volver a iniciar sesión"
+        onPress={() => navigation.navigate('Login')}
+        variant="link"
+      />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.background,
-    padding: spacing.lg,
-    gap: spacing.md,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.background,
+    padding: spacing.s6,
+    gap: spacing.s4,
   },
   title: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   subtitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    width: '100%',
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
+    color: theme.error,
   },
   success: {
     ...typography.bodySmall,
-    color: colors.success,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    width: '100%',
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
-  },
-  link: {
-    ...typography.bodySmall,
-    color: colors.primary,
+    color: theme.success,
   },
 });

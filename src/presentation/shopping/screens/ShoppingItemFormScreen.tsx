@@ -1,9 +1,11 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Input } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useAddShoppingItem } from '../hooks/useShoppingMutations';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ShoppingItemForm'>;
@@ -14,6 +16,7 @@ export const ShoppingItemFormScreen = ({ route, navigation }: Props): JSX.Elemen
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState('ud');
   const addItem = useAddShoppingItem();
+  const styles = useThemedStyles(makeStyles);
 
   const handleSubmit = (): void => {
     addItem.mutate(
@@ -26,78 +29,58 @@ export const ShoppingItemFormScreen = ({ route, navigation }: Props): JSX.Elemen
     <View style={styles.container}>
       <Text style={styles.heading}>Añadir item</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Nombre"
         value={name}
         onChangeText={setName}
+        placeholder="Nombre"
+        required
+        testID="shopping-item-name"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Cantidad (ej. 2 o 1.5)"
-        placeholderTextColor={colors.textMuted}
-        keyboardType="decimal-pad"
+      <Input
+        label="Cantidad"
         value={quantity}
         onChangeText={setQuantity}
+        placeholder="Cantidad (ej. 2 o 1.5)"
+        keyboardType="decimal-pad"
+        testID="shopping-item-quantity"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Unidad (ej. ud, kg, l)"
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
+      <Input
+        label="Unidad"
         value={unit}
         onChangeText={setUnit}
+        placeholder="Unidad (ej. ud, kg, l)"
+        autoCapitalize="none"
+        testID="shopping-item-unit"
       />
 
       {addItem.isError ? <Text style={styles.error}>{addItem.error.message}</Text> : null}
 
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Añadir"
         onPress={handleSubmit}
-        disabled={addItem.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>{addItem.isPending ? 'Añadiendo…' : 'Añadir'}</Text>
-      </TouchableOpacity>
+        loading={addItem.isPending}
+        size="lg"
+        accessibilityHint="Añade el item a la lista de compras"
+        testID="shopping-item-submit"
+      />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: spacing.md,
-    gap: spacing.sm,
+    backgroundColor: theme.background,
+    padding: spacing.s4,
+    gap: spacing.s3,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    color: theme.text,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

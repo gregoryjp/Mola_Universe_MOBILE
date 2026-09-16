@@ -1,7 +1,9 @@
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { PetPermission, PetPermissionLevel } from '@domain/pets/entities/Pet';
+import { Button, Input } from '@presentation/components/ui';
 import { type JSX, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 export const PET_PERMISSION_LEVELS: readonly PetPermissionLevel[] = ['BASIC', 'REGULAR', 'MEDICAL'];
 
@@ -17,23 +19,29 @@ interface LevelPickerProps {
   onSelect: (level: PetPermissionLevel) => void;
 }
 
-const LevelPicker = ({ value, disabled, onSelect }: LevelPickerProps): JSX.Element => (
-  <View style={styles.picker}>
-    {PET_PERMISSION_LEVELS.map((level) => (
-      <TouchableOpacity
-        key={level}
-        style={[styles.levelButton, value === level && styles.levelButtonActive]}
-        disabled={disabled}
-        onPress={() => onSelect(level)}
-        accessibilityRole="button"
-      >
-        <Text style={[styles.levelText, value === level && styles.levelTextActive]}>
-          {LEVEL_LABELS[level]}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-);
+const LevelPicker = ({ value, disabled, onSelect }: LevelPickerProps): JSX.Element => {
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <View style={styles.picker}>
+      {PET_PERMISSION_LEVELS.map((level) => (
+        <TouchableOpacity
+          key={level}
+          style={[styles.levelButton, value === level && styles.levelButtonActive]}
+          disabled={disabled}
+          onPress={() => onSelect(level)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: value === level }}
+          accessibilityLabel={`Nivel ${LEVEL_LABELS[level]}`}
+        >
+          <Text style={[styles.levelText, value === level && styles.levelTextActive]}>
+            {LEVEL_LABELS[level]}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
 
 interface Props {
   permissions: PetPermission[];
@@ -54,6 +62,7 @@ export const PetPermissionsSection = ({
 }: Props): JSX.Element => {
   const [userId, setUserId] = useState('');
   const [level, setLevel] = useState<PetPermissionLevel>('REGULAR');
+  const styles = useThemedStyles(makeStyles);
 
   const trimmedUserId = userId.trim();
   const canAssign = trimmedUserId.length > 0 && !disabled;
@@ -83,101 +92,80 @@ export const PetPermissionsSection = ({
 
       <View style={styles.row}>
         <Text style={styles.rowLabel}>Asignar a otro usuario</Text>
-        <TextInput
-          style={styles.input}
+        <Input
           value={userId}
           onChangeText={setUserId}
           placeholder="id de usuario"
-          placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           accessibilityLabel="Identificador del usuario"
+          testID="pet-permission-user-id"
         />
         <LevelPicker value={level} disabled={disabled} onSelect={setLevel} />
-        <TouchableOpacity
-          style={[styles.assignButton, !canAssign && styles.assignButtonDisabled]}
+        <Button
+          label="Asignar permiso"
           disabled={!canAssign}
           onPress={() => {
             if (!canAssign) return;
             onSetLevel(trimmedUserId, level);
             setUserId('');
           }}
-          accessibilityRole="button"
-        >
-          <Text style={styles.assignText}>Asignar permiso</Text>
-        </TouchableOpacity>
+          accessibilityHint="Asigna el nivel elegido al usuario indicado"
+          testID="pet-permission-assign"
+        />
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   section: {
-    gap: spacing.xs,
+    gap: spacing.s1,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   hint: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   muted: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   row: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: spacing.md,
-    gap: spacing.sm,
+    backgroundColor: theme.surface,
+    borderRadius: radius.sm,
+    padding: spacing.s4,
+    gap: spacing.s2,
   },
   rowLabel: {
     ...typography.body,
-    color: colors.text,
+    color: theme.text,
   },
   picker: {
-    flexDirection: 'row',
-    gap: spacing.xs,
+    flexDirection: 'row' as const,
+    gap: spacing.s1,
   },
   levelButton: {
     flex: 1,
-    borderRadius: 6,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    borderRadius: radius.xs,
     borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
+    borderColor: theme.border,
+    paddingVertical: spacing.s2,
   },
   levelButtonActive: {
-    backgroundColor: colors.primaryDark,
-    borderColor: colors.primary,
+    backgroundColor: theme.primarySoft,
+    borderColor: theme.primary,
   },
   levelText: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   levelTextActive: {
-    color: colors.text,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 6,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    color: colors.text,
-  },
-  assignButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 6,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  assignButtonDisabled: {
-    opacity: 0.5,
-  },
-  assignText: {
-    ...typography.bodySmall,
-    color: colors.background,
+    color: theme.text,
   },
 });

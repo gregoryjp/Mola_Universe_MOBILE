@@ -1,7 +1,8 @@
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { ScrollView, Text, TouchableOpacity } from 'react-native';
 import { useHouseholds } from '../hooks/useHouseholds';
 import { CreateHouseholdButton } from './CreateHouseholdButton';
 
@@ -11,21 +12,34 @@ interface ChipProps {
   onPress: () => void;
 }
 
-const Chip = ({ label, active, onPress }: ChipProps): JSX.Element => (
-  <TouchableOpacity
-    style={[styles.chip, active ? styles.chipActive : null]}
-    onPress={onPress}
-    accessibilityRole="button"
-  >
-    <Text style={active ? styles.chipTextActive : styles.chipText}>{label}</Text>
-  </TouchableOpacity>
-);
+/**
+ * The design system has no chip/segment component, so this stays a themed
+ * pressable. `accessibilityState.selected` is what conveys the active choice to
+ * screen readers, since the active chip is otherwise only distinguished by
+ * colour.
+ */
+const Chip = ({ label, active, onPress }: ChipProps): JSX.Element => {
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <TouchableOpacity
+      style={[styles.chip, active ? styles.chipActive : null]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
+    >
+      <Text style={active ? styles.chipTextActive : styles.chipText}>{label}</Text>
+    </TouchableOpacity>
+  );
+};
 
 /** Lets the user pick the active household (or "Personal"). */
 export const HouseholdSelector = (): JSX.Element => {
   const { data } = useHouseholds();
   const activeHouseholdId = useHouseholdStore((state) => state.activeHouseholdId);
   const setActiveHousehold = useHouseholdStore((state) => state.setActiveHousehold);
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <ScrollView
@@ -51,28 +65,30 @@ export const HouseholdSelector = (): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   row: {
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
+    gap: spacing.s2,
+    paddingVertical: spacing.s1,
   },
   chip: {
-    borderColor: colors.border,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s1,
   },
   chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   chipText: {
     ...typography.caption,
-    color: colors.text,
+    color: theme.text,
   },
   chipTextActive: {
     ...typography.caption,
-    color: colors.background,
+    color: theme.textInverse,
   },
 });

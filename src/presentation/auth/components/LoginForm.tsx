@@ -1,13 +1,16 @@
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Input } from '@presentation/components/ui';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useLogin } from '../hooks/useLogin';
 
 export const LoginForm = (): JSX.Element => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const login = useLogin();
+  const styles = useThemedStyles(makeStyles);
 
   const handleSubmit = (): void => {
     login.mutate({ email, password });
@@ -15,65 +18,42 @@ export const LoginForm = (): JSX.Element => {
 
   return (
     <View style={styles.form}>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="email-address"
+      <Input
+        label="Email"
+        type="email"
         value={email}
         onChangeText={setEmail}
+        placeholder="tu@email.com"
+        testID="login-email"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        placeholderTextColor={colors.textMuted}
-        secureTextEntry
+      <Input
+        label="Contraseña"
+        type="password"
         value={password}
         onChangeText={setPassword}
+        placeholder="Tu contraseña"
+        testID="login-password"
       />
       {login.isError ? <Text style={styles.error}>{login.error.message}</Text> : null}
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Entrar"
         onPress={handleSubmit}
-        disabled={login.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>{login.isPending ? 'Entrando…' : 'Entrar'}</Text>
-      </TouchableOpacity>
+        loading={login.isPending}
+        size="lg"
+        accessibilityHint="Inicia sesión con tu email y contraseña"
+        testID="login-submit"
+      />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   form: {
-    width: '100%',
-    gap: spacing.sm,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    width: '100%' as const,
+    gap: spacing.s4,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

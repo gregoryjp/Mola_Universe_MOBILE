@@ -1,15 +1,10 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useCalendarEvent } from '../hooks/useCalendarEvents';
 import { useDeleteCalendarEvent } from '../hooks/useCalendarMutations';
 
@@ -24,12 +19,13 @@ export const CalendarEventDetailScreen = ({ route, navigation }: Props): JSX.Ele
   const { eventId } = route.params;
   const event = useCalendarEvent(eventId);
   const remove = useDeleteCalendarEvent();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>{event.data?.title ?? 'Evento'}</Text>
 
-      {event.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {event.isLoading ? <Spinner /> : null}
       {event.isError ? <Text style={styles.error}>{event.error.message}</Text> : null}
 
       {event.data ? (
@@ -62,79 +58,56 @@ export const CalendarEventDetailScreen = ({ route, navigation }: Props): JSX.Ele
         </View>
       ) : null}
 
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Editar"
         onPress={() => navigation.navigate('CalendarEventForm', { eventId })}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Editar</Text>
-      </TouchableOpacity>
+        size="lg"
+        accessibilityHint="Abre el formulario para editar este evento"
+      />
 
       {remove.isError ? <Text style={styles.error}>{remove.error.message}</Text> : null}
-      <TouchableOpacity
-        style={[
-          styles.button,
-          styles.dangerButton,
-          remove.isPending ? styles.buttonDisabled : null,
-        ]}
+      <Button
+        label="Eliminar evento"
         onPress={() => remove.mutate(eventId, { onSuccess: () => navigation.goBack() })}
-        disabled={remove.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>
-          {remove.isPending ? 'Eliminando…' : 'Eliminar evento'}
-        </Text>
-      </TouchableOpacity>
+        loading={remove.isPending}
+        variant="danger"
+        size="lg"
+        accessibilityHint="Elimina este evento definitivamente"
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   block: {
-    gap: spacing.xs,
+    gap: spacing.s1,
   },
   row: {
     ...typography.body,
-    color: colors.text,
+    color: theme.text,
   },
   label: {
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   description: {
     ...typography.body,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
+    color: theme.textMuted,
+    marginTop: spacing.s2,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  dangerButton: {
-    backgroundColor: colors.error,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

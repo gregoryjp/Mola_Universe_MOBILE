@@ -1,18 +1,12 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { PetMedicalRecordType } from '@domain/pets/entities/Pet';
+import { Button, ErrorState, Input, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { MEDICAL_RECORD_TYPE_LABELS, MedicalRecordRow } from '../components/MedicalRecordRow';
 import { PetPermissionsSection } from '../components/PetPermissionsSection';
 import {
@@ -47,6 +41,7 @@ export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
   const [recordType, setRecordType] = useState<PetMedicalRecordType>('CONSULTATION');
   const [recordTitle, setRecordTitle] = useState('');
   const [recordDate, setRecordDate] = useState('');
+  const styles = useThemedStyles(makeStyles);
 
   const canSaveRecord =
     recordTitle.trim().length > 0 && recordDate.trim().length > 0 && !createRecord.isPending;
@@ -66,14 +61,17 @@ export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
   };
 
   if (pet.isLoading) {
-    return <ActivityIndicator style={styles.loader} color={colors.primary} />;
+    return <Spinner style={styles.loader} />;
   }
 
   if (pet.isError || !pet.data) {
     return (
-      <Text style={[styles.error, styles.loader]}>
-        {pet.error?.message ?? 'Mascota no encontrada'}
-      </Text>
+      <View style={styles.loader}>
+        <ErrorState
+          message={pet.error?.message ?? 'Mascota no encontrada'}
+          onRetry={() => void pet.refetch()}
+        />
+      </View>
     );
   }
 
@@ -110,31 +108,30 @@ export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
       {current.notes ? <Text style={styles.meta}>{current.notes}</Text> : null}
 
       <View style={styles.row}>
-        <TouchableOpacity
-          style={styles.secondaryButton}
+        <Button
+          label="Editar mascota"
           onPress={() => navigation.navigate('PetForm', { petId })}
-          accessibilityRole="button"
-        >
-          <Text style={styles.secondaryText}>Editar mascota</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.secondaryButton}
+          variant="secondary"
+          style={styles.rowButton}
+          accessibilityHint="Abre el formulario para editar esta mascota"
+        />
+        <Button
+          label="Archivar mascota"
           disabled={archive.isPending}
           onPress={() => {
             archive.mutate(petId, { onSuccess: () => navigation.goBack() });
           }}
-          accessibilityRole="button"
-        >
-          <Text style={styles.dangerText}>
-            {archive.isPending ? 'Archivando…' : 'Archivar mascota'}
-          </Text>
-        </TouchableOpacity>
+          loading={archive.isPending}
+          variant="danger"
+          style={styles.rowButton}
+          accessibilityHint="Archiva esta mascota"
+        />
       </View>
       {archive.isError ? <Text style={styles.error}>{archive.error.message}</Text> : null}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Historial médico</Text>
-        {records.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+        {records.isLoading ? <Spinner /> : null}
         {records.isError ? <Text style={styles.error}>{records.error.message}</Text> : null}
         {(records.data ?? []).map((record) => (
           <MedicalRecordRow
@@ -162,6 +159,7 @@ export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
                 onPress={() => setRecordType(type)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: recordType === type }}
+                accessibilityLabel={`Tipo de registro ${MEDICAL_RECORD_TYPE_LABELS[type]}`}
               >
                 <Text style={[styles.chipText, recordType === type ? styles.chipTextActive : null]}>
                   {MEDICAL_RECORD_TYPE_LABELS[type]}
@@ -169,46 +167,46 @@ export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
               </TouchableOpacity>
             ))}
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Título (ej. Vacuna antirrábica)"
-            placeholderTextColor={colors.textMuted}
+          <Input
+            label="Título"
             value={recordTitle}
             onChangeText={setRecordTitle}
+            placeholder="Título (ej. Vacuna antirrábica)"
+            required
+            testID="pet-record-title"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Fecha (AAAA-MM-DD)"
-            placeholderTextColor={colors.textMuted}
+          <Input
+            label="Fecha"
             value={recordDate}
             onChangeText={setRecordDate}
+            placeholder="Fecha (AAAA-MM-DD)"
             autoCapitalize="none"
+            required
+            testID="pet-record-date"
           />
           {createRecord.isError ? (
             <Text style={styles.error}>{createRecord.error.message}</Text>
           ) : null}
-          <TouchableOpacity
-            style={[styles.button, canSaveRecord ? null : styles.buttonDisabled]}
+          <Button
+            label="Guardar registro"
             disabled={!canSaveRecord}
             onPress={saveRecord}
-            accessibilityRole="button"
-          >
-            <Text style={styles.buttonText}>
-              {createRecord.isPending ? 'Guardando…' : 'Guardar registro'}
-            </Text>
-          </TouchableOpacity>
+            loading={createRecord.isPending}
+            size="lg"
+            accessibilityHint="Guarda el registro médico de la mascota"
+            testID="pet-record-submit"
+          />
         </View>
       ) : (
-        <TouchableOpacity
-          style={styles.button}
+        <Button
+          label="+ Registro médico"
           onPress={() => setShowRecordForm(true)}
-          accessibilityRole="button"
-        >
-          <Text style={styles.buttonText}>+ Registro médico</Text>
-        </TouchableOpacity>
+          size="lg"
+          accessibilityHint="Muestra el formulario de registro médico"
+        />
       )}
 
-      {permissions.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {permissions.isLoading ? <Spinner /> : null}
       {permissions.isError ? <Text style={styles.error}>{permissions.error.message}</Text> : null}
       {permissions.data ? (
         <PetPermissionsSection
@@ -224,114 +222,80 @@ export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.sm,
+    padding: spacing.s4,
+    gap: spacing.s2,
   },
   loader: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: spacing.md,
+    backgroundColor: theme.background,
+    padding: spacing.s4,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   section: {
-    gap: spacing.xs,
-    marginTop: spacing.sm,
+    gap: spacing.s1,
+    marginTop: spacing.s2,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   meta: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   alert: {
     ...typography.bodySmall,
-    color: colors.warning,
+    color: theme.warning,
   },
   muted: {
     ...typography.body,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
+    color: theme.error,
   },
   row: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
+    flexDirection: 'row' as const,
+    gap: spacing.s2,
+    marginTop: spacing.s2,
   },
-  secondaryButton: {
+  rowButton: {
     flex: 1,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  secondaryText: {
-    ...typography.bodySmall,
-    color: colors.text,
-  },
-  dangerText: {
-    ...typography.bodySmall,
-    color: colors.error,
   },
   chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: spacing.s1,
   },
   chip: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s1,
   },
   chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   chipText: {
     ...typography.bodySmall,
-    color: colors.text,
+    color: theme.text,
   },
   chipTextActive: {
-    color: colors.background,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.textInverse,
   },
 });

@@ -1,11 +1,13 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { SavingsBoardPreset } from '@domain/savings/entities/SavingsGoal';
+import { Button, Input } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useCreateSavingsGoal } from '../hooks/useSavingsMutations';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SavingsGoalForm'>;
@@ -23,6 +25,7 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
   const [isHousehold, setIsHousehold] = useState(householdId !== null);
   const [isQuota, setIsQuota] = useState(false);
   const [quotaAmount, setQuotaAmount] = useState('');
+  const styles = useThemedStyles(makeStyles);
 
   const parsedDenominations = denominations
     .split(',')
@@ -60,29 +63,31 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Nueva meta de ahorro</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre (ej. Vacaciones)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Nombre"
         value={name}
         onChangeText={setName}
+        placeholder="Nombre (ej. Vacaciones)"
+        required
+        testID="savings-goal-name"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Objetivo (ej. 1200.00)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Objetivo"
         value={targetAmount}
         onChangeText={setTargetAmount}
+        placeholder="Objetivo (ej. 1200.00)"
         keyboardType="decimal-pad"
+        required
+        testID="savings-goal-target"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Moneda (ISO-3, ej. EUR)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Moneda"
         value={currency}
         onChangeText={setCurrency}
+        placeholder="Moneda (ISO-3, ej. EUR)"
         autoCapitalize="characters"
         maxLength={3}
+        testID="savings-goal-currency"
       />
 
       <Text style={styles.sectionTitle}>Tablero</Text>
@@ -94,6 +99,7 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
             onPress={() => setPreset(option)}
             accessibilityRole="button"
             accessibilityState={{ selected: preset === option }}
+            accessibilityLabel={`Tablero ${option}`}
           >
             <Text style={[styles.chipText, preset === option ? styles.chipTextActive : null]}>
               {option}
@@ -103,12 +109,12 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
       </View>
 
       {preset === 'CUSTOM' ? (
-        <TextInput
-          style={styles.input}
-          placeholder="Denominaciones separadas por coma (ej. 10,20,50)"
-          placeholderTextColor={colors.textMuted}
+        <Input
+          label="Denominaciones"
           value={denominations}
           onChangeText={setDenominations}
+          placeholder="Denominaciones separadas por coma (ej. 10,20,50)"
+          testID="savings-goal-denominations"
         />
       ) : null}
 
@@ -119,6 +125,7 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
           onPress={() => setIsHousehold(false)}
           accessibilityRole="button"
           accessibilityState={{ selected: !isHousehold }}
+          accessibilityLabel="Alcance personal"
         >
           <Text style={[styles.chipText, !isHousehold ? styles.chipTextActive : null]}>
             Personal
@@ -130,6 +137,7 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
           disabled={householdId === null}
           accessibilityRole="button"
           accessibilityState={{ selected: isHousehold }}
+          accessibilityLabel="Alcance hogar"
         >
           <Text style={[styles.chipText, isHousehold ? styles.chipTextActive : null]}>Hogar</Text>
         </TouchableOpacity>
@@ -144,6 +152,7 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
               onPress={() => setIsQuota(false)}
               accessibilityRole="button"
               accessibilityState={{ selected: !isQuota }}
+              accessibilityLabel="Aportación libre"
             >
               <Text style={[styles.chipText, !isQuota ? styles.chipTextActive : null]}>Libre</Text>
             </TouchableOpacity>
@@ -152,18 +161,20 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
               onPress={() => setIsQuota(true)}
               accessibilityRole="button"
               accessibilityState={{ selected: isQuota }}
+              accessibilityLabel="Aportación por cuota"
             >
               <Text style={[styles.chipText, isQuota ? styles.chipTextActive : null]}>Cuota</Text>
             </TouchableOpacity>
           </View>
           {isQuota ? (
-            <TextInput
-              style={styles.input}
-              placeholder="Cuota mensual (ej. 50.00)"
-              placeholderTextColor={colors.textMuted}
+            <Input
+              label="Cuota mensual"
               value={quotaAmount}
               onChangeText={setQuotaAmount}
+              placeholder="Cuota mensual (ej. 50.00)"
               keyboardType="decimal-pad"
+              required
+              testID="savings-goal-quota"
             />
           ) : null}
         </>
@@ -171,86 +182,65 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
 
       {create.isError ? <Text style={styles.error}>{create.error.message}</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.button, canSubmit ? null : styles.buttonDisabled]}
+      <Button
+        label="Crear meta"
         onPress={handleSubmit}
         disabled={!canSubmit}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>{create.isPending ? 'Creando…' : 'Crear meta'}</Text>
-      </TouchableOpacity>
+        loading={create.isPending}
+        size="lg"
+        accessibilityHint="Crea la meta de ahorro con la configuración elegida"
+        testID="savings-goal-submit"
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.sm,
+    padding: spacing.s4,
+    gap: spacing.s2,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    color: theme.textMuted,
+    marginTop: spacing.s1,
   },
   chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: spacing.s1,
   },
   chip: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s1,
   },
   chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   chipText: {
     ...typography.bodySmall,
-    color: colors.text,
+    color: theme.text,
   },
   chipTextActive: {
-    color: colors.background,
+    color: theme.textInverse,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

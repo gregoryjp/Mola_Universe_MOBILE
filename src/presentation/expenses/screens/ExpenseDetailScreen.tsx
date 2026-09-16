@@ -1,18 +1,12 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, ErrorState, Input, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import {
   useConfirmPayment,
   useCreatePayment,
@@ -33,6 +27,7 @@ export const ExpenseDetailScreen = ({ route, navigation }: Props): JSX.Element =
   const reversePayment = useReversePayment(expenseId);
   const removeExpense = useDeleteExpense();
   const [amount, setAmount] = useState('');
+  const styles = useThemedStyles(makeStyles);
 
   const payments = (summary.data?.balances ?? [])
     .flatMap((balance) => balance.payments)
@@ -40,16 +35,16 @@ export const ExpenseDetailScreen = ({ route, navigation }: Props): JSX.Element =
 
   if (expense.isLoading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator color={colors.primary} />
+      <View style={styles.center}>
+        <Spinner />
       </View>
     );
   }
 
   if (expense.isError || !expense.data) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.error}>{expense.error?.message ?? 'Gasto no disponible'}</Text>
+      <View style={styles.center}>
+        <ErrorState message={expense.error?.message ?? 'Gasto no disponible'} />
       </View>
     );
   }
@@ -94,6 +89,7 @@ export const ExpenseDetailScreen = ({ route, navigation }: Props): JSX.Element =
               <TouchableOpacity
                 onPress={() => confirmPayment.mutate(payment.id)}
                 accessibilityRole="button"
+                accessibilityLabel="Confirmar payment"
               >
                 <Text style={styles.action}>Confirmar</Text>
               </TouchableOpacity>
@@ -102,6 +98,7 @@ export const ExpenseDetailScreen = ({ route, navigation }: Props): JSX.Element =
               <TouchableOpacity
                 onPress={() => reversePayment.mutate({ paymentId: payment.id })}
                 accessibilityRole="button"
+                accessibilityLabel="Revertir payment"
               >
                 <Text style={styles.action}>Revertir</Text>
               </TouchableOpacity>
@@ -111,22 +108,21 @@ export const ExpenseDetailScreen = ({ route, navigation }: Props): JSX.Element =
       ))}
 
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Importe a pagar"
-          placeholderTextColor={colors.textMuted}
+        <Input
           value={amount}
           onChangeText={setAmount}
+          placeholder="Importe a pagar"
           keyboardType="decimal-pad"
+          style={styles.formInput}
+          accessibilityLabel="Importe a pagar"
         />
-        <TouchableOpacity
-          style={styles.add}
+        <Button
+          label="Pagar"
           onPress={handlePayment}
-          disabled={amount.length === 0 || createPayment.isPending}
-          accessibilityRole="button"
-        >
-          <Text style={styles.addText}>Pagar</Text>
-        </TouchableOpacity>
+          disabled={amount.length === 0}
+          loading={createPayment.isPending}
+          accessibilityHint="Registra un pago de esta deuda"
+        />
       </View>
 
       {createPayment.isError ? (
@@ -142,107 +138,86 @@ export const ExpenseDetailScreen = ({ route, navigation }: Props): JSX.Element =
         <Text style={styles.error}>{removeExpense.error.message}</Text>
       ) : null}
 
-      <TouchableOpacity
-        style={styles.delete}
+      <Button
+        label="Eliminar gasto"
         onPress={() => removeExpense.mutate(expenseId, { onSuccess: () => navigation.goBack() })}
-        accessibilityRole="button"
-      >
-        <Text style={styles.deleteText}>Eliminar gasto</Text>
-      </TouchableOpacity>
+        loading={removeExpense.isPending}
+        variant="danger"
+        size="lg"
+        accessibilityHint="Elimina este gasto definitivamente"
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.sm,
+    padding: spacing.s4,
+    gap: spacing.s2,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.background,
+    padding: spacing.s6,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   amount: {
     ...typography.h2,
-    color: colors.primary,
+    color: theme.primary,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
+    color: theme.textMuted,
+    marginTop: spacing.s2,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s2,
   },
   actions: {
-    flexDirection: 'row',
-    gap: spacing.md,
+    flexDirection: 'row' as const,
+    gap: spacing.s4,
   },
   action: {
     ...typography.caption,
-    color: colors.primary,
+    color: theme.primary,
+    paddingVertical: spacing.s2,
   },
   form: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-    marginTop: spacing.sm,
+    flexDirection: 'row' as const,
+    gap: spacing.s2,
+    alignItems: 'center' as const,
+    marginTop: spacing.s2,
   },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+  formInput: {
     flex: 1,
-  },
-  add: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  addText: {
-    ...typography.bodySmall,
-    color: colors.background,
   },
   meta: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   muted: {
     ...typography.body,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  delete: {
-    borderColor: colors.error,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  deleteText: {
-    ...typography.body,
-    color: colors.error,
+    color: theme.error,
   },
 });

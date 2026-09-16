@@ -1,7 +1,8 @@
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { SavingsGoal } from '@domain/savings/entities/SavingsGoal';
 import type { JSX } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
   goal: SavingsGoal;
@@ -12,9 +13,16 @@ export const SavingsGoalRow = ({ goal, onPress }: Props): JSX.Element => {
   const target = Number(goal.targetAmount);
   const saved = Number(goal.savedAmount);
   const ratio = target > 0 ? Math.min(saved / target, 1) : 0;
+  const styles = useThemedStyles(makeStyles);
 
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} accessibilityRole="button">
+    <TouchableOpacity
+      style={styles.row}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${goal.name}, ${saved.toFixed(2)} de ${goal.targetAmount} ${goal.currency}`}
+      accessibilityHint="Abre el detalle de la meta de ahorro"
+    >
       <View style={styles.info}>
         <Text style={styles.title}>{goal.name}</Text>
         <Text style={styles.meta}>
@@ -30,43 +38,43 @@ export const SavingsGoalRow = ({ goal, onPress }: Props): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s2,
+    gap: spacing.s2,
   },
   info: {
     flex: 1,
-    gap: spacing.xs,
+    gap: spacing.s1,
   },
   title: {
     ...typography.body,
-    color: colors.text,
+    color: theme.text,
   },
   meta: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   track: {
     height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.border,
-    overflow: 'hidden',
+    borderRadius: radius.xs,
+    backgroundColor: theme.border,
+    overflow: 'hidden' as const,
   },
   fill: {
     height: 6,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   badge: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
 });

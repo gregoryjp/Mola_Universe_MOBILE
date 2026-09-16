@@ -1,18 +1,12 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, EmptyState, Input, Spinner } from '@presentation/components/ui';
 import { HouseholdSelector } from '@presentation/households/components/HouseholdSelector';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { InventoryItemRow } from '../components/InventoryItemRow';
 import { useInventoryItems } from '../hooks/useInventoryItems';
 import { useCreateInventoryItem } from '../hooks/useInventoryMutations';
@@ -24,6 +18,7 @@ export const InventoryListScreen = ({ navigation }: Props): JSX.Element => {
   const create = useCreateInventoryItem();
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('ud');
+  const styles = useThemedStyles(makeStyles);
 
   const handleCreate = (): void => {
     create.mutate({ name, unit }, { onSuccess: () => setName('') });
@@ -35,33 +30,32 @@ export const InventoryListScreen = ({ navigation }: Props): JSX.Element => {
       <HouseholdSelector />
 
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Nombre"
-          placeholderTextColor={colors.textMuted}
+        <Input
           value={name}
           onChangeText={setName}
+          placeholder="Nombre"
+          style={styles.inputName}
+          accessibilityLabel="Nombre del item"
         />
-        <TextInput
-          style={styles.inputSmall}
-          placeholder="Unidad"
-          placeholderTextColor={colors.textMuted}
-          autoCapitalize="none"
+        <Input
           value={unit}
           onChangeText={setUnit}
+          placeholder="Unidad"
+          autoCapitalize="none"
+          style={styles.inputUnit}
+          accessibilityLabel="Unidad del item"
         />
-        <TouchableOpacity
-          style={styles.add}
+        <Button
+          label="Añadir"
           onPress={handleCreate}
-          disabled={create.isPending}
-          accessibilityRole="button"
-        >
-          <Text style={styles.addText}>Añadir</Text>
-        </TouchableOpacity>
+          loading={create.isPending}
+          size="md"
+          accessibilityHint="Añade el item al inventario"
+        />
       </View>
 
       {create.isError ? <Text style={styles.error}>{create.error.message}</Text> : null}
-      {items.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {items.isLoading ? <Spinner /> : null}
       {items.isError ? <Text style={styles.error}>{items.error.message}</Text> : null}
 
       <View style={styles.list}>
@@ -75,71 +69,41 @@ export const InventoryListScreen = ({ navigation }: Props): JSX.Element => {
       </View>
 
       {items.data && items.data.items.length === 0 ? (
-        <Text style={styles.muted}>Tu inventario está vacío</Text>
+        <EmptyState title="Tu inventario está vacío" />
       ) : null}
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   form: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    gap: spacing.s2,
+    alignItems: 'center' as const,
   },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+  inputName: {
     flex: 1,
   },
-  inputSmall: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+  inputUnit: {
     width: 80,
   },
-  add: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  addText: {
-    ...typography.bodySmall,
-    color: colors.background,
-  },
   list: {
-    gap: spacing.sm,
-  },
-  muted: {
-    ...typography.body,
-    color: colors.textMuted,
+    gap: spacing.s2,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
+    color: theme.error,
   },
 });

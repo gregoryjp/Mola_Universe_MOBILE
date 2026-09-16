@@ -1,8 +1,10 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Input } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { type JSX, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
+import { ScrollView, Text } from 'react-native';
 import {
   useCreateRecurringExpense,
   useRestockRecurringExpense,
@@ -21,6 +23,7 @@ export const RecurringExpenseFormScreen = ({ navigation, route }: Props): JSX.El
   const list = useRecurringExpenses();
   const createExpense = useCreateRecurringExpense();
   const restock = useRestockRecurringExpense();
+  const styles = useThemedStyles(makeStyles);
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
@@ -69,106 +72,78 @@ export const RecurringExpenseFormScreen = ({ navigation, route }: Props): JSX.El
       ) : null}
 
       {isRestock ? (
-        <TextInput
-          style={styles.input}
-          placeholder="Importe (ej. 12.50)"
-          placeholderTextColor={colors.textMuted}
+        <Input
+          label="Importe"
           value={amount}
           onChangeText={setAmount}
+          placeholder="Importe (ej. 12.50)"
           keyboardType="decimal-pad"
+          required
+          testID="recurring-amount"
         />
       ) : (
         <>
-          <TextInput
-            style={styles.input}
-            placeholder="Nombre (ej. Detergente)"
-            placeholderTextColor={colors.textMuted}
+          <Input
+            label="Nombre"
             value={name}
             onChangeText={setName}
+            placeholder="Nombre (ej. Detergente)"
+            required
+            testID="recurring-name"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Categoría (opcional)"
-            placeholderTextColor={colors.textMuted}
+          <Input
+            label="Categoría"
             value={category}
             onChangeText={setCategory}
+            placeholder="Categoría (opcional)"
+            testID="recurring-category"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Moneda (EUR)"
-            placeholderTextColor={colors.textMuted}
+          <Input
+            label="Moneda"
             value={currency}
             onChangeText={setCurrency}
+            placeholder="Moneda (EUR)"
             autoCapitalize="characters"
             maxLength={3}
+            testID="recurring-currency"
           />
         </>
       )}
 
       {mutation.isError ? <Text style={styles.error}>{mutation.error.message}</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.button, canSubmit ? null : styles.buttonDisabled]}
+      <Button
+        label={isRestock ? 'Reponer' : 'Crear'}
         disabled={!canSubmit}
         onPress={submit}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>
-          {isRestock
-            ? restock.isPending
-              ? 'Reponiendo…'
-              : 'Reponer'
-            : createExpense.isPending
-              ? 'Creando…'
-              : 'Crear'}
-        </Text>
-      </TouchableOpacity>
+        loading={mutation.isPending}
+        size="lg"
+        accessibilityHint={isRestock ? 'Repone el gasto recurrente' : 'Crea el gasto recurrente'}
+        testID="recurring-submit"
+      />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   hint: {
     ...typography.caption,
-    color: colors.textMuted,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
+    color: theme.error,
   },
 });

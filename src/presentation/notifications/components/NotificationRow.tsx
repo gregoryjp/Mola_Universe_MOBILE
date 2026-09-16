@@ -1,7 +1,9 @@
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { AppNotification } from '@domain/notifications/entities/Notification';
+import { Badge } from '@presentation/components/ui';
 import type { JSX } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
   notification: AppNotification;
@@ -10,16 +12,19 @@ interface Props {
 
 export const NotificationRow = ({ notification, onPress }: Props): JSX.Element => {
   const unread = notification.readAt === null;
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <TouchableOpacity
-      style={[styles.row, unread && styles.unreadRow]}
+      style={[styles.row, unread ? styles.unreadRow : null]}
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityLabel={`${notification.category}: ${notification.title}`}
+      accessibilityHint={unread ? 'Marca la notificación como leída' : undefined}
     >
       <View style={styles.header}>
         <Text style={styles.category}>{notification.category}</Text>
-        {unread ? <Text style={styles.unreadTag}>Sin leer</Text> : null}
+        {unread ? <Badge label="Sin leer" variant="info" size="sm" /> : null}
       </View>
       <Text style={styles.title}>{notification.title}</Text>
       <Text style={styles.body}>{notification.body}</Text>
@@ -27,36 +32,32 @@ export const NotificationRow = ({ notification, onPress }: Props): JSX.Element =
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   row: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: spacing.md,
-    gap: spacing.xs,
+    backgroundColor: theme.surface,
+    borderRadius: radius.sm,
+    padding: spacing.s4,
+    gap: spacing.s1,
   },
   unreadRow: {
     borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
+    borderLeftColor: theme.primary,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
   },
   category: {
     ...typography.caption,
-    color: colors.textMuted,
-  },
-  unreadTag: {
-    ...typography.caption,
-    color: colors.primary,
+    color: theme.textMuted,
   },
   title: {
     ...typography.body,
-    color: colors.text,
+    color: theme.text,
   },
   body: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
 });

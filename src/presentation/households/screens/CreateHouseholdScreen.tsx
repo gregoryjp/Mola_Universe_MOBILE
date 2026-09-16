@@ -1,9 +1,11 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, Input } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useCreateHousehold } from '../hooks/useCreateHousehold';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateHousehold'>;
@@ -12,10 +14,11 @@ export const CreateHouseholdScreen = ({ navigation }: Props): JSX.Element => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const create = useCreateHousehold();
+  const styles = useThemedStyles(makeStyles);
 
   const handleSubmit = (): void => {
     create.mutate(description.length > 0 ? { name, description } : { name }, {
-      onSuccess: () => navigation.navigate('Dashboard'),
+      onSuccess: () => navigation.navigate('MainTabs', { screen: 'Dashboard' }),
     });
   };
 
@@ -23,72 +26,50 @@ export const CreateHouseholdScreen = ({ navigation }: Props): JSX.Element => {
     <View style={styles.container}>
       <Text style={styles.heading}>Crear hogar</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre de la casa"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Nombre"
         value={name}
         onChangeText={setName}
+        placeholder="Nombre de la casa"
+        required
+        testID="household-name"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Descripción (opcional)"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Descripción"
         value={description}
         onChangeText={setDescription}
+        placeholder="Descripción (opcional)"
+        testID="household-description"
       />
 
       {create.isError ? <Text style={styles.error}>{create.error.message}</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.button, name.length === 0 ? styles.buttonDisabled : null]}
+      <Button
+        label="Crear hogar"
         onPress={handleSubmit}
-        disabled={create.isPending || name.length === 0}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>{create.isPending ? 'Creando…' : 'Crear hogar'}</Text>
-      </TouchableOpacity>
+        loading={create.isPending}
+        disabled={name.length === 0}
+        size="lg"
+        accessibilityHint="Crea el hogar y vuelve al panel"
+        testID="household-submit"
+      />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: spacing.md,
-    gap: spacing.sm,
+    backgroundColor: theme.background,
+    padding: spacing.s4,
+    gap: spacing.s3,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    color: theme.text,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

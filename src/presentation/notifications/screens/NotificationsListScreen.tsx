@@ -1,15 +1,10 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, EmptyState, ErrorState, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import {
   NotificationPreferencesSection,
   type SwitchablePreference,
@@ -30,6 +25,7 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
   const markAsRead = useMarkNotificationRead();
   const updatePreferences = useUpdateNotificationPreferences();
   const registerPush = useRegisterPushDevice();
+  const styles = useThemedStyles(makeStyles);
 
   const unreadCount = (notifications.data ?? []).filter((item) => item.readAt === null).length;
 
@@ -41,16 +37,14 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Notificaciones</Text>
 
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Activar avisos push en este dispositivo"
         onPress={() => registerPush.mutate()}
-        disabled={registerPush.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>
-          {registerPush.isPending ? 'Activando…' : 'Activar avisos push en este dispositivo'}
-        </Text>
-      </TouchableOpacity>
+        loading={registerPush.isPending}
+        size="lg"
+        accessibilityHint="Registra este dispositivo para recibir avisos push"
+        style={styles.fullWidth}
+      />
       {registerPush.data?.registered === false ? (
         <Text style={styles.error}>
           No se activaron los avisos: falta el permiso de notificaciones.
@@ -65,10 +59,8 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
         <Text style={styles.sectionTitle}>
           {unreadCount > 0 ? `${unreadCount} sin leer` : 'Todas leídas'}
         </Text>
-        {notifications.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
-        {notifications.isError ? (
-          <Text style={styles.error}>{notifications.error.message}</Text>
-        ) : null}
+        {notifications.isLoading ? <Spinner /> : null}
+        {notifications.isError ? <ErrorState message={notifications.error.message} /> : null}
         {(notifications.data ?? []).map((notification) => (
           <NotificationRow
             key={notification.id}
@@ -79,12 +71,12 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
           />
         ))}
         {notifications.data && notifications.data.length === 0 ? (
-          <Text style={styles.muted}>No tienes notificaciones todavía</Text>
+          <EmptyState title="No tienes notificaciones todavía" />
         ) : null}
       </View>
 
-      {preferences.isLoading ? <ActivityIndicator color={colors.primary} /> : null}
-      {preferences.isError ? <Text style={styles.error}>{preferences.error.message}</Text> : null}
+      {preferences.isLoading ? <Spinner /> : null}
+      {preferences.isError ? <ErrorState message={preferences.error.message} /> : null}
       {preferences.data ? (
         <NotificationPreferencesSection
           preferences={preferences.data}
@@ -99,42 +91,35 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   section: {
-    gap: spacing.xs,
+    gap: spacing.s1,
   },
   sectionTitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   muted: {
     ...typography.body,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
+    color: theme.error,
   },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+  fullWidth: {
+    alignSelf: 'stretch' as const,
   },
 });

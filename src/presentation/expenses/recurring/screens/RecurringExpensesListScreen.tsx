@@ -1,17 +1,12 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { spacing, typography, useThemedStyles } from '@core/theme';
+import { Button, EmptyState, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { RecurringExpenseRow } from '../components/RecurringExpenseRow';
 import { useArchiveRecurringExpense } from '../hooks/useRecurringExpenseMutations';
 import { useRecurringExpenses } from '../hooks/useRecurringExpenses';
@@ -23,6 +18,7 @@ export const RecurringExpensesListScreen = ({ navigation }: Props): JSX.Element 
   const archive = useArchiveRecurringExpense();
   const myUserId = useAuthStore((state) => state.user?.id ?? null);
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
+  const styles = useThemedStyles(makeStyles);
 
   const items = data ?? [];
 
@@ -37,16 +33,15 @@ export const RecurringExpensesListScreen = ({ navigation }: Props): JSX.Element 
       {householdId === null ? (
         <Text style={styles.muted}>Selecciona un hogar para ver sus gastos recurrentes</Text>
       ) : null}
-      {isLoading ? <ActivityIndicator color={colors.primary} /> : null}
+      {isLoading ? <Spinner /> : null}
       {isError ? <Text style={styles.error}>{error.message}</Text> : null}
 
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Nuevo gasto recurrente"
         onPress={() => navigation.navigate('RecurringExpenseForm', {})}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>Nuevo gasto recurrente</Text>
-      </TouchableOpacity>
+        size="lg"
+        accessibilityHint="Abre el formulario para crear un gasto recurrente"
+      />
 
       {archive.isError ? <Text style={styles.error}>{archive.error.message}</Text> : null}
 
@@ -63,49 +58,39 @@ export const RecurringExpensesListScreen = ({ navigation }: Props): JSX.Element 
           />
         ))}
         {data && items.length === 0 ? (
-          <Text style={styles.muted}>No hay gastos recurrentes en este hogar</Text>
+          <EmptyState title="No hay gastos recurrentes en este hogar" />
         ) : null}
       </View>
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.s4,
+    gap: spacing.s4,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
+    color: theme.text,
   },
   hint: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   list: {
-    gap: spacing.sm,
+    gap: spacing.s2,
   },
   muted: {
     ...typography.body,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });

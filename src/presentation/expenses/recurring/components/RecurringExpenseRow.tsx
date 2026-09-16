@@ -1,7 +1,8 @@
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { RecurringExpense } from '@domain/expenses/recurring/entities/RecurringExpense';
 import type { JSX } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
   expense: RecurringExpense;
@@ -25,6 +26,7 @@ export const RecurringExpenseRow = ({
   onArchive,
 }: Props): JSX.Element => {
   const isMyTurn = myUserId !== null && expense.currentTurnUserId === myUserId;
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <View style={styles.row}>
@@ -42,10 +44,18 @@ export const RecurringExpenseRow = ({
         <Text style={styles.meta}>Todavía sin reponer</Text>
       )}
       <View style={styles.actions}>
-        <TouchableOpacity onPress={onRestock} accessibilityRole="button">
+        <TouchableOpacity
+          onPress={onRestock}
+          accessibilityRole="button"
+          accessibilityLabel={`Reponer ${expense.name}`}
+        >
           <Text style={styles.action}>Reponer</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onArchive} accessibilityRole="button">
+        <TouchableOpacity
+          onPress={onArchive}
+          accessibilityRole="button"
+          accessibilityLabel={`Archivar ${expense.name}`}
+        >
           <Text style={styles.archive}>Archivar</Text>
         </TouchableOpacity>
       </View>
@@ -53,45 +63,47 @@ export const RecurringExpenseRow = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   row: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: spacing.md,
-    gap: spacing.xs,
+    backgroundColor: theme.surface,
+    borderRadius: radius.sm,
+    padding: spacing.s4,
+    gap: spacing.s1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
   },
   name: {
     ...typography.body,
-    color: colors.text,
+    color: theme.text,
   },
   currency: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   meta: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: theme.textMuted,
   },
   turnActive: {
     ...typography.bodySmall,
-    color: colors.primary,
+    color: theme.primary,
   },
   actions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.xs,
+    flexDirection: 'row' as const,
+    gap: spacing.s4,
+    marginTop: spacing.s1,
   },
   action: {
     ...typography.bodySmall,
-    color: colors.primary,
+    color: theme.primary,
+    paddingVertical: spacing.s2,
   },
   archive: {
     ...typography.bodySmall,
-    color: colors.error,
+    color: theme.error,
+    paddingVertical: spacing.s2,
   },
 });

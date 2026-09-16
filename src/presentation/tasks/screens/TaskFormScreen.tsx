@@ -1,10 +1,12 @@
 import type { RootStackParamList } from '@core/navigation/types';
-import { colors, spacing, typography } from '@core/theme';
+import type { ColorTokens } from '@core/theme';
+import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { TaskPriority } from '@domain/tasks/entities/Task';
+import { Button, Input } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useCreateTask } from '../hooks/useTaskMutations';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskForm'>;
@@ -18,6 +20,7 @@ export const TaskFormScreen = ({ navigation }: Props): JSX.Element => {
   const [dueDate, setDueDate] = useState(todayIso());
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
   const createTask = useCreateTask();
+  const styles = useThemedStyles(makeStyles);
 
   const handleSubmit = (): void => {
     createTask.mutate({ title, dueDate, priority }, { onSuccess: () => navigation.goBack() });
@@ -27,20 +30,21 @@ export const TaskFormScreen = ({ navigation }: Props): JSX.Element => {
     <View style={styles.container}>
       <Text style={styles.heading}>Nueva tarea</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Título"
-        placeholderTextColor={colors.textMuted}
+      <Input
+        label="Título"
         value={title}
         onChangeText={setTitle}
+        placeholder="Título"
+        required
+        testID="task-title"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Fecha límite (YYYY-MM-DD)"
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
+      <Input
+        label="Fecha límite"
         value={dueDate}
         onChangeText={setDueDate}
+        placeholder="YYYY-MM-DD"
+        autoCapitalize="none"
+        testID="task-due-date"
       />
 
       <Text style={styles.label}>Prioridad</Text>
@@ -51,6 +55,8 @@ export const TaskFormScreen = ({ navigation }: Props): JSX.Element => {
             style={[styles.chip, priority === value ? styles.chipActive : null]}
             onPress={() => setPriority(value)}
             accessibilityRole="button"
+            accessibilityState={{ selected: priority === value }}
+            accessibilityLabel={`Prioridad ${value}`}
           >
             <Text style={priority === value ? styles.chipTextActive : styles.chipText}>
               {value}
@@ -61,80 +67,61 @@ export const TaskFormScreen = ({ navigation }: Props): JSX.Element => {
 
       {createTask.isError ? <Text style={styles.error}>{createTask.error.message}</Text> : null}
 
-      <TouchableOpacity
-        style={styles.button}
+      <Button
+        label="Crear tarea"
         onPress={handleSubmit}
-        disabled={createTask.isPending}
-        accessibilityRole="button"
-      >
-        <Text style={styles.buttonText}>{createTask.isPending ? 'Creando…' : 'Crear tarea'}</Text>
-      </TouchableOpacity>
+        loading={createTask.isPending}
+        size="lg"
+        accessibilityHint="Crea la tarea con el título, la fecha y la prioridad elegidos"
+        testID="task-submit"
+      />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: spacing.md,
-    gap: spacing.sm,
+    backgroundColor: theme.background,
+    padding: spacing.s4,
+    gap: spacing.s3,
   },
   heading: {
     ...typography.h2,
-    color: colors.text,
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    color: theme.text,
   },
   label: {
     ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
+    color: theme.textMuted,
+    marginTop: spacing.s2,
   },
   row: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+    flexDirection: 'row' as const,
+    gap: spacing.s2,
   },
   chip: {
-    borderColor: colors.border,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    borderColor: theme.border,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s2,
   },
   chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   chipText: {
     ...typography.bodySmall,
-    color: colors.text,
+    color: theme.text,
   },
   chipTextActive: {
     ...typography.bodySmall,
-    color: colors.background,
+    color: theme.textInverse,
   },
   error: {
     ...typography.bodySmall,
-    color: colors.error,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonText: {
-    ...typography.body,
-    color: colors.background,
+    color: theme.error,
   },
 });
