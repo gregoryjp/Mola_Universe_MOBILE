@@ -14,4 +14,7 @@ export type RootStackParamList = {
   Expenses: undefined;
   ExpenseDetail: { expenseId: string };
   ExpenseForm: undefined;
+  Savings: undefined;
+  SavingsGoalDetail: { goalId: string };
+  SavingsGoalForm: undefined;
 };
