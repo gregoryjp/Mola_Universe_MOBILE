@@ -12,7 +12,7 @@
 | ID | Severidad | Archivo | Descripción | Estado |
 |---|---|---|---|---|
 | TD-018 | Baja | `src/presentation/{tasks,inventory,shopping,expenses,savings}/screens/` | UI de paginación: solo se cargaba la primera página de cada listado (sin `loadMore`/`hasNextPage`/`fetchNextPage`). **Corrección de ruta (2026-09-17):** la paginación se consume en las *pantallas* — el `fetchNextPage`/`hasNextPage` que devuelve `useInfiniteQuery` —, no en los hooks; la ruta anterior apuntaba a `hooks/` y despistaba al auditar | ✅ Resuelto con matices (commit `dcd8197`) — ver detalle por módulo abajo |
-| TD-020 | Media | `src/presentation/components/ui/Button.tsx:25-28,33-36,40-45,46,100,111` | Tamaños visuales `sm` (32px) y `md` (40px) en `SIZES` (líneas 33-36). El área táctil **sí** cumple: `MIN_TOUCH_TARGET = 44` (línea 46) calcula el `hitSlop` (línea 100) y lo aplica (línea 111), dando 44×44 reales en `sm` y `md`; `lg` (48) y `xl` (56) ya lo superan por altura. WCAG 2.5.8 (AA) exige 24×24 y se cumple de sobra. Los valores 32/40 **no son verificables contra ninguna fuente**: los comentarios citaban `design/components/buttons.md` y `accessibility/guidelines.md`, y ninguno de los dos existe en el repo (`design/components/` solo tiene `.gitkeep`; no hay carpeta `accessibility/`) | 📝 **Decisión pendiente — tamaño visual NO tocado.** Comentarios corregidos para no citar documentos inexistentes. Ver sección TD-020 |
+| TD-020 | Media | `src/presentation/components/ui/Button.tsx:25-28,33-36,40-45,46,100,111` y `src/presentation/components/ui/Input.tsx:42-46` | Tamaños visuales de `Button` (`sm` 32, `md` 40) e `Input` (`sm` 44, `md` 48). El área táctil **sí** cumple en ambos: `Button` calcula `hitSlop` hasta 44×44 reales en `sm` y `md` (constante línea 46, cálculo 100, aplicación 111) e `Input` ya parte de 44. WCAG 2.5.8 (AA) exige 24×24 y se cumple de sobra. Los valores **no eran verificables**: los comentarios de los dos componentes citaban `design/components/buttons.md` y `accessibility/guidelines.md`, y ninguno de los dos existe | ✅ **Cerrado con traspaso a TD-031** — comentarios corregidos en ambos componentes (commits `1d326f6` y el de la sesión de cierre); el tamaño visual queda **sin tocar** y la decisión de alinearlo pasa a TD-031, que es de diseñador y producto |
 
 | TD-021 | Baja | `src/presentation/pets/` (backend: `POST /households/:householdId/pets/:petId/tasks`) | **Ruta sin consumir:** el backend permite crear tareas ligadas a una mascota y el móvil no lo ofrece. Es la única ruta del slice de Pets sin cubrir (27 de 29 rutas de M5 están consumidas) | Pendiente |
 | TD-022 | Alta | `src/presentation/sos/SOSActivationScreen.tsx`, `src/domain/sos/entities/Sos.ts` | **SOS sin geolocalización:** `ActivateSOSSchema` acepta `locationLat`/`locationLng` opcionales y el port los soporta, pero la pantalla no los envía porque `expo-location` no está instalado. La alerta viaja solo con el mensaje | Pendiente |
@@ -24,6 +24,7 @@
 | TD-028 | Media | `tests/setup.ts`, `vitest.config.ts` | **Sin tests de componente:** el setup sigue en `environment: 'node'` sin preset de React Native, así que las pantallas no se renderizan en tests y ningún test cubre el árbol de UI | Pendiente |
 | TD-029 | Baja | `src/presentation/{tasks,inventory,shopping,expenses,savings}/hooks/` | **Contrato de paginación no uniforme:** cada módulo devuelve su propia clave (`tasks`, `items`, `lists`, `expenses`, `goals`) en vez de `{items, total, page, limit}`. Cada hook respeta la clave real de su módulo, así que funciona — es deuda de consistencia de contrato, no un bug | Pendiente |
 | TD-030 | Media | `tests/unit/{expenses,inventory,savings,shopping}/*.test.tsx` | **Tests frágiles por timing:** 4 tests usan un `await new Promise(resolve => setTimeout(resolve, 100))` fijo que estrecha la ventana de fallo pero no la elimina. Mismo patrón de causa raíz que TD-011 en APP; el mecanismo no es portable 1:1 | Pendiente — propuesta concreta escrita (helper `waitFor`), sin implementar |
+| TD-031 | Media | `design/components/buttons.md` y `accessibility/guidelines.md` (ambos por crear) | **Faltan los dos documentos que el código ya cita como fuente de verdad.** `Button.tsx` e `Input.tsx` escriben como si existieran y no existen: `design/components/` solo contiene `.gitkeep` y no hay carpeta `accessibility/`. La guía debe decidir tres cosas: **(1)** target táctil mínimo, ¿**44×44** (WCAG 2.5.5, nivel AAA) o **24×24** (WCAG 2.5.8, nivel AA)?; **(2)** ¿`Button` e `Input` comparten escala de tamaños o son independientes?; **(3)** ¿la guía nace del código actual o el código se alinea a la guía? | Pendiente — trabajo de **diseñador y producto**, no de ingeniería. No se crea desde este repo |
 
 ## Detalle TD-021+ (promovidos del informe M5, 2026-09-17)
 
@@ -99,13 +100,13 @@ tiempo fijo adivinado; esperar la condición real") es el que se podría compart
 Mobile y APP, aunque el código concreto no es portable 1:1 por la diferencia de mecanismo. No
 implementado — queda como propuesta a validar antes de ejecutar.
 
-## TD-020 — decisión pendiente (NO resuelto)
+## TD-020 — cerrado, con traspaso a TD-031
 
-**Estado: 📝 bloqueado por una guía de diseño que no existe en el repo. El tamaño visual del
-componente NO se ha tocado.**
+**Estado final: ✅ Cerrado.** Comentarios corregidos en `Button.tsx` e `Input.tsx`; tamaño visual
+**sin tocar**; la decisión de alinearlo pasa a **TD-031**, que es de diseñador y producto.
 
-Los comentarios **sí** se corrigieron (2026-09-17): ya no citan documentos inexistentes como si
-fueran la fuente de verdad de sus valores. Ver "Corrección de comentarios" más abajo.
+Los dos componentes ya no citan documentos inexistentes como si fueran la fuente de verdad de sus
+valores. Ver "Corrección de comentarios" más abajo.
 
 Pregunta a resolver: ¿el tamaño visual de `sm` (32px) y `md` (40px) debe alinearse con la guía de
 diseño?
@@ -148,61 +149,94 @@ no de área táctil ni de cumplimiento AA.
 
 Un comentario que presenta como fuente de verdad un documento que no existe es peor que no tener
 comentario: quien lea el código creerá que hay una guía detrás y no la irá a buscar. Corregidos los
-dos comentarios para que describan la realidad actual:
+tres comentarios para que describan la realidad actual:
 
-| Antes | Ahora |
-|---|---|
-| Línea 24: *"Heights and horizontal padding from design/components/buttons.md."* | Líneas 25-28: los valores se definen aquí, y la guía de la que debían venir no existe todavía |
-| Línea 36: *"accessibility/guidelines.md requires a 44x44 minimum touch target but the doc's…"* | Líneas 40-45: 44×44 es una **asunción de trabajo** pendiente de confirmar, no una cita |
+| Fichero | Antes | Ahora |
+|---|---|---|
+| `Button.tsx` | L24: *"Heights and horizontal padding from design/components/buttons.md."* | L25-28: los valores se definen aquí, y la guía de la que debían venir no existe todavía |
+| `Button.tsx` | L36: *"accessibility/guidelines.md requires a 44x44 minimum touch target but the doc's…"* | L40-45: 44×44 es una **asunción de trabajo** pendiente de confirmar, no una cita |
+| `Input.tsx` | L42-47: *"…every size clears the 44px touch minimum from accessibility/guidelines.md."* | L42-46: 44 sigue siendo el suelo, pero como **asunción de trabajo**, no como cita |
 
-**Solo comentarios.** Ni una línea de lógica, ni un valor de `SIZES`, ni el `hitSlop`.
+**Solo comentarios, en los dos ficheros.** Ni una línea de lógica, ni un valor de `SIZES` (tampoco
+el `sm: 44` de `Input`), ni el `hitSlop` de `Button`. Verificado mecánicamente en ambos — filtrando
+el diff, **ninguna** línea añadida o eliminada queda fuera de un bloque de comentario.
 
-### El mismo patrón en `Input.tsx`, y evidencia para la decisión
+### Evidencia que la decisión de TD-031 tendrá que resolver
 
-El barrido de `src/` después de la corrección encontró el mismo patrón en
-`src/presentation/components/ui/Input.tsx:46`, que también cita `accessibility/guidelines.md`.
-**No se tocó**: la autorización cubría solo `Button.tsx`. Queda registrado aquí.
-
-Ese fichero aporta además evidencia directa para la decisión de este TD, porque ya resolvió el
-mismo problema por su cuenta:
+`Input.tsx` tenía el mismo patrón (`Input.tsx:46` también citaba `accessibility/guidelines.md`), y
+está corregido en esta misma sesión. Aporta además la evidencia más útil de todo el TD, porque ya
+resolvió el problema por su cuenta antes que nadie:
 
 | Componente | `sm` | `md` | `lg` | `xl` |
 |---|---|---|---|---|
 | Button (`Button.tsx`) | 32 | 40 | 48 | 56 |
 | Input (`Input.tsx`) | **44** | 48 | 56 | — |
 
-`Input` trata 44 como suelo explícito (*"every size clears the 44px touch minimum"*) y define su
-`md` como la altura del botón `md` más área táctil. Son dos componentes del mismo directorio
-aplicando criterios distintos al mismo problema: una inconsistencia interna del sistema de diseño.
-Refuerza que hace falta la guía, no que haya que subir `Button` sin más.
+`Input` trata 44 como suelo explícito y define su `md` como *la altura del botón `md` (40) más área
+táctil*. Son dos componentes del mismo directorio aplicando criterios distintos al mismo problema,
+y el segundo acoplado al primero por un número que vivía en un comentario.
 
-### Propuesta: crear los dos documentos que faltan (NO ejecutada)
+Eso es justo lo que TD-031 tiene que decidir: si `Button` e `Input` comparten escala o no, y si la
+guía nace del código actual o el código se alinea a la guía.
 
-Se documenta como propuesta y **sin ID asignado**, porque el alcance autorizado prohíbe promover
-nada fuera de los hallazgos M5 a TD-021+. Si quieres que tenga ID propio, es añadir una fila.
+### La propuesta pasó a ser TD-031
 
-- **`design/components/buttons.md`** — fijar altura, padding horizontal y tamaño de texto de cada
-  tamaño, y decidir si `sm`/`md` se alinean a 44. `design/README.md` ya reserva
-  `design/components/` para exactamente esto ("Component visual references (source for UI
-  components)"), y `Button.tsx` e `Input.tsx` ya escriben como si existiera.
-- **`accessibility/guidelines.md`** — dejar por escrito el target táctil mínimo. Hoy ese número
-  vive en dos constantes de código y en un comentario que ya no lo cita.
+Crear los dos documentos dejó de ser una propuesta sin ID: es **TD-031**. Esa ficha lleva el detalle
+y, sobre todo, las tres preguntas que la guía debe responder antes de que nadie cambie un tamaño.
 
-Ambos son documentación, no código: no cambian ningún píxel hasta que alguien decida aplicar lo
-que digan.
+## TD-031 — crear la guía que el código ya cita (diseñador + producto)
+
+**Estado: Pendiente.** No se crea desde este repo ni desde ingeniería: es trabajo de **diseñador y
+producto**. Esta ficha existe para que la decisión no se pierda.
+
+Hay dos documentos que `Button.tsx` e `Input.tsx` citaban como fuente de verdad y que **no existen**:
+`design/components/buttons.md` y `accessibility/guidelines.md`. `design/README.md` ya reserva
+`design/components/` para exactamente eso ("Component visual references (source for UI components)"),
+así que el hueco estaba previsto; simplemente está vacío.
+
+### Lo que la guía tiene que decidir
+
+1. **¿El target táctil mínimo es 44×44 o 24×24?** No son intercambiables, son dos criterios distintos
+   de WCAG:
+   - **44×44** — WCAG **2.5.5**, nivel **AAA**. Es el valor que ambos componentes citan hoy.
+   - **24×24** — WCAG **2.5.8**, nivel **AA** (el mínimo exigible). Se cumple de sobra: `Button` ya
+     llega a 44×44 de área real vía `hitSlop` e `Input` parte de 44 de alto.
+   Elegir AAA es más estricto y obliga a cambiar el tamaño *visual* de `Button.sm` (32) y
+   `Button.md` (40); quedarse en AA no obliga a tocar ningún píxel.
+2. **¿`Button` e `Input` comparten escala de tamaños?** Hoy no: `Button` va 32/40/48/56 e `Input`
+   44/48/56, y el `md` de `Input` está definido *en función* del `md` de `Button` más área táctil.
+   Compartir escala o desacoplarlos es decisión de diseño, pero el acoplamiento actual es invisible
+   salvo que se lea el comentario.
+3. **¿La guía nace del código o el código se alinea a la guía?** El código ya decidió de facto (44
+   como suelo en `Input`, 32/40 en `Button`). Si la guía se escribe describiendo lo que hay, se
+   corre el riesgo de bendecir una inconsistencia; si se escribe sin mirar el código, habrá que
+   cambiar componentes.
+
+### Alcance si se decide subir el target visual de `Button` a 44
+
+63 usos de `<Button>` en `src/`. 42 ya usan `lg` (48px) y no cambiarían; `sm` se usa 3 veces, `md`
+explícito 8 veces y 10 botones no pasan `size` (son `md` por defecto). La decisión afecta como máximo
+a **21 botones**, más los sitios donde convivan con botones `lg` y haya que reajustar el layout.
+
+### Qué NO hay que hacer
+
+No crear los documentos desde ingeniería, ni cambiar tamaños antes de que existan. La deuda no es
+que falte un número: es que falta la decisión.
 
 ## Notas
 
 - **TD-018**: cerrado del lado Mobile con matices — Moments queda fuera de alcance (no existe el
   módulo) y se recalendariza a M6. El registro de APP (`TD-018 | Baja | ... | Pendiente (V2)`) queda
   desactualizado respecto a este cierre; no se tocó ese archivo desde este repo.
-- **TD-020** es un hallazgo de la auditoría anterior, no reportado antes de ella. Se verificó
-  leyendo `Button.tsx` completo — no es deuda de área táctil (ya resuelta con `hitSlop`), es una
-  discrepancia entre el tamaño visual y una guía de diseño que **no está presente en el repo**.
-  Estado 2026-09-17: 📝 decisión pendiente, componente **no tocado** (ver sección TD-020). El
-  hallazgo de trazabilidad asociado — los comentarios de `Button.tsx` (líneas 24 y 36) citan dos
-  documentos inexistentes como si fueran la fuente de verdad de sus valores — queda registrado en
-  la sección TD-020, no como TD nueva, para no salir del alcance autorizado.
+- **TD-020**: cerrado el 2026-09-17 con traspaso a TD-031. La parte accionable sin diseñador está
+  hecha: los comentarios de `Button.tsx` e `Input.tsx` que citaban documentos inexistentes fueron
+  corregidos (commits `1d326f6` y el de cierre). El **tamaño visual no se tocó** en ninguno de los
+  dos: sin fuente de verdad no hay forma de saber si 32/40 son correctos o una desviación, y
+  cambiarlos habría sido sustituir un número sin base por otro número sin base. La decisión de
+  alinearlos vive ahora en TD-031.
 - **TD-021 … TD-030**: promovidos del informe M5 (`logs/mobile-m5-2026-09-17.md`) el 2026-09-17.
   Ninguno tiene trabajo iniciado; son registro, no ejecución. El detalle con módulo, impacto UX,
   esfuerzo, dependencias y prioridad está en la sección "Detalle TD-021+".
+- **TD-031** es el único TD fuera del informe M5, y su creación fue autorizada expresamente. No es
+  deuda de ingeniería en el sentido habitual: es la ausencia de una decisión de diseño que el código
+  ya estaba asumiendo. Hasta que exista la guía, ningún tamaño debe cambiar.

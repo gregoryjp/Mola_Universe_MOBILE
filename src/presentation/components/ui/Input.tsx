@@ -40,10 +40,11 @@ interface InputProps {
 }
 
 /**
- * Inputs are documented by type and state but have no pixel sizes, so the three
- * sizes below compose from tokens; `md` matches the md button height (40) plus
- * hit area, and every size clears the 44px touch minimum from
- * accessibility/guidelines.md.
+ * No doc fixes pixel sizes for inputs, so the three sizes below compose from
+ * tokens: `md` matches the md button height (40) plus hit area, and every size
+ * clears the 44px touch minimum. That 44 is a working assumption, not a
+ * citation — the accessibility guide does not exist in the repo yet (TD-020
+ * covers this component, TD-031 covers creating the guide).
  */
 const SIZES: Record<
   InputSize,
