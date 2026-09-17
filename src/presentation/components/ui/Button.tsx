@@ -21,7 +21,11 @@ interface ButtonProps {
   testID?: string;
 }
 
-/** Heights and horizontal padding from design/components/buttons.md. */
+/**
+ * Heights and horizontal padding per size. These values are defined here: the
+ * guide they were meant to come from, design/components/buttons.md, does not
+ * exist in the repo yet (TD-020).
+ */
 const SIZES: Record<
   ButtonSize,
   { height: number; paddingHorizontal: number; text: 'bodySmall' | 'body' | 'bodyLarge' }
@@ -33,9 +37,11 @@ const SIZES: Record<
 };
 
 /**
- * accessibility/guidelines.md requires a 44x44 minimum touch target but the
- * doc's `sm` (32) and `md` (40) buttons are shorter, so the missing area is
- * added with hitSlop instead of growing the visual control.
+ * Targeted touch size. 44x44 is the value the accessibility guide is expected
+ * to require, but accessibility/guidelines.md does not exist in the repo yet,
+ * so it is a working assumption here rather than a citation (TD-020). `sm` (32)
+ * and `md` (40) fall short, so the missing area is added with hitSlop instead
+ * of growing the visual control; `lg` (48) and `xl` (56) already clear it.
  */
 const MIN_TOUCH_TARGET = 44;
 

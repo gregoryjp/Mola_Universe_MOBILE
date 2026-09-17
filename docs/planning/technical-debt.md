@@ -11,8 +11,8 @@
 
 | ID | Severidad | Archivo | Descripción | Estado |
 |---|---|---|---|---|
-| TD-018 | Baja | `src/presentation/{tasks,inventory,shopping,expenses,savings}/hooks/` | UI de paginación: solo se cargaba la primera página de cada listado (sin `loadMore`/`hasNextPage`/`fetchNextPage`) | ✅ Resuelto con matices (commit `dcd8197`) — ver detalle por módulo abajo |
-| TD-020 | Media | `src/presentation/components/ui/Button.tsx:24,29-32,36,40,94,105` | Tamaños visuales `sm` (32px) y `md` (40px) en `SIZES` (líneas 29-32). Los comentarios del componente (líneas 24 y 36) citan `design/components/buttons.md` y `accessibility/guidelines.md`, y **ninguno de los dos existe en el repo** (`design/components/` solo contiene `.gitkeep`; no hay carpeta `accessibility/`), así que los valores 32/40 no son verificables contra ninguna fuente de verdad. El área táctil **sí** cumple: `MIN_TOUCH_TARGET = 44` (línea 40) calcula el `hitSlop` (línea 94) y lo aplica (línea 105), dando 44×44 reales en `sm` y `md`; `lg` (48) y `xl` (56) ya superan 44 sin `hitSlop`. WCAG 2.5.8 (AA) exige 24×24 y se cumple de sobra | 📝 **Decisión pendiente — componente NO tocado.** Bloqueado por la guía de diseño ausente. Ver sección TD-020 abajo |
+| TD-018 | Baja | `src/presentation/{tasks,inventory,shopping,expenses,savings}/screens/` | UI de paginación: solo se cargaba la primera página de cada listado (sin `loadMore`/`hasNextPage`/`fetchNextPage`). **Corrección de ruta (2026-09-17):** la paginación se consume en las *pantallas* — el `fetchNextPage`/`hasNextPage` que devuelve `useInfiniteQuery` —, no en los hooks; la ruta anterior apuntaba a `hooks/` y despistaba al auditar | ✅ Resuelto con matices (commit `dcd8197`) — ver detalle por módulo abajo |
+| TD-020 | Media | `src/presentation/components/ui/Button.tsx:25-28,33-36,40-45,46,100,111` | Tamaños visuales `sm` (32px) y `md` (40px) en `SIZES` (líneas 33-36). El área táctil **sí** cumple: `MIN_TOUCH_TARGET = 44` (línea 46) calcula el `hitSlop` (línea 100) y lo aplica (línea 111), dando 44×44 reales en `sm` y `md`; `lg` (48) y `xl` (56) ya lo superan por altura. WCAG 2.5.8 (AA) exige 24×24 y se cumple de sobra. Los valores 32/40 **no son verificables contra ninguna fuente**: los comentarios citaban `design/components/buttons.md` y `accessibility/guidelines.md`, y ninguno de los dos existe en el repo (`design/components/` solo tiene `.gitkeep`; no hay carpeta `accessibility/`) | 📝 **Decisión pendiente — tamaño visual NO tocado.** Comentarios corregidos para no citar documentos inexistentes. Ver sección TD-020 |
 
 | TD-021 | Baja | `src/presentation/pets/` (backend: `POST /households/:householdId/pets/:petId/tasks`) | **Ruta sin consumir:** el backend permite crear tareas ligadas a una mascota y el móvil no lo ofrece. Es la única ruta del slice de Pets sin cubrir (27 de 29 rutas de M5 están consumidas) | Pendiente |
 | TD-022 | Alta | `src/presentation/sos/SOSActivationScreen.tsx`, `src/domain/sos/entities/Sos.ts` | **SOS sin geolocalización:** `ActivateSOSSchema` acepta `locationLat`/`locationLng` opcionales y el port los soporta, pero la pantalla no los envía porque `expo-location` no está instalado. La alerta viaja solo con el mensaje | Pendiente |
@@ -101,8 +101,11 @@ implementado — queda como propuesta a validar antes de ejecutar.
 
 ## TD-020 — decisión pendiente (NO resuelto)
 
-**Estado: 📝 bloqueado por una guía de diseño que no existe en el repo. El componente no se ha
-tocado.**
+**Estado: 📝 bloqueado por una guía de diseño que no existe en el repo. El tamaño visual del
+componente NO se ha tocado.**
+
+Los comentarios **sí** se corrigieron (2026-09-17): ya no citan documentos inexistentes como si
+fueran la fuente de verdad de sus valores. Ver "Corrección de comentarios" más abajo.
 
 Pregunta a resolver: ¿el tamaño visual de `sm` (32px) y `md` (40px) debe alinearse con la guía de
 diseño?
@@ -113,19 +116,19 @@ Procedimiento seguido antes de decidir:
    `design/components/` contiene solo `.gitkeep`, no existe ningún `buttons.md` y no hay carpeta
    `accessibility/`. Barrido de todos los `*.md`/`*.mdx` del repo: sin resultados. La única
    mención a un target de 44px en todo el repo es la propia ficha de TD-020.
-2. **Verificar el componente.** `Button.tsx` no cita una guía por casualidad: los comentarios de
-   las líneas 24 y 36 afirman explícitamente que las alturas vienen de
-   `design/components/buttons.md` y que `accessibility/guidelines.md` exige 44×44. **Ninguno de
-   los dos documentos existe**, así que la afirmación no es verificable. Es en sí mismo un
-   hallazgo de trazabilidad (ver resumen de la sesión).
+2. **Verificar el componente.** `Button.tsx` no citaba una guía por casualidad: los comentarios
+   de las líneas 24 y 36 (antes de la corrección) afirmaban explícitamente que las alturas venían
+   de `design/components/buttons.md` y que `accessibility/guidelines.md` exige 44×44. **Ninguno
+   de los dos documentos existe**, así que la afirmación no era verificable. Es en sí mismo un
+   hallazgo de trazabilidad, tratado abajo.
 3. **Conclusión:** sin fuente de verdad no hay forma de saber si 32/40 son los valores correctos
    o una desviación. Cambiarlos sería sustituir un número sin base por otro número sin base, así
    que se documenta y no se toca.
 
 Lo que **sí** está verificado y no necesita cambio: el área táctil real ya cumple 44×44 en `sm` y
-`md` vía `hitSlop` (constante en la línea 40, cálculo en la 94, aplicación en la 105), y `lg`
+`md` vía `hitSlop` (constante en la línea 46, cálculo en la 100, aplicación en la 111), y `lg`
 (48) y `xl` (56) lo superan por altura. WCAG 2.5.8 (AA) exige 24×24 y se cumple en los cuatro
-tamaños.
+tamaños. Las líneas son las de después de corregir los comentarios.
 
 **Alcance si se decide subir el target visual a 44×44:** hay 63 usos de `<Button>` en `src/`. 42
 ya usan `lg` (48px) y no cambiarían; `sm` se usa 3 veces, `md` explícito 8 veces, y 10 botones no
@@ -140,6 +143,53 @@ Para desbloquearlo hace falta una de estas dos cosas:
 
 Mientras eso no ocurra, el componente se deja como está: la discrepancia es de tamaño *visual*,
 no de área táctil ni de cumplimiento AA.
+
+### Corrección de comentarios (2026-09-17)
+
+Un comentario que presenta como fuente de verdad un documento que no existe es peor que no tener
+comentario: quien lea el código creerá que hay una guía detrás y no la irá a buscar. Corregidos los
+dos comentarios para que describan la realidad actual:
+
+| Antes | Ahora |
+|---|---|
+| Línea 24: *"Heights and horizontal padding from design/components/buttons.md."* | Líneas 25-28: los valores se definen aquí, y la guía de la que debían venir no existe todavía |
+| Línea 36: *"accessibility/guidelines.md requires a 44x44 minimum touch target but the doc's…"* | Líneas 40-45: 44×44 es una **asunción de trabajo** pendiente de confirmar, no una cita |
+
+**Solo comentarios.** Ni una línea de lógica, ni un valor de `SIZES`, ni el `hitSlop`.
+
+### El mismo patrón en `Input.tsx`, y evidencia para la decisión
+
+El barrido de `src/` después de la corrección encontró el mismo patrón en
+`src/presentation/components/ui/Input.tsx:46`, que también cita `accessibility/guidelines.md`.
+**No se tocó**: la autorización cubría solo `Button.tsx`. Queda registrado aquí.
+
+Ese fichero aporta además evidencia directa para la decisión de este TD, porque ya resolvió el
+mismo problema por su cuenta:
+
+| Componente | `sm` | `md` | `lg` | `xl` |
+|---|---|---|---|---|
+| Button (`Button.tsx`) | 32 | 40 | 48 | 56 |
+| Input (`Input.tsx`) | **44** | 48 | 56 | — |
+
+`Input` trata 44 como suelo explícito (*"every size clears the 44px touch minimum"*) y define su
+`md` como la altura del botón `md` más área táctil. Son dos componentes del mismo directorio
+aplicando criterios distintos al mismo problema: una inconsistencia interna del sistema de diseño.
+Refuerza que hace falta la guía, no que haya que subir `Button` sin más.
+
+### Propuesta: crear los dos documentos que faltan (NO ejecutada)
+
+Se documenta como propuesta y **sin ID asignado**, porque el alcance autorizado prohíbe promover
+nada fuera de los hallazgos M5 a TD-021+. Si quieres que tenga ID propio, es añadir una fila.
+
+- **`design/components/buttons.md`** — fijar altura, padding horizontal y tamaño de texto de cada
+  tamaño, y decidir si `sm`/`md` se alinean a 44. `design/README.md` ya reserva
+  `design/components/` para exactamente esto ("Component visual references (source for UI
+  components)"), y `Button.tsx` e `Input.tsx` ya escriben como si existiera.
+- **`accessibility/guidelines.md`** — dejar por escrito el target táctil mínimo. Hoy ese número
+  vive en dos constantes de código y en un comentario que ya no lo cita.
+
+Ambos son documentación, no código: no cambian ningún píxel hasta que alguien decida aplicar lo
+que digan.
 
 ## Notas
 
