@@ -33,7 +33,7 @@
 | TD-037 | Alta | módulo `diary` (no existe en Mobile) | **Diary sin implementar, y bloqueado por una decisión que no es de ingeniería:** el contrato exige `encryptedContent` + `iv` — **AES-256-GCM cifrado en el cliente** (zero-knowledge: el backend nunca ve el texto). Mobile no tiene ninguna librería criptográfica instalada. Antes de escribir código hay que decidir **dónde vive la clave** (derivada de la contraseña, en `expo-secure-store`, o frase de recuperación) y qué pasa si el usuario la pierde | Pendiente — **bloqueado por gestión de clave** |
 | TD-038 | Media | módulo `storage` (no existe en Mobile) | **Storage sin implementar:** el backend sube por **presigned URL** y **no ofrece listado**. Mobile no tiene ni una sola capacidad de subir ficheros (sin `expo-image-picker` ni `expo-document-picker`). Construirlo sin caso de uso confirmado sería adivinar la UI | Pendiente — **esperando confirmación de Producto** |
 | TD-039 | Media | módulo `billing` (no existe en Mobile) | **Billing sin superficie en Mobile, por decisión de producto:** el backend deriva entitlements y `meowAdvanced`, pero no hay pasarela — Stripe **no es ni dependencia del backend** (los campos existen y nunca se escriben) y RevenueCat no está instalado. La decisión tomada es *entitlement-only*: sin compra, sin suscripción. Falta decidir si Mobile muestra el estado del entitlement aunque no haya pasarela | Pendiente — **decisión de producto** |
-| TD-040 | Media | `src/core/theme/colors.ts` | **Tokens semánticos que fallan AA como color de texto:** medido contra `surface` (`#FFFFFF`) en tema claro, `primary` (`#6BC5A8`) da **2.06:1**, `error` (`#E88B8B`) **2.47:1** y `success` (`#8BC9A8`) **1.72:1**. WCAG 2.1 AA exige **4.5:1** para texto normal. El tema oscuro sí cumple en `text`/`textMuted`. Afecta a todo texto coloreado con esos tokens (p. ej. el «Eliminar contacto» existente, que ya fallaba). Los tokens **no se tocan** en TD-034: la acción nueva usa `theme.text`, que da ~17:1 | Pendiente — decisión de **diseñador**; es la misma familia que TD-031 (guía de diseño) y GAP 9 (contraste del icono) |
+| TD-040 | **Alta** | `src/core/theme/colors.ts`, `Button.tsx`, `Badge.tsx`, `Input.tsx` | **Ninguno de los 8 tokens cromáticos sirve como texto en tema claro, y varios fallan también como relleno y como borde.** Medidos sobre `surface` (`#FFFFFF`): `primary` **2.06:1**, `error` **2.47:1**, `success` **1.91:1** (1.67–1.91 según fondo), `accent` **1.71:1**, `warning` **1.55:1**, `secondary` **1.97:1**, `info` **2.08:1**, `primaryDark` **2.87:1** — **ninguno alcanza el 3:1** de texto grande / componentes de interfaz (1.4.11), y mucho menos el 4.5:1 de texto normal. Falla en **las dos direcciones**: como texto sobre claro *y* como relleno con etiqueta blanca — el botón primario (`2.06:1`) y el de peligro (`2.47:1`) no llegan a AA consigo mismos. Los badges empeoran: texto de color sobre su propio `*Soft` cae a **1.42–2.08:1**, y el borde del badge mide lo mismo. **60 usos** de un token cromático como `color:` en **43 ficheros**, más el `Spinner` por prop. El tema **oscuro no se ve afectado** (6.70–10.82:1: el problema es exclusivo de claro). Solo `text` (17.40:1) y `textMuted` (5.33:1) son utilizables como texto. Los tokens y los componentes **no se tocan** desde Mobile | Pendiente — **decisión de diseñador**: ¿variantes «text-safe» o cambiar los tokens base? Ver ficha **`## TD-040`** |
 | TD-041 | **Alta** | `package.json`, `src/data/sos/location/expoLocation.ts` | **Dependencia importada por código en producción y nunca declarada:** `expoLocation.ts:1` hace `import * as Location from 'expo-location'`, pero **`expo-location` no estaba en `package.json` en ningún commit** (`git log -S"expo-location" -- package.json` no devuelve nada). Sobrevivía porque sí estaba en `package-lock.json` y en `node_modules` local: `npm ci` lo instalaba, `npm install` lo **purgaba** como extraneous, y entonces `tsc` fallaba con `TS2307: Cannot find module 'expo-location'`. Un `npm install` en una máquina limpia rompía el typecheck y el bundle. Detectado al purgar dependencias durante la investigación de TD-028 | ✅ Resuelto — declarado `expo-location: ~57.0.18` en `package.json` (la misma versión que ya fijaba el lock, así que el lock quedó **idéntico**). Encontrado por accidente, pero habría roto la build nativa |
 
 ## Detalle TD-021+ (promovidos del informe M5, 2026-09-17)
@@ -242,6 +242,134 @@ a **21 botones**, más los sitios donde convivan con botones `lg` y haya que rea
 
 No crear los documentos desde ingeniería, ni cambiar tamaños antes de que existan. La deuda no es
 que falte un número: es que falta la decisión.
+
+## TD-040 — los tokens cromáticos no sirven como color de texto en claro (2026-09-17)
+
+**Trabajo de diseñador, no de Mobile.** Esta ficha no cambia ningún token ni ningún componente:
+mide y documenta. La decisión —¿variantes «text-safe» o cambiar los tokens base?— es de diseño.
+
+### Qué pasa
+
+Los 8 tokens cromáticos (`primary`, `primaryDark`, `secondary`, `accent`, `error`, `success`,
+`warning`, `info`) son **pasteles de luminosidad alta**. Sobre los fondos claros del tema, ninguno
+alcanza el mínimo de contraste **ni siquiera para texto grande**, y varios quedan por debajo del
+umbral de **componentes de interfaz** (WCAG 1.4.11, 3:1).
+
+Umbrales de referencia, WCAG 2.1:
+
+- texto normal: **4.5:1**
+- texto grande (≥24 px, o ≥18.66 px en negrita): **3:1**
+- bordes, iconos, indicadores: **3:1** (1.4.11)
+
+### Medición — tema claro (token como color de texto)
+
+| token | valor | sobre `surface` `#FFFFFF` | sobre `background` `#F7F7F5` | sobre `surfaceAlt` `#F0F0ED` |
+| --- | --- | --- | --- | --- |
+| `primary` | `#6BC5A8` | **2.06:1** ✗ | 1.92:1 ✗ | 1.81:1 ✗ |
+| `primaryDark` | `#4FA88C` | 2.87:1 ✗ | 2.68:1 ✗ | 2.52:1 ✗ |
+| `secondary` | `#A8B8E8` | 1.97:1 ✗ | 1.83:1 ✗ | 1.72:1 ✗ |
+| `accent` | `#E8B8D8` | 1.71:1 ✗ | 1.59:1 ✗ | 1.50:1 ✗ |
+| `error` | `#E88B8B` | **2.47:1** ✗ | 2.30:1 ✗ | 2.16:1 ✗ |
+| `success` | `#8BC9A8` | 1.91:1 ✗ | 1.78:1 ✗ | 1.67:1 ✗ |
+| `warning` | `#F5C88B` | 1.55:1 ✗ | 1.45:1 ✗ | 1.36:1 ✗ |
+| `info` | `#8BB8E8` | 2.08:1 ✗ | 1.93:1 ✗ | 1.82:1 ✗ |
+| `text` | `#1A1A1A` | 17.40:1 ✓ | 16.23:1 ✓ | 15.24:1 ✓ |
+| `textMuted` | `#6B6B6B` | 5.33:1 ✓ | 4.97:1 ✓ | 4.67:1 ✓ |
+
+✗ = por debajo de **3:1**, es decir falla incluso el umbral de texto grande y el de interfaz.
+
+Solo `text` y `textMuted` son utilizables como color de texto. `primaryDark`, el más oscuro de los
+cromáticos, se queda en **2.87:1**: le falta un 36 % de recorrido para llegar a 4.5:1.
+
+Nota sobre las cifras del registro original: citaba «success 1.72:1». La medición por par da
+**1.67–1.91:1** según el fondo (el 1.72 corresponde a `secondary`/`accent` sobre `surfaceAlt`). Las
+de `primary` (2.06) y `error` (2.47) se reproducen exactas sobre `surface`.
+
+### Las cuatro formas en que el fallo aterriza hoy
+
+**1. Texto de color sobre fondo claro.** `primary` como etiqueta del botón outline
+(`Button.tsx`, `textOutline`), como enlace (`textLink`), y 11 usos más. Todos ≤ 2.06:1.
+
+**2. Texto blanco sobre un relleno del token** — el caso más visiblemente roto:
+
+| relleno | etiqueta | ratio | veredicto |
+| --- | --- | --- | --- |
+| `primary` (botón primario) | `#FFFFFF` | **2.06:1** | ✗ |
+| `error` (variante `danger`) | `#FFFFFF` | **2.47:1** | ✗ |
+| `success` | `#FFFFFF` | **1.91:1** | ✗ |
+| `secondary`, `accent`, `warning`, `info` | `#FFFFFF` | 1.55–2.08:1 | ✗ |
+
+Es decir: **el botón primario y el de peligro de la app no llegan a AA con su propia etiqueta**. El
+token falla en las dos direcciones a la vez (como texto y como relleno con texto blanco).
+
+**3. Texto de color sobre el fondo suave de su familia** (`Badge.tsx`) — el peor grupo:
+
+| badge | texto | sobre | ratio |
+| --- | --- | --- | --- |
+| success | `#8BC9A8` | `successSoft` `#E8F5EE` | **1.70:1** ✗ |
+| warning | `#F5C88B` | `warningSoft` `#FCF4E5` | **1.42:1** ✗ |
+| error | `#E88B8B` | `errorSoft` `#F8E8E8` | **2.08:1** ✗ |
+| info | `#8BB8E8` | `infoSoft` `#E8F0FA` | **1.81:1** ✗ |
+
+El **borde** del mismo badge, que es un componente de interfaz sujeto a 1.4.11 (3:1), mide
+exactamente lo mismo: **1.42–2.08:1**. El badge se dibuja con un color que no se distingue de su
+propio fondo.
+
+**4. Color como icono, indicador o borde** (1.4.11, 3:1): el `Spinner`
+(`Spinner.tsx:42`, vía prop `color={theme.primary}`) y el borde del botón `secondary`
+(`Button.tsx:59`, `borderColor: theme.primary`) van sobre el fondo de página: **1.92:1** ✗.
+
+### Alcance medido
+
+**60 usos** de un token cromático como propiedad `color:` en **43 ficheros**, más `Spinner.tsx:42`
+por prop. Núcleo afectado: `Button.tsx`, `Badge.tsx`, `Input.tsx` (estado de error) y las
+filas/errores de formulario de los 14 módulos de la app. `error` es el más extendido (41 usos, en
+mensajes de validación de casi todas las pantallas).
+
+### Tema oscuro: no afectado
+
+En oscuro los mismos tokens van sobre `surface` `#1A1F26` y pasan todos:
+
+| token | sobre `surface` oscuro |
+| --- | --- |
+| `primary` `#6BC5A8` | 8.03:1 ✓ |
+| `error` `#E88B8B` | 6.70:1 ✓ |
+| `success` `#8BC9A8` | 8.69:1 ✓ |
+| resto de cromáticos | 5.77–10.82:1 ✓ |
+
+El problema es **exclusivo del tema claro**: los pasteles se eligieron para leer sobre oscuro, y en
+claro falta la otra mitad del par.
+
+### La decisión que hace falta
+
+No es «cambiar un hex»: es decidir **cuántos valores necesita cada rol semántico**. Hoy cada token
+cromático se usa con tres funciones que, en claro, son incompatibles entre sí:
+
+1. como **relleno** (fondo de botón o insignia) → debe contrastar con su etiqueta;
+2. como **texto** sobre fondo claro → necesita **4.5:1** contra `surface` y `background`;
+3. como **borde o icono** → necesita **3:1** (1.4.11).
+
+Un solo valor no puede cumplir 1 y 2 a la vez en claro: si se oscurece lo suficiente para leer como
+texto, deja de admitir texto blanco encima. Opciones:
+
+- **(A) Variantes «text-safe».** Añadir, p. ej., `primaryText`, `errorText`, `successText`… con el
+  valor oscurecido que sí lea sobre claro (mínimo **4.5:1** sobre `surface`), y dejar los pasteles
+  como relleno. Coste: hasta 8 tokens nuevos × 2 temas, y el mapeo rol→token en el código.
+- **(B) Cambiar los tokens base.** Oscurecer los 8 para que sirvan como texto e **invertir la
+  etiqueta** de los rellenos a un color oscuro. Cambia el aspecto del tema claro en toda la app y
+  rompe la dirección «pastel» ya aprobada.
+- **(C) Híbrido.** Oscurecer solo los que se usan como texto (`primary`, `error`, `success`,
+  `warning`, `info`) y mantener los pasteles como relleno con etiqueta oscura.
+
+Las tres exigen **un valor por rol**, que es justo lo que debe fijar la guía de diseño (TD-031).
+Recomendación de ingeniería: **(A)**, porque es aditiva y no toca la paleta ya aprobada; pero la
+decisión es de diseño.
+
+### Qué NO hace Mobile
+
+No se cambian los tokens ni `Button`/`Badge`/`Input` sin la guía. Los 60 usos siguen como están: la
+deuda queda **registrada, no silenciada**. Lo único hecho en TD-034 fue **no añadir un uso nuevo**
+(la acción «Reenviar» usa `theme.text`, ~17:1) y anotar el hallazgo aquí.
 
 ## TD-028 — por qué la raíz no se cierra por configuración (2026-09-17)
 
