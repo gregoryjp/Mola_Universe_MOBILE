@@ -34,6 +34,12 @@
             "backgroundColor": "#0F1419"
           }
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "MOLA usa tu ubicación solo cuando activas una alerta SOS, para enviarla a tus contactos de confianza."
+        }
       ]
     ]
   }

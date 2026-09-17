@@ -5,8 +5,9 @@ import type { SosEventStatus } from '@domain/sos/entities/Sos';
 import { Button, Input, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { type JSX, useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSosHistory, useTrustedContacts } from '../hooks/useSos';
+import { type SosLocationStatus, useSosLocation } from '../hooks/useSosLocation';
 import { useActivateSos, useCancelSos } from '../hooks/useSosMutations';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SOSActivation'>;
@@ -17,11 +18,19 @@ const STATUS_LABELS: Record<SosEventStatus, string> = {
   CANCELLED: 'Cancelada',
 };
 
+const LOCATION_LABELS: Record<SosLocationStatus, string> = {
+  checking: 'Comprobando tu ubicación…',
+  ready: 'Tu ubicación se enviará con la alerta',
+  permission: 'Sin ubicación: no diste permiso',
+  unavailable: 'Sin ubicación: no se pudo obtener',
+};
+
 const seconds = (ms: number): number => Math.ceil(ms / 1000);
 
 export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
   const contacts = useTrustedContacts();
   const history = useSosHistory();
+  const location = useSosLocation();
   const activate = useActivateSos();
   const cancel = useCancelSos();
 
@@ -44,8 +53,12 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
 
   const activateNow = (): void => {
     const trimmed = message.trim();
+    const coords = location.coordinates;
     activate.mutate(
-      { ...(trimmed.length > 0 && { message: trimmed }) },
+      {
+        ...(trimmed.length > 0 && { message: trimmed }),
+        ...(coords !== null && { locationLat: coords.latitude, locationLng: coords.longitude }),
+      },
       {
         onSuccess: (event) => {
           setActiveEventId(event.id);
@@ -93,6 +106,33 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
         accessibilityLabel="Mensaje para tus contactos"
         testID="sos-message"
       />
+
+      <View style={styles.locationRow} testID="sos-location">
+        <Text style={styles.locationText}>{LOCATION_LABELS[location.status]}</Text>
+        {location.coordinates !== null ? (
+          <Text style={styles.meta}>
+            {location.coordinates.latitude.toFixed(4)}, {location.coordinates.longitude.toFixed(4)}
+          </Text>
+        ) : null}
+        {location.status === 'permission' ? (
+          <TouchableOpacity
+            onPress={() => void Linking.openSettings()}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir los ajustes para permitir el acceso a la ubicación"
+          >
+            <Text style={styles.link}>Permitir en ajustes</Text>
+          </TouchableOpacity>
+        ) : null}
+        {location.status === 'unavailable' ? (
+          <TouchableOpacity
+            onPress={location.enable}
+            accessibilityRole="button"
+            accessibilityLabel="Reintentar obtener mi ubicación"
+          >
+            <Text style={styles.link}>Reintentar</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
 
       {isActive ? (
         <View style={styles.activeBox}>
@@ -180,6 +220,16 @@ const makeStyles = (theme: ColorTokens) => ({
     ...typography.bodySmall,
     color: theme.primary,
     paddingVertical: spacing.s2,
+  },
+  locationRow: {
+    backgroundColor: theme.surface,
+    borderRadius: radius.sm,
+    padding: spacing.s4,
+    gap: spacing.s1,
+  },
+  locationText: {
+    ...typography.bodySmall,
+    color: theme.text,
   },
   activeBox: {
     backgroundColor: theme.errorSoft,
