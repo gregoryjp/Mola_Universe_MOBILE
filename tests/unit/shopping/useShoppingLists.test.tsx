@@ -55,7 +55,7 @@ const render = async (): Promise<ReactTestRenderer> => {
     );
   });
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
   if (!renderer) throw new Error('renderer not created');
   return renderer;
@@ -75,7 +75,7 @@ describe('useShoppingLists', () => {
 
     expect(mocks.listPersonalLists).toHaveBeenCalled();
     expect(mocks.listHouseholdLists).not.toHaveBeenCalled();
-    expect(captured?.data?.lists).toHaveLength(1);
+    expect(captured?.lists).toHaveLength(1);
 
     renderer.unmount();
   });
@@ -86,7 +86,7 @@ describe('useShoppingLists', () => {
 
     const renderer = await render();
 
-    expect(mocks.listHouseholdLists).toHaveBeenCalledWith('h1');
+    expect(mocks.listHouseholdLists).toHaveBeenCalledWith('h1', { page: 1 });
     expect(mocks.listPersonalLists).not.toHaveBeenCalled();
 
     renderer.unmount();

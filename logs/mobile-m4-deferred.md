@@ -70,6 +70,10 @@ lo que llega. No hay control de "cargar más" ni scroll infinito.
 expone `page`/`limit` en la mayoría de slices, así que añadir la UI después no requiere
 tocar el contrato.
 
+**Resuelto 2026-09-17 (Claude Code, APP):** "Cargar más" agregado en Tasks, Inventory,
+Shopping (listas), Expenses y Savings (metas de hogar y personales) vía `useInfiniteQuery`.
+No incluye Moments (el módulo no existe todavía en móvil).
+
 ## 4. Entorno Node del repo móvil — **TD-019 (Baja) — documentado**
 
 El `node` por defecto en `PATH` es muy antiguo; el proyecto requiere Node 22 vía `nvm use`.

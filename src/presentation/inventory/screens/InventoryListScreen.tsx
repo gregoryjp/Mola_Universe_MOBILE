@@ -14,7 +14,7 @@ import { useCreateInventoryItem } from '../hooks/useInventoryMutations';
 type Props = NativeStackScreenProps<RootStackParamList, 'InventoryList'>;
 
 export const InventoryListScreen = ({ navigation }: Props): JSX.Element => {
-  const items = useInventoryItems();
+  const { items: itemsList, ...items } = useInventoryItems();
   const create = useCreateInventoryItem();
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('ud');
@@ -59,7 +59,7 @@ export const InventoryListScreen = ({ navigation }: Props): JSX.Element => {
       {items.isError ? <Text style={styles.error}>{items.error.message}</Text> : null}
 
       <View style={styles.list}>
-        {(items.data?.items ?? []).map((item) => (
+        {itemsList.map((item) => (
           <InventoryItemRow
             key={item.id}
             item={item}
@@ -68,8 +68,19 @@ export const InventoryListScreen = ({ navigation }: Props): JSX.Element => {
         ))}
       </View>
 
-      {items.data && items.data.items.length === 0 ? (
+      {items.data && itemsList.length === 0 ? (
         <EmptyState title="Tu inventario está vacío" />
+      ) : null}
+
+      {items.hasNextPage ? (
+        <Button
+          label="Cargar más"
+          onPress={() => void items.fetchNextPage()}
+          loading={items.isFetchingNextPage}
+          variant="secondary"
+          size="md"
+          accessibilityHint="Carga la siguiente página de items del inventario"
+        />
       ) : null}
     </ScrollView>
   );

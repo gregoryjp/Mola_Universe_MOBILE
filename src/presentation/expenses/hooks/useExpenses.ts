@@ -3,7 +3,7 @@ import type { Expense, ExpenseSummary } from '@domain/expenses/entities/Expense'
 import type { PaginatedExpenses } from '@domain/expenses/repositories/ExpenseRepository';
 import { AppError } from '@shared/errors/AppError';
 import { useHouseholdStore } from '@shared/store/householdStore';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 export const expensesQueryKey = (householdId: string | null) =>
   ['expenses', 'list', householdId] as const;
@@ -18,18 +18,27 @@ const noHousehold = (): AppError =>
 export const useExpenses = () => {
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
 
-  return useQuery<PaginatedExpenses, AppError>({
+  const query = useInfiniteQuery<PaginatedExpenses, AppError>({
     queryKey: expensesQueryKey(householdId),
     enabled: householdId !== null,
-    queryFn: async () => {
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
       if (householdId === null) throw noHousehold();
-      const result = await expenseRepository.listExpenses(householdId);
+      const result = await expenseRepository.listExpenses(householdId, {
+        page: pageParam as number,
+      });
       if (!result.success) {
         throw new AppError(result.error.code, result.error.message, result.error.statusCode);
       }
       return result.value;
     },
+    getNextPageParam: (lastPage) =>
+      lastPage.page * lastPage.limit < lastPage.total ? lastPage.page + 1 : undefined,
   });
+
+  const expenses: Expense[] = query.data?.pages.flatMap((page) => page.expenses) ?? [];
+
+  return { ...query, expenses };
 };
 
 export const useExpenseSummary = () => {

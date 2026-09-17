@@ -10,7 +10,16 @@ import { useTasksList } from '../hooks/useTasksList';
 type Props = TabScreenProps<'TasksList'>;
 
 export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
-  const { data, isLoading, isError, error, refetch } = useTasksList();
+  const {
+    tasks,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useTasksList();
   const styles = useThemedStyles(makeStyles);
 
   return (
@@ -20,7 +29,7 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
       {isError ? <ErrorState message={error.message} onRetry={() => void refetch()} /> : null}
       {!isLoading && !isError ? (
         <FlatList
-          data={data?.tasks ?? []}
+          data={tasks}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <TaskListItem
@@ -30,6 +39,18 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
           )}
           contentContainerStyle={styles.list}
           ListEmptyComponent={<EmptyState title="No tienes tareas todavía" />}
+          ListFooterComponent={
+            hasNextPage ? (
+              <Button
+                label="Cargar más"
+                onPress={() => void fetchNextPage()}
+                loading={isFetchingNextPage}
+                variant="secondary"
+                size="md"
+                accessibilityHint="Carga la siguiente página de tareas"
+              />
+            ) : null
+          }
         />
       ) : null}
       <Button

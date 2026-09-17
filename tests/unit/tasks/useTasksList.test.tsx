@@ -72,8 +72,8 @@ describe('useTasksList', () => {
     const renderer = await render();
 
     expect(mocks.listPersonal).toHaveBeenCalled();
-    expect(captured?.data?.tasks).toHaveLength(1);
-    expect(captured?.data?.total).toBe(1);
+    expect(captured?.tasks).toHaveLength(1);
+    expect(captured?.data?.pages[0]?.total).toBe(1);
 
     renderer.unmount();
   });

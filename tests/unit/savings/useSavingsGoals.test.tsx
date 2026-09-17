@@ -54,7 +54,7 @@ const withQueryClient = async (node: React.ReactElement): Promise<ReactTestRende
     renderer = create(<QueryClientProvider client={client}>{node}</QueryClientProvider>);
   });
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
   if (!renderer) throw new Error('renderer not created');
   return renderer;
@@ -78,8 +78,8 @@ describe('savings query hooks', () => {
 
     const renderer = await withQueryClient(<Harness />);
 
-    expect(mocks.listHouseholdGoals).toHaveBeenCalledWith('h1');
-    expect(captured?.data?.goals).toHaveLength(1);
+    expect(mocks.listHouseholdGoals).toHaveBeenCalledWith('h1', { page: 1 });
+    expect(captured?.goals).toHaveLength(1);
 
     renderer.unmount();
   });
@@ -132,7 +132,7 @@ describe('savings query hooks', () => {
     const renderer = await withQueryClient(<Harness />);
 
     expect(mocks.listPersonalGoals).toHaveBeenCalled();
-    expect(captured?.data?.goals).toHaveLength(1);
+    expect(captured?.goals).toHaveLength(1);
 
     renderer.unmount();
   });

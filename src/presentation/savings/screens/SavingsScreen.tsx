@@ -14,12 +14,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Savings'>;
 
 export const SavingsScreen = ({ navigation }: Props): JSX.Element => {
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
-  const householdGoals = useHouseholdSavingsGoals();
-  const personalGoals = usePersonalSavingsGoals();
+  const { goals, ...householdGoals } = useHouseholdSavingsGoals();
+  const { goals: personal, ...personalGoals } = usePersonalSavingsGoals();
   const styles = useThemedStyles(makeStyles);
-
-  const goals = householdGoals.data?.goals ?? [];
-  const personal = personalGoals.data?.goals ?? [];
 
   const openGoal = (goalId: string): void => navigation.navigate('SavingsGoalDetail', { goalId });
 
@@ -44,6 +41,16 @@ export const SavingsScreen = ({ navigation }: Props): JSX.Element => {
         {householdGoals.data && goals.length === 0 && householdId !== null ? (
           <EmptyState title="Sin metas de hogar todavía" />
         ) : null}
+        {householdGoals.hasNextPage ? (
+          <Button
+            label="Cargar más"
+            onPress={() => void householdGoals.fetchNextPage()}
+            loading={householdGoals.isFetchingNextPage}
+            variant="secondary"
+            size="md"
+            accessibilityHint="Carga la siguiente página de metas del hogar"
+          />
+        ) : null}
       </View>
 
       <View style={styles.section}>
@@ -57,6 +64,16 @@ export const SavingsScreen = ({ navigation }: Props): JSX.Element => {
         ))}
         {personalGoals.data && personal.length === 0 ? (
           <EmptyState title="Sin metas personales todavía" />
+        ) : null}
+        {personalGoals.hasNextPage ? (
+          <Button
+            label="Cargar más"
+            onPress={() => void personalGoals.fetchNextPage()}
+            loading={personalGoals.isFetchingNextPage}
+            variant="secondary"
+            size="md"
+            accessibilityHint="Carga la siguiente página de metas personales"
+          />
         ) : null}
       </View>
 

@@ -13,11 +13,10 @@ type Props = TabScreenProps<'Expenses'>;
 
 export const ExpensesScreen = ({ navigation }: Props): JSX.Element => {
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
-  const expenses = useExpenses();
+  const { expenses: list, ...expenses } = useExpenses();
   const summary = useExpenseSummary();
   const styles = useThemedStyles(makeStyles);
 
-  const list = expenses.data?.expenses ?? [];
   const balances = summary.data?.balances ?? [];
 
   return (
@@ -63,6 +62,17 @@ export const ExpensesScreen = ({ navigation }: Props): JSX.Element => {
 
       {expenses.data && list.length === 0 && householdId !== null ? (
         <EmptyState title="No hay gastos en este hogar todavía" />
+      ) : null}
+
+      {expenses.hasNextPage ? (
+        <Button
+          label="Cargar más gastos"
+          onPress={() => void expenses.fetchNextPage()}
+          loading={expenses.isFetchingNextPage}
+          variant="secondary"
+          size="md"
+          accessibilityHint="Carga la siguiente página de gastos"
+        />
       ) : null}
 
       <Button

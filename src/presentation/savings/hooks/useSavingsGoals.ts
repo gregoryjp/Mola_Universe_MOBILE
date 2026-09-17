@@ -8,7 +8,7 @@ import type {
 import type { PaginatedSavingsGoals } from '@domain/savings/repositories/SavingsRepository';
 import { AppError } from '@shared/errors/AppError';
 import { useHouseholdStore } from '@shared/store/householdStore';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 export const savingsGoalsQueryKey = (householdId: string | null) =>
   ['savings', 'goals', householdId] as const;
@@ -30,27 +30,44 @@ function fail(error: { code: string; message: string; statusCode: number }): nev
 export const useHouseholdSavingsGoals = () => {
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
 
-  return useQuery<PaginatedSavingsGoals, AppError>({
+  const query = useInfiniteQuery<PaginatedSavingsGoals, AppError>({
     queryKey: savingsGoalsQueryKey(householdId),
     enabled: householdId !== null,
-    queryFn: async () => {
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
       if (householdId === null) throw noHousehold();
-      const result = await savingsRepository.listHouseholdGoals(householdId);
+      const result = await savingsRepository.listHouseholdGoals(householdId, {
+        page: pageParam as number,
+      });
       if (!result.success) fail(result.error);
       return result.value;
     },
+    getNextPageParam: (lastPage) =>
+      lastPage.page * lastPage.limit < lastPage.total ? lastPage.page + 1 : undefined,
   });
+
+  const goals: SavingsGoal[] = query.data?.pages.flatMap((page) => page.goals) ?? [];
+
+  return { ...query, goals };
 };
 
-export const usePersonalSavingsGoals = () =>
-  useQuery<PaginatedSavingsGoals, AppError>({
+export const usePersonalSavingsGoals = () => {
+  const query = useInfiniteQuery<PaginatedSavingsGoals, AppError>({
     queryKey: personalSavingsGoalsQueryKey(),
-    queryFn: async () => {
-      const result = await savingsRepository.listPersonalGoals();
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const result = await savingsRepository.listPersonalGoals({ page: pageParam as number });
       if (!result.success) fail(result.error);
       return result.value;
     },
+    getNextPageParam: (lastPage) =>
+      lastPage.page * lastPage.limit < lastPage.total ? lastPage.page + 1 : undefined,
   });
+
+  const goals: SavingsGoal[] = query.data?.pages.flatMap((page) => page.goals) ?? [];
+
+  return { ...query, goals };
+};
 
 export const useSavingsGoal = (goalId: string) =>
   useQuery<SavingsGoal, AppError>({

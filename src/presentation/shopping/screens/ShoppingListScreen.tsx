@@ -19,13 +19,11 @@ import {
 type Props = TabScreenProps<'ShoppingLists'>;
 
 export const ShoppingListScreen = ({ navigation }: Props): JSX.Element => {
-  const lists = useShoppingLists();
+  const { lists: availableLists, ...lists } = useShoppingLists();
   const createList = useCreateShoppingList();
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [newListName, setNewListName] = useState('');
   const styles = useThemedStyles(makeStyles);
-
-  const availableLists = lists.data?.lists ?? [];
   const activeListId = availableLists.some((list) => list.id === selectedListId)
     ? (selectedListId as string)
     : (availableLists[0]?.id ?? '');
@@ -84,6 +82,17 @@ export const ShoppingListScreen = ({ navigation }: Props): JSX.Element => {
 
       {lists.data && availableLists.length === 0 ? (
         <EmptyState title="No tienes listas de compras todavía" />
+      ) : null}
+
+      {lists.hasNextPage ? (
+        <Button
+          label="Cargar más listas"
+          onPress={() => void lists.fetchNextPage()}
+          loading={lists.isFetchingNextPage}
+          variant="secondary"
+          size="md"
+          accessibilityHint="Carga la siguiente página de listas de compras"
+        />
       ) : null}
 
       {items.isLoading ? <Spinner /> : null}
