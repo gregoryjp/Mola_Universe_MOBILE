@@ -23,6 +23,13 @@ export type SosResult<T> = { success: true; value: T } | { success: false; error
 export interface SosRepository {
   listContacts(): Promise<SosResult<TrustedContact[]>>;
   createContact(input: CreateTrustedContactInput): Promise<SosResult<TrustedContact>>;
+  /**
+   * Regenerates the invitation and re-sends the email for a *pending* contact
+   * (`POST /sos/contacts/:contactId/resend-invite`, authenticated). The backend
+   * rejects an already-verified contact, so callers must only offer this while
+   * `verified` is false. Returns the refreshed contact.
+   */
+  resendContactInvite(contactId: string): Promise<SosResult<TrustedContact>>;
   deleteContact(contactId: string): Promise<SosResult<void>>;
   activate(input: ActivateSosInput): Promise<SosResult<ActivatedSosEvent>>;
   cancel(sosEventId: string): Promise<SosResult<SosEvent>>;

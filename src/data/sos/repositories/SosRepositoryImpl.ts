@@ -48,6 +48,13 @@ export class SosRepositoryImpl implements SosRepository {
     return toResult(raw, toTrustedContact);
   }
 
+  async resendContactInvite(contactId: string): Promise<SosResult<TrustedContact>> {
+    const raw = await apiClient.postRaw<TrustedContactDto>(
+      `/sos/contacts/${contactId}/resend-invite`,
+    );
+    return toResult(raw, toTrustedContact);
+  }
+
   async deleteContact(contactId: string): Promise<SosResult<void>> {
     const raw = await apiClient.deleteRaw<void>(`/sos/contacts/${contactId}`);
     return raw.success

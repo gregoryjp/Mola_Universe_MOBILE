@@ -32,22 +32,69 @@ const contact = (verified: boolean): TrustedContact => ({
   createdAt: '2026-09-17T09:00:00.000Z',
 });
 
-const render = (verified: boolean): ReactTestRenderer => {
+const render = (
+  verified: boolean,
+  options: { isResending?: boolean; onResendInvite?: () => void } = {},
+): ReactTestRenderer => {
   let renderer: ReactTestRenderer | undefined;
   act(() => {
-    renderer = create(<TrustedContactRow contact={contact(verified)} onDelete={vi.fn()} />);
+    renderer = create(
+      <TrustedContactRow
+        contact={contact(verified)}
+        onDelete={vi.fn()}
+        onResendInvite={options.onResendInvite ?? vi.fn()}
+        isResending={options.isResending ?? false}
+      />,
+    );
   });
   if (!renderer) throw new Error('renderer not created');
   return renderer;
 };
 
-describe('TrustedContactRow — unverified state is not a dead end (TD-023)', () => {
+const findPressable = (
+  renderer: ReactTestRenderer,
+  testID: string,
+): { props: Record<string, unknown> } | undefined => {
+  const match = renderer.root.findAll((node) => node.props.testID === testID);
+  return match[0] as unknown as { props: Record<string, unknown> } | undefined;
+};
+
+describe('TrustedContactRow — unverified state is actionable (TD-023, TD-034)', () => {
   it('explains that the contact must accept the emailed invitation', () => {
     expect(textOf(render(false))).toContain('No recibirá tus alertas SOS hasta que acepte');
   });
 
-  it('gives the one action the app can offer: delete and recreate', () => {
-    expect(textOf(render(false))).toContain('elimínalo y créalo de nuevo');
+  it('offers the resend action now that the backend route exists (TD-034)', () => {
+    expect(textOf(render(false))).toContain('Reenviar invitación');
+    expect(findPressable(render(false), 'contact-c1-resend')).toBeDefined();
+  });
+
+  it('hides the resend action for an already-verified contact', () => {
+    expect(textOf(render(true))).not.toContain('Reenviar invitación');
+    expect(findPressable(render(true), 'contact-c1-resend')).toBeUndefined();
+  });
+
+  it('marks the resend action busy while the request is in flight', () => {
+    const text = textOf(render(false, { isResending: true }));
+
+    expect(text).toContain('Reenviando…');
+    expect(text).not.toContain('Reenviar invitación');
+  });
+
+  it('calls the resend handler when the action is pressed', () => {
+    const onResendInvite = vi.fn();
+    const row = findPressable(render(false, { onResendInvite }), 'contact-c1-resend');
+    if (!row) throw new Error('resend action not rendered');
+
+    act(() => {
+      (row.props.onPress as () => void)();
+    });
+
+    expect(onResendInvite).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps delete-and-recreate as the fallback for a wrong email', () => {
+    expect(textOf(render(false))).toContain('si el correo es incorrecto, elimínalo y créalo de nuevo');
   });
 
   it('does not claim an unverified contact receives the alert by email', () => {

@@ -35,6 +35,19 @@ export const useCreateTrustedContact = () => {
   });
 };
 
+export const useResendContactInvite = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<TrustedContact, AppError, string>({
+    mutationFn: async (contactId) => unwrap(await sosRepository.resendContactInvite(contactId)),
+    onSuccess: () => {
+      // The backend rotates the verification token and its expiry, so the cached
+      // list is stale in a way an optimistic patch could not express.
+      void queryClient.invalidateQueries({ queryKey: sosContactsQueryKey() });
+    },
+  });
+};
+
 export const useDeleteTrustedContact = () => {
   const queryClient = useQueryClient();
 

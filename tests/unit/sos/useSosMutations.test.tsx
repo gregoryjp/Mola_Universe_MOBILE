@@ -5,6 +5,7 @@ import { flushQueries } from '../../helpers/flush';
 
 const mocks = vi.hoisted(() => ({
   createContact: vi.fn(),
+  resendContactInvite: vi.fn(),
   deleteContact: vi.fn(),
   activate: vi.fn(),
   cancel: vi.fn(),
@@ -13,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@data/sos/repositories/SosRepositoryImpl', () => ({
   sosRepository: {
     createContact: mocks.createContact,
+    resendContactInvite: mocks.resendContactInvite,
     deleteContact: mocks.deleteContact,
     activate: mocks.activate,
     cancel: mocks.cancel,
@@ -25,6 +27,7 @@ import {
   useCancelSos,
   useCreateTrustedContact,
   useDeleteTrustedContact,
+  useResendContactInvite,
 } from '@presentation/sos/hooks/useSosMutations';
 
 const contact: TrustedContact = {
@@ -140,6 +143,48 @@ describe('sos mutation hooks', () => {
 
     expect(mocks.deleteContact).toHaveBeenCalledWith('c1');
     expect(captured().isSuccess).toBe(true);
+
+    renderer.unmount();
+  });
+
+  it('resends the invitation and refreshes the contact list (TD-034)', async () => {
+    mocks.resendContactInvite.mockResolvedValueOnce({ success: true, value: contact });
+
+    const { captured, renderer, client } = await render(useResendContactInvite);
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+
+    await act(async () => {
+      captured().mutate('c1');
+    });
+    await flush();
+
+    expect(mocks.resendContactInvite).toHaveBeenCalledWith('c1');
+    expect(captured().isSuccess).toBe(true);
+    // The token and its expiry rotate server-side, so the cache must be refetched.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['sos', 'contacts'] });
+
+    renderer.unmount();
+  });
+
+  it('surfaces the backend refusal when the contact is already verified', async () => {
+    mocks.resendContactInvite.mockResolvedValueOnce({
+      success: false,
+      error: {
+        code: 'CONTACT_ALREADY_VERIFIED',
+        message: 'Trusted contact is already verified',
+        statusCode: 409,
+      },
+    });
+
+    const { captured, renderer } = await render(useResendContactInvite);
+
+    await act(async () => {
+      captured().mutate('c1');
+    });
+    await flush();
+
+    expect(captured().isError).toBe(true);
+    expect(captured().error?.code).toBe('CONTACT_ALREADY_VERIFIED');
 
     renderer.unmount();
   });

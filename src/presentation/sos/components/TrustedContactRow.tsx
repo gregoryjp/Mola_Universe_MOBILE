@@ -8,9 +8,16 @@ import { Text, TouchableOpacity, View } from 'react-native';
 interface Props {
   contact: TrustedContact;
   onDelete: () => void;
+  onResendInvite: () => void;
+  isResending?: boolean;
 }
 
-export const TrustedContactRow = ({ contact, onDelete }: Props): JSX.Element => {
+export const TrustedContactRow = ({
+  contact,
+  onDelete,
+  onResendInvite,
+  isResending = false,
+}: Props): JSX.Element => {
   const styles = useThemedStyles(makeStyles);
 
   return (
@@ -23,8 +30,9 @@ export const TrustedContactRow = ({ contact, onDelete }: Props): JSX.Element => 
       {contact.phone ? <Text style={styles.meta}>{contact.phone}</Text> : null}
       {!contact.verified ? (
         <Text style={styles.pending}>
-          No recibirá tus alertas SOS hasta que acepte la invitación que le enviamos por correo. Si
-          el correo es incorrecto, elimínalo y créalo de nuevo.
+          No recibirá tus alertas SOS hasta que acepte la invitación que le enviamos por correo.
+          Puedes reenviarla si no la vio o si ha caducado; si el correo es incorrecto, elimínalo y
+          créalo de nuevo.
         </Text>
       ) : null}
       <Text style={styles.meta}>
@@ -34,6 +42,21 @@ export const TrustedContactRow = ({ contact, onDelete }: Props): JSX.Element => 
             ? 'Recibe avisos push'
             : 'Recibe la alerta por email'}
       </Text>
+      {!contact.verified ? (
+        <TouchableOpacity
+          onPress={onResendInvite}
+          disabled={isResending}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isResending }}
+          accessibilityLabel={`Reenviar la invitación a ${contact.name}`}
+          accessibilityHint="Vuelve a enviar el correo de verificación a este contacto"
+          testID={`contact-${contact.id}-resend`}
+        >
+          <Text style={[styles.action, isResending && styles.actionDisabled]}>
+            {isResending ? 'Reenviando…' : 'Reenviar invitación'}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
       <TouchableOpacity
         onPress={onDelete}
         accessibilityRole="button"
@@ -68,6 +91,16 @@ const makeStyles = (theme: ColorTokens) => ({
   pending: {
     ...typography.caption,
     color: theme.text,
+  },
+  action: {
+    ...typography.caption,
+    color: theme.text,
+    textDecorationLine: 'underline' as const,
+    paddingVertical: spacing.s2,
+  },
+  actionDisabled: {
+    color: theme.textMuted,
+    textDecorationLine: 'none' as const,
   },
   delete: {
     ...typography.caption,

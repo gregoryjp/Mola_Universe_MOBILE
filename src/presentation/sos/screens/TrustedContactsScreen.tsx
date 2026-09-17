@@ -8,7 +8,11 @@ import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { TrustedContactRow } from '../components/TrustedContactRow';
 import { useTrustedContacts } from '../hooks/useSos';
-import { useCreateTrustedContact, useDeleteTrustedContact } from '../hooks/useSosMutations';
+import {
+  useCreateTrustedContact,
+  useDeleteTrustedContact,
+  useResendContactInvite,
+} from '../hooks/useSosMutations';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TrustedContacts'>;
 
@@ -16,6 +20,7 @@ export const TrustedContactsScreen = (_props: Props): JSX.Element => {
   const contacts = useTrustedContacts();
   const createContact = useCreateTrustedContact();
   const deleteContact = useDeleteTrustedContact();
+  const resendInvite = useResendContactInvite();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -100,6 +105,12 @@ export const TrustedContactsScreen = (_props: Props): JSX.Element => {
       {deleteContact.isError ? (
         <Text style={styles.error}>{deleteContact.error.message}</Text>
       ) : null}
+      {resendInvite.isError ? <Text style={styles.error}>{resendInvite.error.message}</Text> : null}
+      {resendInvite.isSuccess ? (
+        <Text style={styles.confirmation}>
+          Invitación reenviada. Le llegará un correo nuevo con un enlace válido.
+        </Text>
+      ) : null}
 
       <View style={styles.list}>
         {items.map((contact) => (
@@ -107,6 +118,8 @@ export const TrustedContactsScreen = (_props: Props): JSX.Element => {
             key={contact.id}
             contact={contact}
             onDelete={() => deleteContact.mutate(contact.id)}
+            onResendInvite={() => resendInvite.mutate(contact.id)}
+            isResending={resendInvite.isPending && resendInvite.variables === contact.id}
           />
         ))}
         {contacts.data && items.length === 0 ? (
@@ -141,5 +154,9 @@ const makeStyles = (theme: ColorTokens) => ({
   error: {
     ...typography.bodySmall,
     color: theme.error,
+  },
+  confirmation: {
+    ...typography.bodySmall,
+    color: theme.text,
   },
 });

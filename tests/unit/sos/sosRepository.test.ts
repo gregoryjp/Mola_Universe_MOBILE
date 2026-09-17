@@ -85,6 +85,50 @@ describe('SosRepositoryImpl', () => {
     expect(result).toEqual({ success: true, value: undefined });
   });
 
+  it('resends the invitation and returns the refreshed contact (TD-034)', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(jsonResponse(contactDto, 200));
+
+    const result = await repo.resendContactInvite('c1');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${BASE}/sos/contacts/c1/resend-invite`,
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(result).toEqual({
+      success: true,
+      value: expect.objectContaining({ id: 'c1', verified: false }),
+    });
+  });
+
+  it('surfaces the backend refusal when the contact is already verified', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          success: false,
+          error: {
+            code: 'CONTACT_ALREADY_VERIFIED',
+            message: 'Trusted contact is already verified',
+            statusCode: 409,
+          },
+        },
+        409,
+      ),
+    );
+
+    const result = await repo.resendContactInvite('c1');
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        code: 'CONTACT_ALREADY_VERIFIED',
+        message: 'Trusted contact is already verified',
+        statusCode: 409,
+      },
+    });
+  });
+
   it('activates the alert and keeps the cancellation window', async () => {
     const fetchMock = vi.mocked(global.fetch);
     fetchMock.mockResolvedValueOnce(jsonResponse({ ...eventDto, cancelWindowMs: 15000 }, 201));
