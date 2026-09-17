@@ -13,6 +13,7 @@ wordmark provisional en dark mode. Cinco commits:
 | `3813936` | `feat(splash): configure splash screen with MOLA icon` |
 | `cf1343b` | `feat(icon): apply MOLA icon as app icon` |
 | `068147d` | `fix(brand): keep the brand mark legible on the dark scheme` |
+| `b0bc85e` | `fix(icon): flatten the app icon onto the dark background token` |
 | (previo) `53af662` | `chore(permissions): allow assets and app.json edits` |
 
 ---
@@ -72,24 +73,46 @@ y se auditó el proyecto nativo generado (luego eliminado, está en `.gitignore`
 
 | Fichero | Contenido |
 |---|---|
-| `assets/icon.png` | 1024×1024, la marca al 80% sobre **`#2E7D5F` opaco** (`RGB`, sin alfa) |
-| `assets/adaptive-icon.png` | 1024×1024, la marca al **66%** (zona segura de Android), fondo transparente |
+| `assets/icon.png` | 1024×1024, la marca al 80% sobre **`#0F1419` opaco** (`RGB`, sin alfa) |
+| `assets/adaptive-icon.png` | 1024×1024, la marca al **66%**, fondo transparente (el color lo pone `app.json`) |
 
 La marca se escaló desde su **caja de contenido medida** (784×480 dentro del PNG de 1024),
 no desde el lienzo bruto, para que los porcentajes describan lo que se ve.
 
 **Desviación consciente:** `icon.png` no es una copia literal de `logo-icon-1024.png`. Ese
 PNG tiene transparencia y la guía de iconos de Apple exige un icono opaco, así que se
-aplanó sobre `#2E7D5F`. Se usó el mismo color que pediste para Android para que el icono
-sea coherente entre plataformas.
+aplanó sobre el color de fondo. Primero se usó `#2E7D5F` (el que se había pedido) y después
+se cambió a `#0F1419` al resolver el GAP 9 — ver la sección 3.1.
 
-**No hecho:** `monochromeImage` se eliminó (tu snippet no lo incluía), así que los iconos
+**No hecho:** `monochromeImage` se eliminó (el snippet no lo incluía), así que los iconos
 temáticos de Android 13+ vuelven al tratamiento por defecto. Y `assets/android-icon-*.png`
 quedan sin referenciar.
 
-Verificado con `prebuild`: `mipmap-anydpi-v26/ic_launcher.xml` referencia
-`<background android:drawable="@color/iconBackground"/>` = `#2E7D5F` y
+Verificado con `prebuild`: `mipmap-anydpi-v26/ic_launcher.xml` y `ic_launcher_round.xml`
+referencian `<background android:drawable="@color/iconBackground"/>` = `#0F1419` y
 `<foreground android:drawable="@mipmap/ic_launcher_foreground"/>`.
+
+### 3.1 GAP 9 resuelto — el fondo del icono (commit `b0bc85e`)
+
+`#2E7D5F` no existe en `colors.md` y dejaba la banda violeta de la marca en **1.08:1**, así
+que desaparecía medio degradado. Cambiado a **`#0F1419`**, que sí es token (`background`
+dark) y sube la peor banda a **4.00:1**:
+
+| Banda | Sobre `#2E7D5F` | Sobre `#0F1419` |
+|---|---|---|
+| rosa `#FFC4DF` | 3.37:1 | 12.53:1 |
+| violeta `#7357FF` | **1.08:1** | 4.00:1 |
+| azul `#397CFF` | 1.31:1 | 4.85:1 |
+| menta `#BFFFD8` | 4.39:1 | 16.32:1 |
+
+Se cambió **también** `assets/icon.png`, no solo el token de Android: si solo se cambiara el
+adaptativo, iOS (que lee el PNG directamente) y Android (que lee el token) divergirían.
+
+El PNG se regeneró con el **procedimiento idéntico**, verificado byte a byte: la
+reconstrucción sobre `#2E7D5F` coincide con el commit anterior y la reconstrucción sobre
+`#0F1419` coincide con el nuevo, ambas con **0 píxeles distintos**. Tamaño, modo, escala
+(80%) y la marca en sí no cambian: **0 de los píxeles opacos de la marca difieren**; solo
+cambian los 870240 píxeles de fondo y el borde con alfa parcial. Sigue siendo `RGB` opaco.
 
 ---
 
@@ -135,7 +158,14 @@ solo sitio.
 - `npx expo prebuild --platform android --no-install` + auditoría de los recursos generados
   (sección 2 y 3).
 - Navegador real (Chrome headless + CDP) contra un servidor limpio en 8083: capturas del
-  logo en light/dark y análisis de píxeles.
+  logo en light/dark y análisis de píxeles. El ciclo `light → dark → light` devuelve el
+  wordmark en light (sección 4).
+- Regeneración de `assets/icon.png` verificada **byte a byte** contra el procedimiento en
+  ambos colores (0 píxeles distintos en los dos casos) y de forma independiente del
+  umbral: 0 diferencias en la zona opaca de la marca (sección 3.1).
+- Barrido a nivel de píxel de los 13 PNG de `assets/` y `src/shared/assets/`: **ninguno**
+  contiene `#2E7D5F`.
+- Análisis de la máscara circular sobre `ic_launcher_foreground.webp` (GAP 12).
 
 ### Lo que NO se puede verificar aquí
 
@@ -163,24 +193,44 @@ ver en Expo Go.
 
 ## 7. Gaps
 
-### GAP 9 — `#2E7D5F` no es token y deja medio icono ilegible
+### GAP 9 — `#2E7D5F` no es token y deja medio icono ilegible — RESUELTO
 
-El fondo del icono adaptativo que indicaste no existe en `colors.md` (los menta del sistema
-son `primary #6BC5A8` y `primaryDark #4FA88C`). Y medido, el problema es peor que el color:
-el degradado de la marca va de rosa claro a menta claro, así que **sobre un fondo oscuro
-saturado se pierden las bandas violeta y azul**.
+Resuelto en `b0bc85e` (ver sección 3.1). Se deja aquí el registro de la medición.
+
+El fondo del icono adaptativo indicado no existe en `colors.md` (los menta del sistema
+son `primary #6BC5A8` y `primaryDark #4FA88C`). Y medido, el problema era peor que el
+color: el degradado de la marca va de rosa claro a menta claro, así que **sobre un fondo
+oscuro saturado se pierden las bandas violeta y azul**.
 
 | Fondo | Origen | Peor banda del degradado |
 |---|---|---|
-| **`#2E7D5F`** | el que indicaste | **1.08:1** (violeta `#7357FF`) — invisible |
+| **`#2E7D5F`** | el indicado | **1.08:1** (violeta `#7357FF`) — invisible |
 | `#4FA88C` | `primaryDark` (token) | 1.33:1 |
 | `#6BC5A8` | `primary` (token) | 1.40:1 |
-| `#0F1419` | `background` dark (token) | **4.00:1** ← el mejor |
+| **`#0F1419`** | `background` dark (token) | **4.00:1** ← adoptado |
 | `#1A1A1A` | `text` light (token) | 3.76:1 |
 | `#FFFFFF` | `surface` light (token) | 1.13:1 (se pierde la menta) |
 
-Apliqué `#2E7D5F` porque lo pediste explícitamente, pero **solo los fondos oscuros del
-sistema muestran la marca entera**. Cambiar a `#0F1419` es una línea en `app.json`.
+### GAP 12 — La marca es ancha y la máscara del icono adaptativo es circular
+
+Hallazgo nuevo, aparecido al auditar el foreground generado. El icono adaptativo se
+escaló al **66% del ancho del lienzo**, que es correcto para un cuadrado, pero **el
+viewport visible de Android es un círculo** (72dp de 108dp), y la marca tiene aspecto
+**1.63:1**. Consecuencia, medida sobre `ic_launcher_foreground.webp` (432×432, marca
+286×176, semidiagonal 168px):
+
+| Zona | Radio | Marca recortada |
+|---|---|---|
+| viewport de máscara (72/108) | 144px | **5.06%** |
+| safe zone (66/108) | 132px | **12.11%** |
+
+Para que la marca quepa entera habría que bajarla al **56.8%** del ancho (viewport) o al
+**52.0%** (safe zone), con lo que el icono se vería más pequeño. Es inherente: una marca
+ancha no puede llenar una máscara redonda.
+
+No se ha cambiado: los launchers con máscara *squircle* o cuadrado redondeado recortan
+bastante menos que el círculo, así que el 66% no es necesariamente un error. Requiere
+decisión (ver sección 8).
 
 ### GAP 10 — `tintColor` no es fiable en react-native-web
 
@@ -200,7 +250,9 @@ intercambio por asset de `068147d` por el asset real, y quitar el `useIsDarkSche
 
 1. **Pedir `logo-primary-light.svg`** (APP, lo está haciendo Claude). Al llegar, sustituye
    la provisional de `068147d`.
-2. **Decidir el GAP 9**: `#2E7D5F` u `#0F1419` para el fondo del icono.
+2. **Decidir el GAP 12**: si la marca se baja al 56.8% del ancho para que la máscara
+   circular no le coma el 5.06% de las puntas, o se deja al 66% asumiendo que la mayoría de
+   launchers usan squircle. Es una línea en el generador de `assets/adaptive-icon.png`.
 3. **Build nativa** para ver icono y splash de verdad (requiere macOS para iOS).
 4. Reiniciar los dos servidores de Metro que siguen vivos y obsoletos (8081 y 8082, de hace
    ~6 h): `Ctrl+C` y `npx expo start --clear`.
