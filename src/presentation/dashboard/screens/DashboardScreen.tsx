@@ -118,6 +118,12 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
         size="lg"
         style={styles.navButton}
       />
+      <Button
+        label="Meow"
+        onPress={() => navigation.navigate('Meow')}
+        size="lg"
+        style={styles.navButton}
+      />
     </ScrollView>
   );
 };

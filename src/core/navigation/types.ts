@@ -45,6 +45,7 @@ export type RootStackParamList = {
   MomentDetail: { momentId: string };
   MomentForm: { momentId?: string };
   Account: undefined;
+  Meow: undefined;
 };
 
 /**

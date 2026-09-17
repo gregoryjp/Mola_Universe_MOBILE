@@ -13,6 +13,7 @@ import { useDefaultActiveHousehold } from '@presentation/households/hooks/useDef
 import { CreateHouseholdScreen } from '@presentation/households/screens/CreateHouseholdScreen';
 import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
 import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
+import { MeowScreen } from '@presentation/meow/screens/MeowScreen';
 import { MomentDetailScreen } from '@presentation/moments/screens/MomentDetailScreen';
 import { MomentFormScreen } from '@presentation/moments/screens/MomentFormScreen';
 import { MomentsListScreen } from '@presentation/moments/screens/MomentsListScreen';
@@ -106,6 +107,7 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="MomentDetail" component={MomentDetailScreen} />
             <Stack.Screen name="MomentForm" component={MomentFormScreen} />
             <Stack.Screen name="Account" component={AccountScreen} />
+            <Stack.Screen name="Meow" component={MeowScreen} />
           </>
         ) : (
           <>
