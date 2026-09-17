@@ -1,5 +1,6 @@
 import type {
   CreateMedicalRecordInput,
+  CreatePetCareTaskInput,
   CreatePetInput,
   Pet,
   PetMedicalRecord,
@@ -53,5 +54,17 @@ export interface PetRepository {
     householdId: string,
     petId: string,
     recordId: string,
+  ): Promise<PetsResult<void>>;
+
+  /**
+   * Consumes `POST /households/:householdId/pets/:petId/tasks`, the last
+   * un-consumed Pets route. The 201 body is a household task; it is dropped
+   * here on purpose, so this slice does not reach into the Tasks domain — the
+   * caller refetches the tasks lists instead.
+   */
+  createCareTask(
+    householdId: string,
+    petId: string,
+    input: CreatePetCareTaskInput,
   ): Promise<PetsResult<void>>;
 }

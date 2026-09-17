@@ -82,3 +82,16 @@ export interface CreateMedicalRecordInput {
 
 /** The record type is immutable after creation, so it is excluded here. */
 export type UpdateMedicalRecordInput = Partial<Omit<CreateMedicalRecordInput, 'type'>>;
+
+/**
+ * `CreatePetCareTaskSchema`. The backend does not store this shape: it creates a
+ * household task with `category: 'PETS'` and the pet name appended to the title,
+ * and answers 201 with that task.
+ */
+export interface CreatePetCareTaskInput {
+  title: string;
+  dueDate: string;
+  description?: string;
+  rotative?: boolean;
+  assignedTo?: string;
+}

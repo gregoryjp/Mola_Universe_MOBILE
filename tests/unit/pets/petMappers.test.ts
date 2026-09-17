@@ -1,6 +1,7 @@
 import type { PetDto, PetMedicalRecordDto } from '@data/pets/dtos/petDtos';
 import {
   toCreateMedicalRecordRequest,
+  toCreatePetCareTaskRequest,
   toCreatePetRequest,
   toPet,
   toPetMedicalRecord,
@@ -143,5 +144,51 @@ describe('petMappers', () => {
 
   it('serialises the permission level', () => {
     expect(toSetPetPermissionRequest('MEDICAL')).toEqual({ level: 'MEDICAL' });
+  });
+
+  describe('toCreatePetCareTaskRequest (TD-021)', () => {
+    it('serialises the required fields', () => {
+      expect(toCreatePetCareTaskRequest({ title: 'Pasear', dueDate: '2026-09-20' })).toEqual({
+        title: 'Pasear',
+        dueDate: '2026-09-20',
+      });
+    });
+
+    it('omits optional keys that were not provided', () => {
+      const request = toCreatePetCareTaskRequest({ title: 'Pasear', dueDate: '2026-09-20' });
+      expect('description' in request).toBe(false);
+      expect('rotative' in request).toBe(false);
+      expect('assignedTo' in request).toBe(false);
+    });
+
+    it('keeps rotative when it is explicitly false', () => {
+      // false is a value, not an absence: sending it is what switches a
+      // rotative task back to a single assignment.
+      const request = toCreatePetCareTaskRequest({
+        title: 'Pasear',
+        dueDate: '2026-09-20',
+        rotative: false,
+      });
+      expect('rotative' in request).toBe(true);
+      expect(request.rotative).toBe(false);
+    });
+
+    it('carries the optional fields when they are set', () => {
+      expect(
+        toCreatePetCareTaskRequest({
+          title: 'Pasear',
+          dueDate: '2026-09-20',
+          description: 'Por la mañana',
+          rotative: true,
+          assignedTo: 'u2',
+        }),
+      ).toEqual({
+        title: 'Pasear',
+        dueDate: '2026-09-20',
+        description: 'Por la mañana',
+        rotative: true,
+        assignedTo: 'u2',
+      });
+    });
   });
 });

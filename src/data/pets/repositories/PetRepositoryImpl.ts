@@ -2,6 +2,7 @@ import type { RawResult } from '@data/api/client';
 import { apiClient } from '@data/api/client';
 import type {
   CreateMedicalRecordInput,
+  CreatePetCareTaskInput,
   CreatePetInput,
   Pet,
   PetMedicalRecord,
@@ -13,6 +14,7 @@ import type {
 import type { PetRepository, PetsResult } from '@domain/pets/repositories/PetRepository';
 import type {
   CreateMedicalRecordRequestDto,
+  CreatePetCareTaskRequestDto,
   CreatePetRequestDto,
   PetDto,
   PetMedicalRecordDto,
@@ -23,6 +25,7 @@ import type {
 } from '../dtos/petDtos';
 import {
   toCreateMedicalRecordRequest,
+  toCreatePetCareTaskRequest,
   toCreatePetRequest,
   toPet,
   toPetMedicalRecord,
@@ -52,6 +55,9 @@ const pets = (householdId: string): string => `/households/${householdId}/pets`;
 
 const medicalRecords = (householdId: string, petId: string): string =>
   `${pets(householdId)}/${petId}/medical-records`;
+
+const careTasks = (householdId: string, petId: string): string =>
+  `${pets(householdId)}/${petId}/tasks`;
 
 export class PetRepositoryImpl implements PetRepository {
   async listPets(householdId: string): Promise<PetsResult<Pet[]>> {
@@ -146,6 +152,19 @@ export class PetRepositoryImpl implements PetRepository {
     const raw = await apiClient.deleteRaw<void>(
       `${medicalRecords(householdId, petId)}/${recordId}`,
     );
+    return raw.success ? emptyOk() : { success: false, error: toError(raw) };
+  }
+
+  async createCareTask(
+    householdId: string,
+    petId: string,
+    input: CreatePetCareTaskInput,
+  ): Promise<PetsResult<void>> {
+    const body: CreatePetCareTaskRequestDto = toCreatePetCareTaskRequest(input);
+    const raw = await apiClient.postRaw<unknown>(careTasks(householdId, petId), body);
+    // The 201 body is a household task. It is deliberately dropped: mapping it
+    // here would pull the Tasks domain into the Pets slice for a value the
+    // screen does not use. The hook refetches `['tasks']` instead.
     return raw.success ? emptyOk() : { success: false, error: toError(raw) };
   }
 }

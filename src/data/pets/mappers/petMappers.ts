@@ -1,5 +1,6 @@
 import type {
   CreateMedicalRecordInput,
+  CreatePetCareTaskInput,
   CreatePetInput,
   Pet,
   PetMedicalRecord,
@@ -11,6 +12,7 @@ import type {
 } from '@domain/pets/entities/Pet';
 import type {
   CreateMedicalRecordRequestDto,
+  CreatePetCareTaskRequestDto,
   CreatePetRequestDto,
   PetDto,
   PetMedicalRecordDto,
@@ -90,6 +92,20 @@ export const toCreateMedicalRecordRequest = (
   date: input.date,
   ...(input.notes !== undefined && { notes: input.notes }),
   ...(input.nextDueDate !== undefined && { nextDueDate: input.nextDueDate }),
+});
+
+/**
+ * `additionalProperties: false` on the backend schema means an explicit
+ * `undefined` would be rejected, so optional keys are only spread when set.
+ */
+export const toCreatePetCareTaskRequest = (
+  input: CreatePetCareTaskInput,
+): CreatePetCareTaskRequestDto => ({
+  title: input.title,
+  dueDate: input.dueDate,
+  ...(input.description !== undefined && { description: input.description }),
+  ...(input.rotative !== undefined && { rotative: input.rotative }),
+  ...(input.assignedTo !== undefined && { assignedTo: input.assignedTo }),
 });
 
 export const toUpdateMedicalRecordRequest = (

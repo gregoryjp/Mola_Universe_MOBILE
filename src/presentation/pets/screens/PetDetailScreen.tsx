@@ -12,6 +12,7 @@ import { PetPermissionsSection } from '../components/PetPermissionsSection';
 import {
   useArchivePet,
   useCreateMedicalRecord,
+  useCreatePetCareTask,
   useDeleteMedicalRecord,
   useSetPetPermission,
 } from '../hooks/usePetMutations';
@@ -27,12 +28,15 @@ const RECORD_TYPES: PetMedicalRecordType[] = [
   'CHECKUP',
 ];
 
+const todayIso = (): string => new Date().toISOString().slice(0, 10);
+
 export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
   const { petId } = route.params;
   const pet = usePet(petId);
   const records = usePetMedicalRecords(petId);
   const permissions = usePetPermissions();
   const createRecord = useCreateMedicalRecord(petId);
+  const createCareTask = useCreatePetCareTask(petId);
   const deleteRecord = useDeleteMedicalRecord(petId);
   const setPermission = useSetPetPermission();
   const archive = useArchivePet();
@@ -41,10 +45,36 @@ export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
   const [recordType, setRecordType] = useState<PetMedicalRecordType>('CONSULTATION');
   const [recordTitle, setRecordTitle] = useState('');
   const [recordDate, setRecordDate] = useState('');
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDueDate, setTaskDueDate] = useState(todayIso());
+  const [taskRotative, setTaskRotative] = useState(false);
   const styles = useThemedStyles(makeStyles);
 
   const canSaveRecord =
     recordTitle.trim().length > 0 && recordDate.trim().length > 0 && !createRecord.isPending;
+
+  const canSaveTask =
+    taskTitle.trim().length > 0 && taskDueDate.trim().length > 0 && !createCareTask.isPending;
+
+  const saveCareTask = (): void => {
+    if (!canSaveTask) return;
+    createCareTask.mutate(
+      {
+        title: taskTitle.trim(),
+        dueDate: taskDueDate.trim(),
+        ...(taskRotative && { rotative: true }),
+      },
+      {
+        onSuccess: () => {
+          setTaskTitle('');
+          setTaskDueDate(todayIso());
+          setTaskRotative(false);
+          setShowTaskForm(false);
+        },
+      },
+    );
+  };
 
   const saveRecord = (): void => {
     if (!canSaveRecord) return;
@@ -206,6 +236,73 @@ export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
         />
       )}
 
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Tareas de cuidado</Text>
+        <Text style={styles.muted}>
+          Crea una tarea de este hogar ligada a {current.name}. Aparecerá en Tareas con la categoría
+          Mascotas.
+        </Text>
+        {showTaskForm ? (
+          <>
+            <Input
+              label="Título"
+              value={taskTitle}
+              onChangeText={setTaskTitle}
+              placeholder="Título (ej. Sacar a pasear)"
+              required
+              testID="pet-task-title"
+            />
+            <Input
+              label="Fecha límite"
+              value={taskDueDate}
+              onChangeText={setTaskDueDate}
+              placeholder="AAAA-MM-DD"
+              autoCapitalize="none"
+              required
+              testID="pet-task-due-date"
+            />
+            <TouchableOpacity
+              style={[styles.chip, taskRotative ? styles.chipActive : null, styles.chipWide]}
+              onPress={() => setTaskRotative((previous) => !previous)}
+              accessibilityRole="button"
+              accessibilityState={{ checked: taskRotative }}
+              accessibilityLabel="Turnos rotativos entre los miembros del hogar"
+              testID="pet-task-rotative"
+            >
+              <Text style={[styles.chipText, taskRotative ? styles.chipTextActive : null]}>
+                Turnos rotativos
+              </Text>
+            </TouchableOpacity>
+            {createCareTask.isError ? (
+              <Text style={styles.error}>{createCareTask.error.message}</Text>
+            ) : null}
+            <Button
+              label="Crear tarea"
+              disabled={!canSaveTask}
+              onPress={saveCareTask}
+              loading={createCareTask.isPending}
+              size="lg"
+              accessibilityHint="Crea una tarea de cuidado ligada a esta mascota"
+              testID="pet-task-submit"
+            />
+            <Button
+              label="Cancelar"
+              onPress={() => setShowTaskForm(false)}
+              variant="ghost"
+              size="lg"
+            />
+          </>
+        ) : (
+          <Button
+            label="+ Tarea de cuidado"
+            onPress={() => setShowTaskForm(true)}
+            size="lg"
+            accessibilityHint="Muestra el formulario de tarea de cuidado"
+            testID="pet-task-open"
+          />
+        )}
+      </View>
+
       {permissions.isLoading ? <Spinner /> : null}
       {permissions.isError ? <Text style={styles.error}>{permissions.error.message}</Text> : null}
       {permissions.data ? (
@@ -290,6 +387,9 @@ const makeStyles = (theme: ColorTokens) => ({
   chipActive: {
     backgroundColor: theme.primary,
     borderColor: theme.primary,
+  },
+  chipWide: {
+    alignSelf: 'flex-start' as const,
   },
   chipText: {
     ...typography.bodySmall,

@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   createMedicalRecord: vi.fn(),
   deleteMedicalRecord: vi.fn(),
   setPermission: vi.fn(),
+  createCareTask: vi.fn(),
 }));
 
 vi.mock('@data/pets/repositories/PetRepositoryImpl', () => ({
@@ -20,6 +21,7 @@ vi.mock('@data/pets/repositories/PetRepositoryImpl', () => ({
     createMedicalRecord: mocks.createMedicalRecord,
     deleteMedicalRecord: mocks.deleteMedicalRecord,
     setPermission: mocks.setPermission,
+    createCareTask: mocks.createCareTask,
   },
 }));
 
@@ -28,6 +30,7 @@ import {
   useArchivePet,
   useCreateMedicalRecord,
   useCreatePet,
+  useCreatePetCareTask,
   useDeleteMedicalRecord,
   useSetPetPermission,
   useUpdatePet,
@@ -57,7 +60,7 @@ const pet: Pet = {
 
 const render = async <T,>(
   useHook: () => T,
-): Promise<{ captured: () => T; renderer: ReactTestRenderer }> => {
+): Promise<{ captured: () => T; renderer: ReactTestRenderer; client: QueryClient }> => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   let value: T | undefined;
   const Harness = (): null => {
@@ -80,6 +83,7 @@ const render = async <T,>(
       return value;
     },
     renderer: capturedRenderer,
+    client,
   };
 };
 
@@ -249,5 +253,83 @@ describe('pet mutation hooks', () => {
     expect(captured().data?.level).toBe('MEDICAL');
 
     renderer.unmount();
+  });
+
+  describe('useCreatePetCareTask (TD-021)', () => {
+    it('creates the task through the pet route', async () => {
+      mocks.createCareTask.mockResolvedValueOnce({ success: true, value: undefined });
+
+      const { captured, renderer } = await render(() => useCreatePetCareTask('p1'));
+
+      await act(async () => {
+        captured().mutate({ title: 'Pasear', dueDate: '2026-09-20' });
+      });
+      await flush();
+
+      expect(mocks.createCareTask).toHaveBeenCalledWith('h1', 'p1', {
+        title: 'Pasear',
+        dueDate: '2026-09-20',
+      });
+      expect(captured().isSuccess).toBe(true);
+
+      renderer.unmount();
+    });
+
+    it('refreshes the tasks lists, which is how the new task becomes visible', async () => {
+      // The created value is a household task and does not travel back through
+      // the Pets port, so invalidation is the only path from "created" to
+      // "visible in Tareas". Without it the task exists and the user cannot see it.
+      mocks.createCareTask.mockResolvedValueOnce({ success: true, value: undefined });
+
+      const { captured, renderer, client } = await render(() => useCreatePetCareTask('p1'));
+      const invalidate = vi.spyOn(client, 'invalidateQueries');
+
+      await act(async () => {
+        captured().mutate({ title: 'Pasear', dueDate: '2026-09-20' });
+      });
+      await flush();
+
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['tasks'] });
+
+      renderer.unmount();
+    });
+
+    it('fails fast without a household instead of calling the backend', async () => {
+      useHouseholdStore.setState({ activeHouseholdId: null });
+
+      const { captured, renderer } = await render(() => useCreatePetCareTask('p1'));
+
+      await act(async () => {
+        captured().mutate({ title: 'Pasear', dueDate: '2026-09-20' });
+      });
+      await flush();
+
+      expect(mocks.createCareTask).not.toHaveBeenCalled();
+      expect(captured().error?.code).toBe('NO_HOUSEHOLD');
+
+      renderer.unmount();
+    });
+
+    it('surfaces a pet permission failure', async () => {
+      mocks.createCareTask.mockResolvedValueOnce({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_PET_PERMISSION',
+          message: 'Insufficient Pets permission level for this action',
+          statusCode: 403,
+        },
+      });
+
+      const { captured, renderer } = await render(() => useCreatePetCareTask('p1'));
+
+      await act(async () => {
+        captured().mutate({ title: 'Pasear', dueDate: '2026-09-20' });
+      });
+      await flush();
+
+      expect(captured().error?.code).toBe('INSUFFICIENT_PET_PERMISSION');
+
+      renderer.unmount();
+    });
   });
 });

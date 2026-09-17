@@ -68,6 +68,15 @@ export interface CreateMedicalRecordRequestDto {
 
 export type UpdateMedicalRecordRequestDto = Partial<Omit<CreateMedicalRecordRequestDto, 'type'>>;
 
+/** `CreatePetCareTaskSchema`. `additionalProperties: false`, so omit undefined keys. */
+export interface CreatePetCareTaskRequestDto {
+  title: string;
+  dueDate: string;
+  description?: string;
+  rotative?: boolean;
+  assignedTo?: string;
+}
+
 /** `SetPetPermissionSchema`: `{ level }`. */
 export interface SetPetPermissionRequestDto {
   level: string;

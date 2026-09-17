@@ -236,4 +236,107 @@ describe('PetRepositoryImpl', () => {
       },
     });
   });
+
+  describe('createCareTask (TD-021)', () => {
+    const taskDto = {
+      id: 't1',
+      householdId: 'h1',
+      title: 'Sacar a pasear (Luna)',
+      category: 'PETS',
+      dueDate: '2026-09-20T00:00:00.000Z',
+    };
+
+    it('posts to the pet care-task route and reports success', async () => {
+      const fetchMock = vi.mocked(global.fetch);
+      fetchMock.mockResolvedValueOnce(jsonResponse(taskDto, 201));
+
+      const result = await repo.createCareTask('h1', 'p1', {
+        title: 'Sacar a pasear',
+        dueDate: '2026-09-20',
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        `${BASE}/households/h1/pets/p1/tasks`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ title: 'Sacar a pasear', dueDate: '2026-09-20' }),
+        }),
+      );
+      expect(result).toEqual({ success: true, value: undefined });
+    });
+
+    it('does not send optional keys that were not provided', async () => {
+      // CreatePetCareTaskSchema is additionalProperties: false, so an explicit
+      // undefined would be rejected with a 400.
+      const fetchMock = vi.mocked(global.fetch);
+      fetchMock.mockResolvedValueOnce(jsonResponse(taskDto, 201));
+
+      await repo.createCareTask('h1', 'p1', { title: 'Pasear', dueDate: '2026-09-20' });
+
+      const body = JSON.parse(
+        (vi.mocked(global.fetch).mock.calls[0]?.[1] as { body: string }).body,
+      ) as Record<string, unknown>;
+      expect('description' in body).toBe(false);
+      expect('rotative' in body).toBe(false);
+      expect('assignedTo' in body).toBe(false);
+    });
+
+    it('sends rotative only when it is true', async () => {
+      const fetchMock = vi.mocked(global.fetch);
+      fetchMock.mockResolvedValueOnce(jsonResponse(taskDto, 201));
+
+      await repo.createCareTask('h1', 'p1', {
+        title: 'Pasear',
+        dueDate: '2026-09-20',
+        rotative: true,
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        `${BASE}/households/h1/pets/p1/tasks`,
+        expect.objectContaining({
+          body: JSON.stringify({ title: 'Pasear', dueDate: '2026-09-20', rotative: true }),
+        }),
+      );
+    });
+
+    it('drops the created task body instead of mapping it', async () => {
+      // The same 201 for a caller that only needs "it worked": the created task
+      // belongs to the Tasks slice, and this port does not expose it.
+      const fetchMock = vi.mocked(global.fetch);
+      fetchMock.mockResolvedValueOnce(jsonResponse(taskDto, 201));
+
+      const result = await repo.createCareTask('h1', 'p1', { title: 'Pasear', dueDate: '2026-09-20' });
+
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.value).toBeUndefined();
+    });
+
+    it('maps a pet permission failure', async () => {
+      const fetchMock = vi.mocked(global.fetch);
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INSUFFICIENT_PET_PERMISSION',
+              message: 'Insufficient Pets permission level for this action',
+              statusCode: 403,
+            },
+          },
+          403,
+        ),
+      );
+
+      const result = await repo.createCareTask('h1', 'p1', { title: 'Pasear', dueDate: '2026-09-20' });
+
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_PET_PERMISSION',
+          message: 'Insufficient Pets permission level for this action',
+          statusCode: 403,
+        },
+      });
+    });
+  });
 });

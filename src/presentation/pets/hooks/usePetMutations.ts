@@ -1,6 +1,7 @@
 import { petRepository } from '@data/pets/repositories/PetRepositoryImpl';
 import type {
   CreateMedicalRecordInput,
+  CreatePetCareTaskInput,
   CreatePetInput,
   Pet,
   PetMedicalRecord,
@@ -92,6 +93,27 @@ export const useCreateMedicalRecord = (petId: string) => {
       void queryClient.invalidateQueries({
         queryKey: petMedicalRecordsQueryKey(householdId, petId),
       });
+    },
+  });
+};
+
+/**
+ * TD-021: `POST /households/:householdId/pets/:petId/tasks` was the one Pets
+ * route mobile did not consume. The backend turns it into a household task with
+ * `category: 'PETS'` and the pet name appended to the title, so the created
+ * value belongs to the Tasks slice — this invalidates the tasks lists (root
+ * prefix `['tasks']`, same as `useTaskMutations`) rather than mirroring a task
+ * back through the Pets port.
+ */
+export const useCreatePetCareTask = (petId: string) => {
+  const householdId = useHouseholdStore((state) => state.activeHouseholdId);
+  const queryClient = useQueryClient();
+
+  return useMutation<void, AppError, CreatePetCareTaskInput>({
+    mutationFn: async (input) =>
+      unwrap(await petRepository.createCareTask(requiredHouseholdId(householdId), petId, input)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });
 };
