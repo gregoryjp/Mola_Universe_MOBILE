@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   useTasksList: vi.fn(),
   useHouseholdTasks: vi.fn(),
   useHouseholds: vi.fn(),
+  usePhrase: vi.fn(),
   navigate: vi.fn(),
 }));
 
@@ -21,6 +22,7 @@ vi.mock('@presentation/tasks/hooks/useHouseholdTasks', () => ({
 vi.mock('@presentation/households/hooks/useHouseholds', () => ({
   useHouseholds: mocks.useHouseholds,
 }));
+vi.mock('@presentation/phrases/hooks/usePhrase', () => ({ usePhrase: mocks.usePhrase }));
 vi.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mocks.navigate }),
 }));
@@ -81,6 +83,7 @@ const given = (options: {
   householdTasks?: Task[];
   personalTasks?: Task[];
   householdData?: boolean;
+  phrase?: string | null;
 }): ReactTestRenderer => {
   const householdTasks = options.householdTasks ?? [];
   const personalTasks = options.personalTasks ?? [];
@@ -91,6 +94,12 @@ const given = (options: {
     hasChosen: true,
   });
   mocks.useHouseholds.mockReturnValue({ data: [] });
+  mocks.usePhrase.mockReturnValue({
+    phrase:
+      options.phrase === undefined || options.phrase === null
+        ? null
+        : { module: 'TASKS', context: 'DAY_START', text: options.phrase },
+  });
   const householdResult: HouseholdResult = {
     tasks: householdTasks,
     isLoading: false,
@@ -150,6 +159,22 @@ describe('TasksListScreen (P0-5)', () => {
     renderer.unmount();
   });
 
+  it('asks the phrase bank for a TASKS line, not a generic one', () => {
+    const renderer = given({ householdId: 'hh-1' });
+
+    expect(mocks.usePhrase).toHaveBeenCalledWith('TASKS', 'DAY_START');
+
+    renderer.unmount();
+  });
+
+  it('shows the line from the phrase bank above the task sections', () => {
+    const renderer = given({ householdId: 'hh-1', phrase: 'Hoy tienes tareas esperando.' });
+
+    expect(textOf(renderer)).toContain('Hoy tienes tareas esperando.');
+
+    renderer.unmount();
+  });
+
   it('shows an empty state for the household section', () => {
     const renderer = given({ householdId: 'hh-1', householdTasks: [] });
 
@@ -159,7 +184,10 @@ describe('TasksListScreen (P0-5)', () => {
   });
 
   it('opens the detail of a household task', () => {
-    const renderer = given({ householdId: 'hh-1', householdTasks: [task('t1', 'Tarea del hogar')] });
+    const renderer = given({
+      householdId: 'hh-1',
+      householdTasks: [task('t1', 'Tarea del hogar')],
+    });
 
     const row = renderer.root.findAll(
       (node) => node.props.accessibilityLabel === 'Tarea del hogar',

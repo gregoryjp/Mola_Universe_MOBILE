@@ -3,6 +3,7 @@ import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
 import { Button, EmptyState, ErrorState, Spinner } from '@presentation/components/ui';
 import { HouseholdSelector } from '@presentation/households/components/HouseholdSelector';
+import { PhraseBanner } from '@presentation/phrases/components/PhraseBanner';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -31,6 +32,7 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.header}>Mis tareas</Text>
+        <PhraseBanner module="TASKS" context="DAY_START" testID="tasks-phrase" />
         <HouseholdSelector />
 
         {householdId === null ? (

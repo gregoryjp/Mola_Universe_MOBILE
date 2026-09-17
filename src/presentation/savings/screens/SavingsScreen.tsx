@@ -3,6 +3,7 @@ import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
 import { Button, EmptyState, Spinner } from '@presentation/components/ui';
 import { HouseholdSelector } from '@presentation/households/components/HouseholdSelector';
+import { PhraseBanner } from '@presentation/phrases/components/PhraseBanner';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
@@ -23,6 +24,7 @@ export const SavingsScreen = ({ navigation }: Props): JSX.Element => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Ahorros</Text>
+      <PhraseBanner module="SAVINGS" context="DAY_START" testID="savings-phrase" />
       <HouseholdSelector />
 
       {householdId === null ? (
