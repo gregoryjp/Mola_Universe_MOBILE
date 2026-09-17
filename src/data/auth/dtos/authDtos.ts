@@ -65,6 +65,8 @@ export interface TokensDto {
 export interface AuthResponseDto {
   user: UserDto;
   tokens: TokensDto;
+  /** Backend session id at the payload root (`IAuthPayload.sessionId`). */
+  sessionId: string;
 }
 
 export interface RegisterResponseDto extends AuthResponseDto {
@@ -74,6 +76,8 @@ export interface RegisterResponseDto extends AuthResponseDto {
 export interface RefreshResponseDto {
   accessToken: string;
   refreshToken: string;
+  /** A refresh creates a new session server-side, so the id is rotated too. */
+  sessionId: string;
 }
 
 export interface MessageResponseDto {
@@ -83,4 +87,23 @@ export interface MessageResponseDto {
 export interface ForgotPasswordResponseDto {
   verificationToken: string;
   message: string;
+}
+
+// `GET /users/me` mirrors the backend `IUserProfileDTO`
+// (Mola_Universe_APP/src/modules/users/interface/IUserProfile.ts). The controller
+// returns the resource raw (`res.json(result.data)`), not enveloped, so it is read
+// through `apiClient.getRaw`.
+export interface UserProfileDto {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+  birthDate: string | null;
+  countryCode: string | null;
+  city: string | null;
+  phoneNumber: string | null;
+  avatar: string | null;
+  emailVerified: boolean;
+  createdAt: string;
 }

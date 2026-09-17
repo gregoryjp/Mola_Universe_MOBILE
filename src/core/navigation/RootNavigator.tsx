@@ -1,4 +1,5 @@
 import { colors } from '@core/theme';
+import { AccountScreen } from '@presentation/account/screens/AccountScreen';
 import { ForgotPasswordScreen } from '@presentation/auth/screens/ForgotPasswordScreen';
 import { LoginScreen } from '@presentation/auth/screens/LoginScreen';
 import { RegisterScreen } from '@presentation/auth/screens/RegisterScreen';
@@ -101,6 +102,7 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="Moments" component={MomentsListScreen} />
             <Stack.Screen name="MomentDetail" component={MomentDetailScreen} />
             <Stack.Screen name="MomentForm" component={MomentFormScreen} />
+            <Stack.Screen name="Account" component={AccountScreen} />
           </>
         ) : (
           <>

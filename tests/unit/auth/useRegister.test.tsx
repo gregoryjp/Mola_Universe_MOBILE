@@ -35,6 +35,7 @@ const tokens = {
   refreshToken: 'rt',
   expiresIn: 900,
   tokenType: 'Bearer' as const,
+  sessionId: 's1',
 };
 
 let captured: ReturnType<typeof useRegister> | undefined;

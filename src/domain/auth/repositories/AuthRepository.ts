@@ -1,4 +1,4 @@
-import type { Session, TokenPair } from '../entities/Session';
+import type { RefreshedSession, Session } from '../entities/Session';
 import type { User } from '../entities/User';
 
 /** Typed error shape returned by the backend (ADR-0010 Result Pattern). */
@@ -62,8 +62,14 @@ export interface MessageResult {
 export interface AuthRepository {
   login(credentials: LoginCredentials): Promise<AuthResult<AuthData>>;
   register(payload: RegisterPayload): Promise<AuthResult<RegisterData>>;
-  refresh(refreshToken: string): Promise<AuthResult<TokenPair>>;
+  refresh(refreshToken: string): Promise<AuthResult<RefreshedSession>>;
   logout(sessionId: string): Promise<AuthResult<MessageResult>>;
+  /**
+   * `GET /users/me`. The session survives a cold start but the user is not
+   * persisted, so this is what lets the store repopulate `user` after hydration
+   * (P0-1).
+   */
+  fetchProfile(): Promise<AuthResult<User>>;
   forgotPassword(email: string): Promise<AuthResult<ForgotPasswordResult>>;
   resetPassword(payload: ResetPasswordPayload): Promise<AuthResult<MessageResult>>;
   verifyEmail(token: string): Promise<AuthResult<MessageResult>>;

@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthRepositoryImpl } from '@data/auth/repositories/AuthRepositoryImpl';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const BASE = 'http://localhost:3000/api/v1';
 
@@ -11,9 +11,10 @@ const user = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 const tokens = { accessToken: 'at', refreshToken: 'rt', expiresIn: 900, tokenType: 'Bearer' };
+const session = { ...tokens, sessionId: 's1' };
 
 const jsonResponse = (body: unknown, status = 200): Response =>
-  ({ status, json: async () => body }) as unknown as Response;
+  ({ status, ok: status >= 200 && status < 300, json: async () => body }) as unknown as Response;
 
 const repo = new AuthRepositoryImpl();
 
@@ -28,7 +29,9 @@ afterEach(() => {
 describe('AuthRepositoryImpl', () => {
   it('login POSTs to /auth/login and maps the response', async () => {
     const fetchMock = vi.mocked(global.fetch);
-    fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: { user, tokens } }));
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ success: true, data: { user, tokens, sessionId: 's1' } }),
+    );
 
     const result = await repo.login({ email: 'a@b.com', password: 'secret' });
 
@@ -39,7 +42,8 @@ describe('AuthRepositoryImpl', () => {
         body: JSON.stringify({ email: 'a@b.com', password: 'secret' }),
       }),
     );
-    expect(result).toEqual({ success: true, value: { user, tokens } });
+    // The payload's root `sessionId` lands on the Session entity (P0-3).
+    expect(result).toEqual({ success: true, value: { user, tokens: session } });
   });
 
   it('surfaces backend errors as a Result instead of throwing', async () => {
@@ -73,7 +77,10 @@ describe('AuthRepositoryImpl', () => {
   it('register POSTs to /auth/register and returns the verification token', async () => {
     const fetchMock = vi.mocked(global.fetch);
     fetchMock.mockResolvedValueOnce(
-      jsonResponse({ success: true, data: { user, tokens, verificationToken: 'challenge' } }, 201),
+      jsonResponse(
+        { success: true, data: { user, tokens, sessionId: 's1', verificationToken: 'challenge' } },
+        201,
+      ),
     );
 
     const result = await repo.register({
@@ -89,14 +96,17 @@ describe('AuthRepositoryImpl', () => {
     );
     expect(result).toEqual({
       success: true,
-      value: { user, tokens, verificationToken: 'challenge' },
+      value: { user, tokens: session, verificationToken: 'challenge' },
     });
   });
 
-  it('refresh POSTs the refresh token', async () => {
+  it('refresh POSTs the refresh token and keeps the rotated session id', async () => {
     const fetchMock = vi.mocked(global.fetch);
     fetchMock.mockResolvedValueOnce(
-      jsonResponse({ success: true, data: { accessToken: 'new', refreshToken: 'new2' } }),
+      jsonResponse({
+        success: true,
+        data: { accessToken: 'new', refreshToken: 'new2', sessionId: 's2' },
+      }),
     );
 
     const result = await repo.refresh('rt');
@@ -105,12 +115,65 @@ describe('AuthRepositoryImpl', () => {
       `${BASE}/auth/refresh`,
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ refreshToken: 'rt' }) }),
     );
-    expect(result).toEqual({ success: true, value: { accessToken: 'new', refreshToken: 'new2' } });
+    expect(result).toEqual({
+      success: true,
+      value: { accessToken: 'new', refreshToken: 'new2', sessionId: 's2' },
+    });
+  });
+
+  it('fetchProfile GETs the raw /users/me resource (P0-1)', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        id: 'u1',
+        email: 'a@b.com',
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        displayName: null,
+        birthDate: null,
+        countryCode: null,
+        city: null,
+        phoneNumber: null,
+        avatar: null,
+        emailVerified: true,
+        createdAt: '2026-01-01T00:00:00.000Z',
+      }),
+    );
+
+    const result = await repo.fetchProfile();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${BASE}/users/me`,
+      expect.objectContaining({ method: 'GET' }),
+    );
+    expect(result).toEqual({
+      success: true,
+      value: { ...user, name: 'Ada Lovelace' },
+    });
+  });
+
+  it('fetchProfile maps a raw error envelope to a Result', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        { success: false, error: { code: 'UNAUTHORIZED', message: 'Expired', statusCode: 401 } },
+        401,
+      ),
+    );
+
+    const result = await repo.fetchProfile();
+
+    expect(result).toEqual({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: 'Expired', statusCode: 401 },
+    });
   });
 
   it('uses the real OAuth paths /auth/google-login and /auth/apple-login', async () => {
     const fetchMock = vi.mocked(global.fetch);
-    fetchMock.mockResolvedValue(jsonResponse({ success: true, data: { user, tokens } }));
+    fetchMock.mockResolvedValue(
+      jsonResponse({ success: true, data: { user, tokens, sessionId: 's1' } }),
+    );
 
     await repo.googleLogin('google-id');
     await repo.appleLogin('apple-id');

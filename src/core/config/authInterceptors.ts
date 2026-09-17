@@ -1,6 +1,6 @@
 import { setAccessTokenProvider, setRefreshHandler } from '@data/api/client';
 import { authRepository } from '@data/auth/repositories/AuthRepositoryImpl';
-import { useAuthStore } from '@shared/store/authStore';
+import { setProfileFetcher, useAuthStore } from '@shared/store/authStore';
 
 /**
  * Composition-root wiring. Lets the shared API client read the current access
@@ -21,8 +21,17 @@ export const registerAuthInterceptors = (): void => {
       return null;
     }
 
-    const { accessToken, refreshToken } = result.value;
-    await useAuthStore.getState().updateTokens({ accessToken, refreshToken });
+    // The backend rotates the session on refresh: persist the new tokens *and*
+    // the new session id, or logout would revoke a stale session (P0-3).
+    const { accessToken, refreshToken, sessionId } = result.value;
+    await useAuthStore.getState().updateTokens({ accessToken, refreshToken, sessionId });
     return accessToken;
+  });
+
+  // P0-1: the session is persisted, the user is not. Re-fetch the profile so the
+  // store always has a `user` while authenticated, even after a cold start.
+  setProfileFetcher(async () => {
+    const result = await authRepository.fetchProfile();
+    return result.success ? result.value : null;
   });
 };

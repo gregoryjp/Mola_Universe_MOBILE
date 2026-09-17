@@ -12,13 +12,14 @@ vi.mock('@shared/utils/secureStorage', () => ({
   clearSession: mocks.clearSession,
 }));
 
-import { useAuthStore } from '@shared/store/authStore';
+import { setProfileFetcher, useAuthStore } from '@shared/store/authStore';
 
 const session = {
   accessToken: 'at',
   refreshToken: 'rt',
   expiresIn: 900,
   tokenType: 'Bearer' as const,
+  sessionId: 's1',
 };
 const user = {
   id: 'u1',
@@ -30,6 +31,7 @@ const user = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  setProfileFetcher(null);
   useAuthStore.setState({
     user: null,
     session: null,
@@ -74,15 +76,18 @@ describe('useAuthStore', () => {
     });
   });
 
-  it('updateTokens swaps tokens and keeps the rest of the session', async () => {
+  it('updateTokens swaps tokens (and the rotated session id) keeping the rest', async () => {
     useAuthStore.setState({ session });
 
-    await useAuthStore.getState().updateTokens({ accessToken: 'new', refreshToken: 'new2' });
+    await useAuthStore
+      .getState()
+      .updateTokens({ accessToken: 'new', refreshToken: 'new2', sessionId: 's2' });
 
     expect(useAuthStore.getState().session).toEqual({
       ...session,
       accessToken: 'new',
       refreshToken: 'new2',
+      sessionId: 's2',
     });
   });
 
@@ -96,6 +101,51 @@ describe('useAuthStore', () => {
       user: null,
       session: null,
       isAuthenticated: false,
+    });
+  });
+
+  // P0-1: the session is persisted but the user is not, so hydrate has to
+  // repopulate it — otherwise ownership checks read a null `user.id`.
+  describe('hydrate profile repopulation', () => {
+    it('repopulates user from the injected profile fetcher', async () => {
+      mocks.loadSession.mockResolvedValueOnce(session);
+      setProfileFetcher(async () => user);
+
+      await useAuthStore.getState().hydrate();
+
+      expect(useAuthStore.getState().user).toEqual(user);
+    });
+
+    it('leaves user null (but authenticated) when the profile fetch fails', async () => {
+      mocks.loadSession.mockResolvedValueOnce(session);
+      setProfileFetcher(async () => null);
+
+      await useAuthStore.getState().hydrate();
+
+      expect(useAuthStore.getState().user).toBeNull();
+      expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    });
+
+    it('does not call the profile fetcher without a stored session', async () => {
+      mocks.loadSession.mockResolvedValueOnce(null);
+      const fetcher = vi.fn(async () => user);
+      setProfileFetcher(fetcher);
+
+      await useAuthStore.getState().hydrate();
+
+      expect(fetcher).not.toHaveBeenCalled();
+    });
+
+    it('ignores a profile that resolves after the user signed out', async () => {
+      mocks.loadSession.mockResolvedValueOnce(session);
+      setProfileFetcher(async () => {
+        await useAuthStore.getState().signOut();
+        return user;
+      });
+
+      await useAuthStore.getState().hydrate();
+
+      expect(useAuthStore.getState().user).toBeNull();
     });
   });
 });

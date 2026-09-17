@@ -112,6 +112,12 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
         size="lg"
         style={styles.navButton}
       />
+      <Button
+        label="Cuenta"
+        onPress={() => navigation.navigate('Account')}
+        size="lg"
+        style={styles.navButton}
+      />
     </ScrollView>
   );
 };

@@ -1,6 +1,8 @@
+import type { RawResult } from '@data/api/client';
 import { apiClient } from '@data/api/client';
 import type { ApiResponse } from '@data/api/types';
-import type { TokenPair } from '@domain/auth/entities/Session';
+import type { RefreshedSession } from '@domain/auth/entities/Session';
+import type { User } from '@domain/auth/entities/User';
 import type {
   AuthData,
   AuthRepository,
@@ -19,8 +21,9 @@ import type {
   MessageResponseDto,
   RefreshResponseDto,
   RegisterResponseDto,
+  UserProfileDto,
 } from '../dtos/authDtos';
-import { toAuthData, toRegisterData, toTokenPair } from '../mappers/authMappers';
+import { toAuthData, toProfileUser, toRegisterData, toTokenPair } from '../mappers/authMappers';
 
 const toResult = <TD, T>(response: ApiResponse<TD>, map: (dto: TD) => T): AuthResult<T> => {
   if (response.success && response.data !== undefined) {
@@ -36,6 +39,20 @@ const toResult = <TD, T>(response: ApiResponse<TD>, map: (dto: TD) => T): AuthRe
   };
 };
 
+// Raw endpoints (no `{ success, data }` envelope) still deliver errors enveloped,
+// so the raw error is normalised to the same domain shape as `toResult`.
+const fromRaw = <TD, T>(raw: RawResult<TD>, map: (dto: TD) => T): AuthResult<T> =>
+  raw.success
+    ? { success: true, value: map(raw.data) }
+    : {
+        success: false,
+        error: {
+          code: raw.error.code,
+          message: raw.error.message,
+          statusCode: raw.error.statusCode ?? raw.status,
+        },
+      };
+
 const toMessage = (dto: MessageResponseDto): MessageResult => ({ message: dto.message });
 
 export class AuthRepositoryImpl implements AuthRepository {
@@ -49,7 +66,7 @@ export class AuthRepositoryImpl implements AuthRepository {
     return toResult(response, toRegisterData);
   }
 
-  async refresh(refreshToken: string): Promise<AuthResult<TokenPair>> {
+  async refresh(refreshToken: string): Promise<AuthResult<RefreshedSession>> {
     const response = await apiClient.post<RefreshResponseDto>('/auth/refresh', { refreshToken });
     return toResult(response, toTokenPair);
   }
@@ -57,6 +74,11 @@ export class AuthRepositoryImpl implements AuthRepository {
   async logout(sessionId: string): Promise<AuthResult<MessageResult>> {
     const response = await apiClient.post<MessageResponseDto>('/auth/logout', { sessionId });
     return toResult(response, toMessage);
+  }
+
+  async fetchProfile(): Promise<AuthResult<User>> {
+    const raw = await apiClient.getRaw<UserProfileDto>('/users/me');
+    return fromRaw(raw, toProfileUser);
   }
 
   async forgotPassword(email: string): Promise<AuthResult<ForgotPasswordResult>> {

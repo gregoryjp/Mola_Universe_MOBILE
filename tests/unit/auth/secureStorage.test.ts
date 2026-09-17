@@ -13,6 +13,7 @@ const session = {
   refreshToken: 'rt',
   expiresIn: 900,
   tokenType: 'Bearer' as const,
+  sessionId: 's1',
 };
 
 const SESSION_KEY = 'mola.auth.session';

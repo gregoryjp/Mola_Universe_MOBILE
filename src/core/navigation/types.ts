@@ -44,6 +44,7 @@ export type RootStackParamList = {
   Moments: undefined;
   MomentDetail: { momentId: string };
   MomentForm: { momentId?: string };
+  Account: undefined;
 };
 
 /**
