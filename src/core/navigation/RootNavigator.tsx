@@ -9,6 +9,7 @@ import { RecurringExpenseFormScreen } from '@presentation/expenses/recurring/scr
 import { RecurringExpensesListScreen } from '@presentation/expenses/recurring/screens/RecurringExpensesListScreen';
 import { ExpenseDetailScreen } from '@presentation/expenses/screens/ExpenseDetailScreen';
 import { ExpenseFormScreen } from '@presentation/expenses/screens/ExpenseFormScreen';
+import { useDefaultActiveHousehold } from '@presentation/households/hooks/useDefaultActiveHousehold';
 import { CreateHouseholdScreen } from '@presentation/households/screens/CreateHouseholdScreen';
 import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
 import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
@@ -71,6 +72,8 @@ export const RootNavigator = (): JSX.Element => {
   // TD-026: registers this device silently on login and on app start with a
   // live session. Disabled by itself while there is no session.
   usePushRegistrationStatus();
+  // P0-4: picks a default active household when the user never chose one.
+  useDefaultActiveHousehold();
 
   return (
     <NavigationContainer theme={theme}>
