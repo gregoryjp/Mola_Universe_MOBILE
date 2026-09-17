@@ -15,16 +15,18 @@
 | TD-020 | Media | `src/presentation/components/ui/Button.tsx:25-28,33-36,40-45,46,100,111` y `src/presentation/components/ui/Input.tsx:42-46` | Tamaños visuales de `Button` (`sm` 32, `md` 40) e `Input` (`sm` 44, `md` 48). El área táctil **sí** cumple en ambos: `Button` calcula `hitSlop` hasta 44×44 reales en `sm` y `md` (constante línea 46, cálculo 100, aplicación 111) e `Input` ya parte de 44. WCAG 2.5.8 (AA) exige 24×24 y se cumple de sobra. Los valores **no eran verificables**: los comentarios de los dos componentes citaban `design/components/buttons.md` y `accessibility/guidelines.md`, y ninguno de los dos existe | ✅ **Cerrado con traspaso a TD-031** — comentarios corregidos en ambos componentes (commits `1d326f6` y el de la sesión de cierre); el tamaño visual queda **sin tocar** y la decisión de alinearlo pasa a TD-031, que es de diseñador y producto |
 
 | TD-021 | Baja | `src/presentation/pets/` (backend: `POST /households/:householdId/pets/:petId/tasks`) | **Ruta sin consumir:** el backend permite crear tareas ligadas a una mascota y el móvil no lo ofrece. Es la única ruta del slice de Pets sin cubrir (27 de 29 rutas de M5 están consumidas) | Pendiente |
-| TD-022 | Alta | `src/presentation/sos/SOSActivationScreen.tsx`, `src/domain/sos/entities/Sos.ts` | **SOS sin geolocalización:** `ActivateSOSSchema` acepta `locationLat`/`locationLng` opcionales y el port los soporta, pero la pantalla no los envía porque `expo-location` no está instalado. La alerta viaja solo con el mensaje | Pendiente |
+| TD-022 | Alta | `src/presentation/sos/SOSActivationScreen.tsx`, `src/data/sos/location/expoLocation.ts`, `src/presentation/sos/hooks/useSosLocation.ts` | **SOS sin geolocalización:** `ActivateSOSSchema` acepta `locationLat`/`locationLng` opcionales y el port los soporta, pero la pantalla no los enviaba porque `expo-location` no estaba instalado. La alerta viajaba solo con el mensaje | ✅ Resuelto (commit `08fdc26`) — `expo-location ~57.0.18` + captura que **nunca bloquea la alerta** (máx. 5 s, degrada a sin ubicación) |
 | TD-023 | Baja | `src/presentation/sos/TrustedContactsScreen.tsx` | **Verificación del contacto no accionable:** `POST /sos/contacts/:contactId/verify` es pública por diseño (la consume el enlace del email), así que la app no puede verificar por el contacto. La UI muestra "Sin verificar"/"Verificado" sin explicar el siguiente paso | Pendiente |
 | TD-024 | Media | `src/presentation/expenses/recurring/`, `src/presentation/pets/PetPermissionsSection.tsx` | **Turno del recurrente sin nombre de miembro:** no hay endpoint de miembros del hogar cableado, así que la fila dice "le toca a otro miembro" en vez de un nombre. Mismo gap que arrastra `PetPermissionsSection` | Pendiente |
 | TD-025 | Media | `src/presentation/notifications/NotificationPreferencesSection.tsx` | **`quietHours` sin UI:** el DTO trae `quietHoursStart`/`quietHoursEnd` y el mapper los conserva, pero la pantalla solo expone los toggles booleanos | Pendiente |
-| TD-026 | Alta | `src/presentation/notifications/`, `src/core/auth/` | **Sin registro automático del device al hacer login:** el token Expo se registra solo si el usuario entra a la pantalla de notificaciones. Hasta entonces no llega push aunque el usuario crea tenerlas activas | Pendiente |
+| TD-026 | Alta | `src/presentation/notifications/hooks/usePushRegistration.ts`, `src/core/navigation/RootNavigator.tsx` | **Sin registro automático del device al hacer login:** el token Expo se registraba solo si el usuario entraba a la pantalla de notificaciones. Hasta entonces no llegaba push aunque el usuario creyera tenerlas activas | ✅ Resuelto (commit `c270b92`) — query única en el árbol autenticado: lee el permiso real y, si ya está concedido, registra el device (upsert idempotente). El estado de la UI viene de esa fuente, no de la mutación efímera |
 | TD-027 | N/A | `src/presentation/{tasks,inventory,shopping,expenses,savings}/hooks/` | **UI de paginación** — mismo hallazgo que TD-018. Fila de trazabilidad con el gap 7 del informe M5; no hay trabajo nuevo detrás | ✅ Resuelto vía TD-018 (commit `dcd8197`) |
-| TD-028 | Media | `tests/setup.ts`, `vitest.config.ts` | **Sin tests de componente:** el setup sigue en `environment: 'node'` sin preset de React Native, así que las pantallas no se renderizan en tests y ningún test cubre el árbol de UI | Pendiente |
+| TD-028 | Media | `tests/setup.ts`, `vitest.config.ts`, `tests/helpers/reactNativeStub.ts` | **Sin tests de componente:** el setup sigue en `environment: 'node'` sin preset de React Native, así que las pantallas no se renderizan en tests. **Actualización (2026-09-17):** la afirmación "ningún test cubre el árbol de UI" ya **no** es cierta — Moments estrena 3 tests de componente (`RsvpSection`, `MomentCard`, `MomentDetailScreen`) sobre un stub compartido de `react-native`. El stub es superficial (drives behaviour, no styling) porque el paquete trae fuentes Flow que Vite no parsea | ⚠️ Parcial — paliado con stub por módulo, no resuelto de raíz (sigue sin preset RN real) |
 | TD-029 | Baja | `src/presentation/{tasks,inventory,shopping,expenses,savings}/hooks/` | **Contrato de paginación no uniforme:** cada módulo devuelve su propia clave (`tasks`, `items`, `lists`, `expenses`, `goals`) en vez de `{items, total, page, limit}`. Cada hook respeta la clave real de su módulo, así que funciona — es deuda de consistencia de contrato, no un bug | Pendiente |
 | TD-030 | Media | `tests/unit/{expenses,inventory,savings,shopping}/*.test.tsx` | **Tests frágiles por timing:** 4 tests usan un `await new Promise(resolve => setTimeout(resolve, 100))` fijo que estrecha la ventana de fallo pero no la elimina. Mismo patrón de causa raíz que TD-011 en APP; el mecanismo no es portable 1:1 | Pendiente — propuesta concreta escrita (helper `waitFor`), sin implementar |
 | TD-031 | Media | `design/components/buttons.md` y `accessibility/guidelines.md` (ambos por crear) | **Faltan los dos documentos que el código ya cita como fuente de verdad.** `Button.tsx` e `Input.tsx` escriben como si existieran y no existen: `design/components/` solo contiene `.gitkeep` y no hay carpeta `accessibility/`. La guía debe decidir tres cosas: **(1)** target táctil mínimo, ¿**44×44** (WCAG 2.5.5, nivel AAA) o **24×24** (WCAG 2.5.8, nivel AA)?; **(2)** ¿`Button` e `Input` comparten escala de tamaños o son independientes?; **(3)** ¿la guía nace del código actual o el código se alinea a la guía? | Pendiente — trabajo de **diseñador y producto**, no de ingeniería. No se crea desde este repo |
+| TD-032 | Media | `src/domain/household/entities/Household.ts`, backend `src/modules/households/` | **Sin nombre visible de miembro:** `IHouseholdMemberDTO` solo trae `userId`/`role`/`joinedAt` — ni nombre ni email. Nadie puede mostrar "le toca a Ana" ni listar quién asistió a un Moment. Es la **misma causa raíz** que TD-024 y que el hallazgo M5 "turno del recurrente sin nombre de miembro", contada tres veces desde tres pantallas. Se resuelve una sola vez: exponiendo un display name en el contrato de miembros | Pendiente — **de backend**. Bloquea la lista nominal de RSVP en Moments (§9 de `docs/modules/moments.md`) |
+| TD-033 | Media | `src/presentation/notifications/hooks/useNotificationMutations.ts` (`useRemovePushDevice`), `src/shared/store/authStore.ts` (logout) | **Baja del device sin cablear y sin lectura de estado real:** `DELETE /notifications/devices/:token` está implementado en el cliente pero **ninguna pantalla lo llama**, y el logout no lo invoca, así que un device dado de baja sigue en el backend. Además el contrato **no expone `GET`** de devices registrados, así que la app nunca puede confirmar contra el servidor qué devices tiene | Pendiente — el `GET` es de backend; el cableado de `useRemovePushDevice` al logout sí es de Mobile |
 
 ## Detalle TD-021+ (promovidos del informe M5, 2026-09-17)
 
@@ -36,19 +38,23 @@ correspondencia 1:1 con el informe sea trazable.
 | ID | Módulo afectado | Impacto UX | Esfuerzo | Dependencias | Prioridad sugerida |
 |---|---|---|---|---|---|
 | TD-021 | Pets (+ Tasks) | Medio | S | Slice `tasks`; posiblemente M6 (Diary/Tasks) | Media-baja |
-| TD-022 | SOS | **Alto** | M | `expo-location` (dependencia nueva), permisos en `app.json`, verificación en build nativa | **Alta** |
+| TD-022 | SOS | **Alto** | M | `expo-location` (dependencia nueva), permisos en `app.json`, verificación en build nativa | ✅ **Cerrado** (commit `08fdc26`) |
 | TD-023 | SOS | Medio | XS | Ninguna — `verify` es pública por diseño, no consumible autenticada | Baja-media |
 | TD-024 | Recurring Expenses (+ Pets) | Medio | S (si el endpoint existe en backend) / M si hay que crearlo | Endpoint de miembros del hogar, no cableado en móvil | Media |
 | TD-025 | Notifications | Medio | S | Ninguna — el contrato ya existe y está mapeado | Media |
-| TD-026 | Notifications (+ Auth) | **Alto** | S | Flujo de auth (`useAuth`/sesión) y permiso de notificaciones | **Alta** |
+| TD-026 | Notifications (+ Auth) | **Alto** | S | Flujo de auth (`useAuth`/sesión) y permiso de notificaciones | ✅ **Cerrado** (commit `c270b92`) |
 | TD-027 | Paginación (5 módulos) | — | — | Ninguna | Cerrado (TD-018) |
-| TD-028 | Infra de tests (cross-cutting) | Bajo (indirecto) | L | Cambia el entorno de los 281 tests | Media |
+| TD-028 | Infra de tests (cross-cutting) | Bajo (indirecto) | L | Cambia el entorno de los 281 tests | ⚠️ **Paliado** — stub de `react-native` por módulo (3 tests de componente nuevos en Moments); la raíz sigue abierta |
 | TD-029 | Contrato de API (cross-cutting) | Bajo | M | Decisión de producto; toca el backend, fuera de Mobile | Baja |
 | TD-030 | Infra de tests (cross-cutting) | Bajo | S | Ninguna; la propuesta ya está redactada | Media |
 
 Nota sobre el impacto UX de TD-022 y TD-026: son los dos únicos clasificados como **Alto**.
 TD-022 porque la ubicación es el dato que más sirve a quien responde una alerta SOS; TD-026
 porque el usuario cree tener push activas cuando no hay ningún device registrado.
+**Ambos cerrados en la sesión de M6 (2026-09-17)** — en el orden de esa prioridad.
+
+Esta tabla refleja el **planeo** del 2026-09-17 por la mañana, no el estado final del día. Para el
+estado real, la tabla principal de arriba y la nota "Estado real de TD-021+" son la fuente.
 
 ## Detalle TD-018 por módulo
 
@@ -59,7 +65,7 @@ porque el usuario cree tener push activas cuando no hay ningún device registrad
 | Shopping (listas) | ✅ Resuelto | `ScrollView.map()` + botón "Cargar más" |
 | Expenses | ✅ Resuelto | `ScrollView.map()` + botón "Cargar más" |
 | Savings (metas de hogar y personales) | ✅ Resuelto | `ScrollView.map()` + botón "Cargar más" |
-| Moments | ⚠️ No aplica a TD-018 | El módulo no existe en Mobile (sin `domain`/`data`/`presentation`) — es trabajo de M6, no deuda de TD-018 |
+| Moments | ✅ No aplica a TD-018 | El módulo no existía al auditar (sin `domain`/`data`/`presentation`) — era trabajo de M6, no deuda de TD-018. **M6 entregado (2026-09-17):** el módulo existe y su lista consume `Moment[]` (array plano del backend), así que `loadMore` no aplica por contrato, no por omisión |
 
 ## Hallazgos adicionales (auditoría M5, 2026-09-17)
 
@@ -225,9 +231,12 @@ que falte un número: es que falta la decisión.
 
 ## Notas
 
-- **TD-018**: cerrado del lado Mobile con matices — Moments queda fuera de alcance (no existe el
-  módulo) y se recalendariza a M6. El registro de APP (`TD-018 | Baja | ... | Pendiente (V2)`) queda
-  desactualizado respecto a este cierre; no se tocó ese archivo desde este repo.
+- **TD-018**: cerrado del lado Mobile con matices — Moments quedó fuera de alcance (no existía el
+  módulo) y se recalendarizó a M6. **Actualización (2026-09-17):** M6 entregó Moments, así que ese
+  matiz está saldado; el módulo nace ya con su lista consumiendo el contrato (`Moment[]`, array plano
+  sin paginación, por lo que `loadMore` no aplica). El registro de APP (`TD-018 | Baja | ... |
+  Pendiente (V2)`) queda desactualizado respecto a este cierre; no se tocó ese archivo desde este
+  repo.
 - **TD-020**: cerrado el 2026-09-17 con traspaso a TD-031. La parte accionable sin diseñador está
   hecha: los comentarios de `Button.tsx` e `Input.tsx` que citaban documentos inexistentes fueron
   corregidos (commits `1d326f6` y el de cierre). El **tamaño visual no se tocó** en ninguno de los
@@ -235,8 +244,24 @@ que falte un número: es que falta la decisión.
   cambiarlos habría sido sustituir un número sin base por otro número sin base. La decisión de
   alinearlos vive ahora en TD-031.
 - **TD-021 … TD-030**: promovidos del informe M5 (`logs/mobile-m5-2026-09-17.md`) el 2026-09-17.
-  Ninguno tiene trabajo iniciado; son registro, no ejecución. El detalle con módulo, impacto UX,
-  esfuerzo, dependencias y prioridad está en la sección "Detalle TD-021+".
-- **TD-031** es el único TD fuera del informe M5, y su creación fue autorizada expresamente. No es
+  El detalle con módulo, impacto UX, esfuerzo, dependencias y prioridad está en la sección
+  "Detalle TD-021+". **Actualización (2026-09-17):** la afirmación "ninguno tiene trabajo iniciado"
+  ya no se sostiene — ver la nota siguiente.
+- **Estado real de TD-021+ tras la sesión de M6 (2026-09-17):** atacados por severidad, los "Alta"
+  primero. Cerrados: **TD-022** (`08fdc26`) y **TD-026** (`c270b92`), los dos "Alta". Paliado:
+  **TD-028**, que ya no es "ningún test cubre el árbol de UI" sino "el stub es por módulo". Sin
+  iniciar: **TD-021, TD-023, TD-024, TD-025, TD-029, TD-030** — los "Media" y "Baja" que quedaban.
+  Cada uno sigue pendiente por la razón que dice su propia fila, no por falta de tiempo.
+- **TD-032** nació al construir el RSVP de Moments y su valor está menos en el ítem que en el
+  patrón: **tres hallazgos distintos (TD-024, el M5 del turno del recurrente, y la lista nominal de
+  RSVP) son el mismo gap de backend** visto desde tres pantallas. Se resuelve una vez, exponiendo un
+  display name en `IHouseholdMemberDTO`. Hasta entonces, cualquier UI que necesite un nombre humano
+  tiene que contar personas, no nombrarlas.
+- **TD-033** documenta el otro límite duro que apareció en TD-026: el contrato de notificaciones es
+  **write-only** (`POST`/`DELETE`, sin `GET`), así que la app puede declarar su intención pero no
+  puede verificar contra el servidor qué devices tiene registrados. El auto-registro es idempotente y
+  eso lo hace seguro, pero "seguro" no es "verificable".
+- **TD-031** fue el primer TD fuera del informe M5, y su creación fue autorizada expresamente. No es
   deuda de ingeniería en el sentido habitual: es la ausencia de una decisión de diseño que el código
-  ya estaba asumiendo. Hasta que exista la guía, ningún tamaño debe cambiar.
+  ya estaba asumiendo. Hasta que exista la guía, ningún tamaño debe cambiar. **TD-032** y **TD-033**
+  también nacieron fuera del informe M5 — son hallazgos de la sesión de M6, no del audit de la mañana.
