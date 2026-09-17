@@ -211,11 +211,23 @@ oscuro saturado se pierden las bandas violeta y azul**.
 | `#1A1A1A` | `text` light (token) | 3.76:1 |
 | `#FFFFFF` | `surface` light (token) | 1.13:1 (se pierde la menta) |
 
+### GAP 10 — `tintColor` no es fiable en react-native-web
+
+No es solo un problema de la provisional: si alguna vez se quiere tintar una imagen al
+cambiar de tema, en web **no funciona** en el cambio en caliente. Documentado en el commit
+`068147d`.
+
+### GAP 11 — El wordmark sigue necesitando su variante clara
+
+`brand/logo-primary-light.svg` no ha llegado todavía. Cuando llegue: sustituir el
+intercambio por asset de `068147d` por el asset real, y quitar el `useIsDarkScheme` de
+`BrandLogo` si ya no hace falta. El resto de la app no cambia.
+
 ### GAP 12 — La marca es ancha y la máscara del icono adaptativo es circular
 
 Hallazgo nuevo, aparecido al auditar el foreground generado. El icono adaptativo se
 escaló al **66% del ancho del lienzo**, que es correcto para un cuadrado, pero **el
-viewport visible de Android es un círculo** (72dp de 108dp), y la marca tiene aspecto
+viewport visible de Android es un círculo** (72dp de 108dp) y la marca tiene aspecto
 **1.63:1**. Consecuencia, medida sobre `ic_launcher_foreground.webp` (432×432, marca
 286×176, semidiagonal 168px):
 
@@ -231,18 +243,6 @@ ancha no puede llenar una máscara redonda.
 No se ha cambiado: los launchers con máscara *squircle* o cuadrado redondeado recortan
 bastante menos que el círculo, así que el 66% no es necesariamente un error. Requiere
 decisión (ver sección 8).
-
-### GAP 10 — `tintColor` no es fiable en react-native-web
-
-No es solo un problema de la provisional: si alguna vez se quiere tintar una imagen al
-cambiar de tema, en web **no funciona** en el cambio en caliente. Documentado en el commit
-`068147d`.
-
-### GAP 11 — El wordmark sigue necesitando su variante clara
-
-`brand/logo-primary-light.svg` no ha llegado todavía. Cuando llegue: sustituir el
-intercambio por asset de `068147d` por el asset real, y quitar el `useIsDarkScheme` de
-`BrandLogo` si ya no hace falta. El resto de la app no cambia.
 
 ---
 
