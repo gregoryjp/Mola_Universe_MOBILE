@@ -12,7 +12,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2E7D5F"
+        "backgroundColor": "#0F1419"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.gregory222.Mola_Universe_MOBILE"
