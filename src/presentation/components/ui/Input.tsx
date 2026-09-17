@@ -10,7 +10,11 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-/** The text-like types from design/components/inputs.md. */
+/**
+ * The text-like types this component offers. `design/components/inputs.md` was
+ * the intended source but does not exist in the repo — `design/components/` is
+ * reserved by `design/README.md` and still empty (TD-031).
+ */
 export type InputType = 'text' | 'password' | 'email' | 'number' | 'search' | 'textarea';
 
 export type InputSize = 'sm' | 'md' | 'lg';

@@ -36,6 +36,19 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
   };
 
   /**
+   * TD-025: the quiet-hours window was reachable in the contract and preserved
+   * by the mapper, but had no UI, so the setting was frozen at whatever the
+   * server held. Both bounds travel together — the backend ignores a half-set
+   * window, so sending one alone would be an invisible no-op.
+   */
+  const updateQuietHours = (value: {
+    quietHoursStart: string | null;
+    quietHoursEnd: string | null;
+  }): void => {
+    updatePreferences.mutate(value);
+  };
+
+  /**
    * TD-026: the status shown here comes from the shared, query-backed state
    * (`usePushRegistrationStatus`), not from the mutation that just ran. That is
    * what removes the false positive: a device with the permission already
@@ -134,6 +147,7 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
           preferences={preferences.data}
           disabled={updatePreferences.isPending}
           onToggle={togglePreference}
+          onUpdateQuietHours={updateQuietHours}
         />
       ) : null}
       {updatePreferences.isError ? (
