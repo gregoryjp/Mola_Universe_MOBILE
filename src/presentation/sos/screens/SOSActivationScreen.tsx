@@ -48,7 +48,10 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
     return () => clearInterval(interval);
   }, [deadline]);
 
-  const contactCount = contacts.data?.length ?? 0;
+  // Only verified contacts actually receive the alert: the dispatcher filters
+  // by verifiedAt, so an unverified contact is silently skipped.
+  const verifiedContactCount = contacts.data?.filter((contact) => contact.verified).length ?? 0;
+  const pendingVerificationCount = (contacts.data?.length ?? 0) - verifiedContactCount;
   const isActive = activeEventId !== null;
 
   const activateNow = (): void => {
@@ -82,7 +85,7 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>SOS</Text>
 
-      {contactCount === 0 && !contacts.isLoading ? (
+      {contacts.data && contacts.data.length === 0 ? (
         <View style={styles.warningBox}>
           <Text style={styles.warningText}>
             No tienes contactos de confianza: nadie recibirá tu alerta.
@@ -95,6 +98,37 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
             <Text style={styles.link}>Añadir contactos</Text>
           </TouchableOpacity>
         </View>
+      ) : null}
+
+      {contacts.data && contacts.data.length > 0 && verifiedContactCount === 0 ? (
+        <View style={styles.warningBox}>
+          <Text style={styles.warningText}>
+            Ninguno de tus {contacts.data.length} contactos ha verificado su correo: nadie recibirá
+            tu alerta.
+          </Text>
+          <Text style={styles.warningHint}>
+            Tu contacto debe abrir el enlace del correo que le enviamos. Si el correo es incorrecto,
+            elimínalo y créalo de nuevo.
+          </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('TrustedContacts')}
+            accessibilityRole="button"
+            accessibilityLabel="Revisar contactos de confianza"
+          >
+            <Text style={styles.link}>Revisar contactos</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {contacts.data &&
+      contacts.data.length > 0 &&
+      pendingVerificationCount > 0 &&
+      verifiedContactCount > 0 ? (
+        <Text style={styles.muted}>
+          {pendingVerificationCount === 1
+            ? '1 contacto aún no ha verificado su correo: no recibiría la alerta.'
+            : `${pendingVerificationCount} contactos aún no han verificado su correo: no recibirían la alerta.`}
+        </Text>
       ) : null}
 
       <Input
@@ -168,9 +202,9 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
       {activate.isError ? <Text style={styles.error}>{activate.error.message}</Text> : null}
       {activate.data ? (
         <Text style={styles.muted}>
-          {contactCount > 0
-            ? `Se avisará a ${contactCount} contacto(s) de confianza`
-            : 'Aviso registrado, pero no hay contactos que puedan recibirlo'}
+          {verifiedContactCount > 0
+            ? `Se avisará a ${verifiedContactCount} contacto(s) de confianza`
+            : 'Aviso registrado, pero ningún contacto verificado puede recibirlo'}
         </Text>
       ) : null}
 
@@ -215,6 +249,10 @@ const makeStyles = (theme: ColorTokens) => ({
   warningText: {
     ...typography.bodySmall,
     color: theme.text,
+  },
+  warningHint: {
+    ...typography.caption,
+    color: theme.textMuted,
   },
   link: {
     ...typography.bodySmall,

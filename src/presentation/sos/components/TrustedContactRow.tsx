@@ -21,10 +21,18 @@ export const TrustedContactRow = ({ contact, onDelete }: Props): JSX.Element => 
       </View>
       <Text style={styles.meta}>{contact.email}</Text>
       {contact.phone ? <Text style={styles.meta}>{contact.phone}</Text> : null}
+      {!contact.verified ? (
+        <Text style={styles.pending}>
+          No recibirá tus alertas SOS hasta que acepte la invitación que le enviamos por correo. Si
+          el correo es incorrecto, elimínalo y créalo de nuevo.
+        </Text>
+      ) : null}
       <Text style={styles.meta}>
-        {contact.isMolaUser && contact.pushEnabled
-          ? 'Recibe avisos push'
-          : 'Recibe la alerta por email'}
+        {!contact.verified
+          ? 'Sin verificar: no recibe avisos'
+          : contact.isMolaUser && contact.pushEnabled
+            ? 'Recibe avisos push'
+            : 'Recibe la alerta por email'}
       </Text>
       <TouchableOpacity
         onPress={onDelete}
@@ -56,6 +64,10 @@ const makeStyles = (theme: ColorTokens) => ({
   meta: {
     ...typography.bodySmall,
     color: theme.textMuted,
+  },
+  pending: {
+    ...typography.caption,
+    color: theme.text,
   },
   delete: {
     ...typography.caption,
