@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushQueries } from '../../helpers/flush';
 
 const mocks = vi.hoisted(() => ({ forgotPassword: vi.fn() }));
 
@@ -26,7 +27,7 @@ const settle = async (predicate: () => boolean): Promise<void> => {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (predicate()) return;
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await flushQueries();
     });
   }
 };

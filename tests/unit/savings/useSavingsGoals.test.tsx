@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushQueries } from '../../helpers/flush';
 
 const mocks = vi.hoisted(() => ({
   listHouseholdGoals: vi.fn(),
@@ -54,7 +55,7 @@ const withQueryClient = async (node: React.ReactElement): Promise<ReactTestRende
     renderer = create(<QueryClientProvider client={client}>{node}</QueryClientProvider>);
   });
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await flushQueries();
   });
   if (!renderer) throw new Error('renderer not created');
   return renderer;

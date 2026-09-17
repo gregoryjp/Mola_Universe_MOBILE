@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushQueries } from '../../helpers/flush';
 
 const mocks = vi.hoisted(() => ({
   listMoments: vi.fn(),
@@ -41,9 +42,7 @@ const moment: Moment = {
 
 const detail: MomentDetail = {
   ...moment,
-  participants: [
-    { id: 'p1', momentId: 'm1', userId: 'u1', response: 'GOING', respondedAt: null },
-  ],
+  participants: [{ id: 'p1', momentId: 'm1', userId: 'u1', response: 'GOING', respondedAt: null }],
 };
 
 const invite: MomentExternalInvite = {
@@ -64,7 +63,7 @@ const withQueryClient = async (node: React.ReactElement): Promise<ReactTestRende
     renderer = create(<QueryClientProvider client={client}>{node}</QueryClientProvider>);
   });
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await flushQueries();
   });
   if (!renderer) throw new Error('renderer not created');
   return renderer;

@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushQueries } from '../../helpers/flush';
 
 const mocks = vi.hoisted(() => ({
   createMoment: vi.fn(),
@@ -20,7 +21,11 @@ vi.mock('@data/moments/repositories/MomentRepositoryImpl', () => ({
   },
 }));
 
-import type { Moment, MomentExternalInvite, MomentParticipant } from '@domain/moments/entities/Moment';
+import type {
+  Moment,
+  MomentExternalInvite,
+  MomentParticipant,
+} from '@domain/moments/entities/Moment';
 import {
   useCreateMoment,
   useCreateMomentExternalInvite,
@@ -76,7 +81,7 @@ const withQueryClient = async (node: React.ReactElement): Promise<ReactTestRende
 
 const settle = async (): Promise<void> => {
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await flushQueries();
   });
 };
 

@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushQueries } from '../../helpers/flush';
 
 const mocks = vi.hoisted(() => ({
   listPets: vi.fn(),
@@ -78,7 +79,7 @@ const render = async <T,>(
 
 const flush = async (): Promise<void> => {
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await flushQueries();
   });
 };
 

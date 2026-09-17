@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushQueries } from '../../helpers/flush';
 
 const mocks = vi.hoisted(() => ({ createHousehold: vi.fn() }));
 
@@ -56,7 +57,7 @@ describe('useCreateHousehold', () => {
       captured?.mutate({ name: 'Casa' });
     });
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await flushQueries();
     });
 
     expect(mocks.createHousehold).toHaveBeenCalledWith({ name: 'Casa' });
@@ -78,7 +79,7 @@ describe('useCreateHousehold', () => {
       captured?.mutate({ name: 'Casa' });
     });
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await flushQueries();
     });
 
     expect(captured?.isError).toBe(true);

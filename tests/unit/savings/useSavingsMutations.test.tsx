@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushQueries } from '../../helpers/flush';
 
 const mocks = vi.hoisted(() => ({
   createHouseholdGoal: vi.fn(),
@@ -22,8 +23,8 @@ vi.mock('@data/savings/repositories/SavingsRepositoryImpl', () => ({
 
 import type { SavingsGoal } from '@domain/savings/entities/SavingsGoal';
 import {
-  useCreateSavingsGoal,
   useCreateContribution,
+  useCreateSavingsGoal,
   useDeleteSavingsGoal,
   useMarkCell,
 } from '@presentation/savings/hooks/useSavingsMutations';
@@ -78,7 +79,9 @@ const markResult = {
   newStatus: 'OPEN' as const,
 };
 
-const render = async <T,>(useHook: () => T): Promise<{ captured: () => T; renderer: ReactTestRenderer }> => {
+const render = async <T,>(
+  useHook: () => T,
+): Promise<{ captured: () => T; renderer: ReactTestRenderer }> => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   let value: T | undefined;
   const Harness = (): null => {
@@ -106,7 +109,7 @@ const render = async <T,>(useHook: () => T): Promise<{ captured: () => T; render
 
 const flush = async (): Promise<void> => {
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await flushQueries();
   });
 };
 
@@ -125,7 +128,12 @@ describe('savings mutation hooks', () => {
     await act(async () => {
       captured().mutate({
         scope: 'HOUSEHOLD',
-        input: { name: 'Vacaciones', targetAmount: '1200.00', currency: 'EUR', boardPreset: 'MEDIUM' },
+        input: {
+          name: 'Vacaciones',
+          targetAmount: '1200.00',
+          currency: 'EUR',
+          boardPreset: 'MEDIUM',
+        },
       });
     });
     await flush();
@@ -245,7 +253,10 @@ describe('savings mutation hooks', () => {
     });
     await flush();
 
-    expect(mocks.createContribution).toHaveBeenCalledWith('g1', { amount: '500.00', month: '2026-09' });
+    expect(mocks.createContribution).toHaveBeenCalledWith('g1', {
+      amount: '500.00',
+      month: '2026-09',
+    });
     expect(captured().isError).toBe(true);
     expect(captured().error?.code).toBe('QUOTA_EXCEEDED');
 

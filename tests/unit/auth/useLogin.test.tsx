@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushQueries } from '../../helpers/flush';
 
 const mocks = vi.hoisted(() => ({
   login: vi.fn(),
@@ -29,7 +30,12 @@ const user = {
   emailVerified: true,
   createdAt: '2026-01-01T00:00:00.000Z',
 };
-const tokens = { accessToken: 'at', refreshToken: 'rt', expiresIn: 900, tokenType: 'Bearer' as const };
+const tokens = {
+  accessToken: 'at',
+  refreshToken: 'rt',
+  expiresIn: 900,
+  tokenType: 'Bearer' as const,
+};
 
 let captured: ReturnType<typeof useLogin> | undefined;
 
@@ -47,7 +53,7 @@ const settle = async (predicate: () => boolean): Promise<void> => {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (predicate()) return;
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await flushQueries();
     });
   }
 };

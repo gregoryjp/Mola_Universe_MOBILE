@@ -12,6 +12,8 @@ import type { PaginatedExpenses } from '@domain/expenses/repositories/ExpenseRep
 import { useExpenses } from '@presentation/expenses/hooks/useExpenses';
 import { useHouseholdStore } from '@shared/store/householdStore';
 
+import { flushQueries } from '../../helpers/flush';
+
 const page: PaginatedExpenses = {
   expenses: [
     {
@@ -55,7 +57,7 @@ const render = async (): Promise<ReactTestRenderer> => {
     );
   });
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await flushQueries();
   });
   if (!renderer) throw new Error('renderer not created');
   return renderer;
