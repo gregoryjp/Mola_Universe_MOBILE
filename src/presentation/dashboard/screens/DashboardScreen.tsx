@@ -95,6 +95,12 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
         style={styles.navButton}
       />
       <Button
+        label="Momentos"
+        onPress={() => navigation.navigate('Moments')}
+        size="lg"
+        style={styles.navButton}
+      />
+      <Button
         label="SOS"
         onPress={() => navigation.navigate('SOSActivation')}
         size="lg"

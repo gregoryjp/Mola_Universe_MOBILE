@@ -11,6 +11,9 @@ import { ExpenseFormScreen } from '@presentation/expenses/screens/ExpenseFormScr
 import { CreateHouseholdScreen } from '@presentation/households/screens/CreateHouseholdScreen';
 import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
 import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
+import { MomentDetailScreen } from '@presentation/moments/screens/MomentDetailScreen';
+import { MomentFormScreen } from '@presentation/moments/screens/MomentFormScreen';
+import { MomentsListScreen } from '@presentation/moments/screens/MomentsListScreen';
 import { usePushRegistrationStatus } from '@presentation/notifications/hooks/usePushRegistration';
 import { NotificationsListScreen } from '@presentation/notifications/screens/NotificationsListScreen';
 import { PetDetailScreen } from '@presentation/pets/screens/PetDetailScreen';
@@ -95,6 +98,9 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="PetForm" component={PetFormScreen} />
             <Stack.Screen name="SOSActivation" component={SOSActivationScreen} />
             <Stack.Screen name="TrustedContacts" component={TrustedContactsScreen} />
+            <Stack.Screen name="Moments" component={MomentsListScreen} />
+            <Stack.Screen name="MomentDetail" component={MomentDetailScreen} />
+            <Stack.Screen name="MomentForm" component={MomentFormScreen} />
           </>
         ) : (
           <>
