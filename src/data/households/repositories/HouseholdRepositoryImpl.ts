@@ -1,12 +1,20 @@
 import type { RawResult } from '@data/api/client';
 import { apiClient } from '@data/api/client';
-import type { CreateHouseholdInput, Household } from '@domain/households/entities/Household';
+import type {
+  CreateHouseholdInput,
+  Household,
+  HouseholdMember,
+} from '@domain/households/entities/Household';
 import type {
   HouseholdRepository,
   HouseholdResult,
 } from '@domain/households/repositories/HouseholdRepository';
-import type { HouseholdDto } from '../dtos/householdDtos';
-import { toCreateHouseholdRequest, toHousehold } from '../mappers/householdMappers';
+import type { HouseholdDto, HouseholdMemberDto } from '../dtos/householdDtos';
+import {
+  toCreateHouseholdRequest,
+  toHousehold,
+  toHouseholdMember,
+} from '../mappers/householdMappers';
 
 const toError = (raw: Extract<RawResult<unknown>, { success: false }>) => ({
   code: raw.error.code,
@@ -28,6 +36,14 @@ export class HouseholdRepositoryImpl implements HouseholdRepository {
     const raw = await apiClient.postRaw<HouseholdDto>('/households', body);
     if (raw.success) {
       return { success: true, value: toHousehold(raw.data) };
+    }
+    return { success: false, error: toError(raw) };
+  }
+
+  async listMembers(householdId: string): Promise<HouseholdResult<HouseholdMember[]>> {
+    const raw = await apiClient.getRaw<HouseholdMemberDto[]>(`/households/${householdId}/members`);
+    if (raw.success) {
+      return { success: true, value: raw.data.map(toHouseholdMember) };
     }
     return { success: false, error: toError(raw) };
   }

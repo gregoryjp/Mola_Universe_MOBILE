@@ -2,6 +2,10 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
 import { Button, EmptyState, Spinner } from '@presentation/components/ui';
+import {
+  memberNameById,
+  useHouseholdMembers,
+} from '@presentation/households/hooks/useHouseholdMembers';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import { useHouseholdStore } from '@shared/store/householdStore';
@@ -18,6 +22,7 @@ export const RecurringExpensesListScreen = ({ navigation }: Props): JSX.Element 
   const archive = useArchiveRecurringExpense();
   const myUserId = useAuthStore((state) => state.user?.id ?? null);
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
+  const { members } = useHouseholdMembers(householdId);
   const styles = useThemedStyles(makeStyles);
 
   const items = data ?? [];
@@ -51,6 +56,7 @@ export const RecurringExpensesListScreen = ({ navigation }: Props): JSX.Element 
             key={expense.id}
             expense={expense}
             myUserId={myUserId}
+            turnMemberName={memberNameById(members, expense.currentTurnUserId)}
             onRestock={() =>
               navigation.navigate('RecurringExpenseForm', { recurringId: expense.id })
             }

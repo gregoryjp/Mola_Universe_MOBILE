@@ -6,22 +6,33 @@ import { Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
   expense: RecurringExpense;
-  /** Current user id, to resolve whether this is my turn. Member names are
-   * not available yet (there is no household-members endpoint wired). */
+  /** Current user id, to resolve whether this is my turn. */
   myUserId: string | null;
+  /**
+   * Display name of the member whose turn it is. The backend joins member names
+   * from `User` (backend TD-032), so the turn can name a person; null when the
+   * member is not in the list yet, and the row keeps its neutral copy.
+   */
+  turnMemberName: string | null;
   onRestock: () => void;
   onArchive: () => void;
 }
 
-const turnLabel = (expense: RecurringExpense, myUserId: string | null): string => {
+const turnLabel = (
+  expense: RecurringExpense,
+  myUserId: string | null,
+  turnMemberName: string | null,
+): string => {
   if (expense.currentTurnUserId === null) return 'Sin turno asignado';
   if (myUserId !== null && expense.currentTurnUserId === myUserId) return 'Te toca reponer';
+  if (turnMemberName !== null) return `Le toca a ${turnMemberName}`;
   return 'Le toca a otro miembro';
 };
 
 export const RecurringExpenseRow = ({
   expense,
   myUserId,
+  turnMemberName,
   onRestock,
   onArchive,
 }: Props): JSX.Element => {
@@ -35,7 +46,9 @@ export const RecurringExpenseRow = ({
         <Text style={styles.currency}>{expense.currency}</Text>
       </View>
       {expense.category ? <Text style={styles.meta}>{expense.category}</Text> : null}
-      <Text style={isMyTurn ? styles.turnActive : styles.meta}>{turnLabel(expense, myUserId)}</Text>
+      <Text style={isMyTurn ? styles.turnActive : styles.meta}>
+        {turnLabel(expense, myUserId, turnMemberName)}
+      </Text>
       {expense.lastPurchasedAt ? (
         <Text style={styles.meta}>
           Última reposición: {new Date(expense.lastPurchasedAt).toLocaleDateString()}

@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HouseholdRepositoryImpl } from '@data/households/repositories/HouseholdRepositoryImpl';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const BASE = 'http://localhost:3000/api/v1';
 
@@ -14,6 +14,15 @@ const householdDto = {
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   ({ status, ok: status >= 200 && status < 300, json: async () => body }) as unknown as Response;
+
+const memberDto = {
+  id: 'm1',
+  userId: 'u1',
+  name: 'Gregory',
+  email: 'gregory@ejemplo.com',
+  role: 'OWNER',
+  joinedAt: '2026-09-15T00:00:00.000Z',
+};
 
 const repo = new HouseholdRepositoryImpl();
 
@@ -109,5 +118,42 @@ describe('HouseholdRepositoryImpl', () => {
       success: false,
       error: { code: 'MAX_HOUSEHOLDS', message: 'Max households reached', statusCode: 400 },
     });
+  });
+
+  it('lists the household members with the names joined by the backend', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse([
+        memberDto,
+        { ...memberDto, id: 'm2', userId: 'u2', name: 'Ana', role: 'MEMBER' },
+      ]),
+    );
+
+    const result = await repo.listMembers('h1');
+
+    expect(fetchMock).toHaveBeenCalledWith(`${BASE}/households/h1/members`, expect.anything());
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.map((member) => member.name)).toEqual(['Gregory', 'Ana']);
+      expect(result.value[0]).toEqual(memberDto);
+    }
+  });
+
+  it('forwards the backend error when the member list is forbidden', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'Not authorized', statusCode: 403 },
+        },
+        403,
+      ),
+    );
+
+    const result = await repo.listMembers('h1');
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.statusCode).toBe(403);
   });
 });

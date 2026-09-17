@@ -1,4 +1,4 @@
-import type { CreateHouseholdInput, Household } from '../entities/Household';
+import type { CreateHouseholdInput, Household, HouseholdMember } from '../entities/Household';
 
 export interface HouseholdError {
   code: string;
@@ -14,4 +14,6 @@ export type HouseholdResult<T> =
 export interface HouseholdRepository {
   listMyHouseholds(): Promise<HouseholdResult<Household[]>>;
   createHousehold(input: CreateHouseholdInput): Promise<HouseholdResult<Household>>;
+  /** `GET /households/:householdId/members` — 200 with the array raw. */
+  listMembers(householdId: string): Promise<HouseholdResult<HouseholdMember[]>>;
 }

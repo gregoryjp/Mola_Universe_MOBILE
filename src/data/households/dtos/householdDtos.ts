@@ -14,3 +14,13 @@ export interface CreateHouseholdRequestDto {
   name: string;
   description?: string;
 }
+
+/** Mirrors the backend `IHouseholdMemberDTO` (name and email join from `User`). */
+export interface HouseholdMemberDto {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  joinedAt: string;
+}
