@@ -9,6 +9,7 @@ import type {
 import type { NotificationsResult } from '@domain/notifications/repositories/NotificationRepository';
 import { AppError } from '@shared/errors/AppError';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { pushRegistrationStatusQueryPrefix } from './pushRegistrationKeys';
 import { notificationPreferencesQueryKey, notificationsQueryKey } from './useNotifications';
 
 const unwrap = <T>(result: NotificationsResult<T>): T => {
@@ -46,14 +47,22 @@ export const useUpdateNotificationPreferences = () => {
  * A declined permission is a normal outcome, not an error: it resolves with
  * `{ registered: false }` so the screen can tell the user what happened.
  */
-export const useRegisterPushDevice = () =>
-  useMutation<RegisterDeviceResult, AppError, void>({
+export const useRegisterPushDevice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<RegisterDeviceResult, AppError, void>({
     mutationFn: async () => {
       const pushToken = await requestExpoPushToken();
       if (!pushToken.granted) return { registered: false };
       return unwrap(await notificationRepository.registerDevice(pushToken.token));
     },
+    onSuccess: () => {
+      // Re-resolve the shared status: the user may have just granted the
+      // permission, which flips the screen from "activate" to "active".
+      void queryClient.invalidateQueries({ queryKey: pushRegistrationStatusQueryPrefix });
+    },
   });
+};
 
 export const useRemovePushDevice = () =>
   useMutation<void, AppError, string>({

@@ -4,7 +4,7 @@ import { spacing, typography, useThemedStyles } from '@core/theme';
 import { Button, EmptyState, ErrorState, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Linking, ScrollView, Text, View } from 'react-native';
 import {
   NotificationPreferencesSection,
   type SwitchablePreference,
@@ -16,6 +16,7 @@ import {
   useUpdateNotificationPreferences,
 } from '../hooks/useNotificationMutations';
 import { useNotificationPreferences, useNotificationsList } from '../hooks/useNotifications';
+import { usePushRegistrationStatus } from '../hooks/usePushRegistration';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NotificationsList'>;
 
@@ -25,6 +26,7 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
   const markAsRead = useMarkNotificationRead();
   const updatePreferences = useUpdateNotificationPreferences();
   const registerPush = useRegisterPushDevice();
+  const pushStatus = usePushRegistrationStatus();
   const styles = useThemedStyles(makeStyles);
 
   const unreadCount = (notifications.data ?? []).filter((item) => item.readAt === null).length;
@@ -33,27 +35,77 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
     updatePreferences.mutate({ [key]: value });
   };
 
+  /**
+   * TD-026: the status shown here comes from the shared, query-backed state
+   * (`usePushRegistrationStatus`), not from the mutation that just ran. That is
+   * what removes the false positive: a device with the permission already
+   * granted no longer shows an "activate" button as if nothing were registered.
+   */
+  const renderPushRegistration = (): JSX.Element => {
+    if (pushStatus.isLoading) return <Spinner />;
+
+    if (pushStatus.data?.state === 'active') {
+      return <Text style={styles.muted}>Avisos push activados en este dispositivo.</Text>;
+    }
+
+    if (pushStatus.data?.permission === 'denied') {
+      return (
+        <>
+          <Text style={styles.muted}>
+            Los avisos push están desactivados para Mola Universe en los ajustes del sistema.
+          </Text>
+          <Button
+            label="Abrir ajustes del sistema"
+            variant="secondary"
+            size="lg"
+            onPress={() => void Linking.openSettings()}
+            accessibilityHint="Abre los ajustes del dispositivo para permitir las notificaciones"
+            style={styles.fullWidth}
+          />
+        </>
+      );
+    }
+
+    if (pushStatus.data?.state === 'failed' || pushStatus.isError) {
+      return (
+        <>
+          <Text style={styles.error}>No se pudieron registrar los avisos en este dispositivo.</Text>
+          <Button
+            label="Reintentar"
+            variant="secondary"
+            size="lg"
+            onPress={() => void pushStatus.refetch()}
+            style={styles.fullWidth}
+          />
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Button
+          label="Activar avisos push en este dispositivo"
+          onPress={() => registerPush.mutate()}
+          loading={registerPush.isPending}
+          size="lg"
+          accessibilityHint="Registra este dispositivo para recibir avisos push"
+          style={styles.fullWidth}
+        />
+        {registerPush.isError ? (
+          <Text style={styles.error}>{registerPush.error.message}</Text>
+        ) : null}
+      </>
+    );
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Notificaciones</Text>
 
-      <Button
-        label="Activar avisos push en este dispositivo"
-        onPress={() => registerPush.mutate()}
-        loading={registerPush.isPending}
-        size="lg"
-        accessibilityHint="Registra este dispositivo para recibir avisos push"
-        style={styles.fullWidth}
-      />
-      {registerPush.data?.registered === false ? (
-        <Text style={styles.error}>
-          No se activaron los avisos: falta el permiso de notificaciones.
-        </Text>
-      ) : null}
-      {registerPush.data?.registered === true ? (
-        <Text style={styles.muted}>Avisos push activados en este dispositivo.</Text>
-      ) : null}
-      {registerPush.isError ? <Text style={styles.error}>{registerPush.error.message}</Text> : null}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Avisos push en este dispositivo</Text>
+        {renderPushRegistration()}
+      </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>

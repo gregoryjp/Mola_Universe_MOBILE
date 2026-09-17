@@ -11,6 +11,7 @@ import { ExpenseFormScreen } from '@presentation/expenses/screens/ExpenseFormScr
 import { CreateHouseholdScreen } from '@presentation/households/screens/CreateHouseholdScreen';
 import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
 import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
+import { usePushRegistrationStatus } from '@presentation/notifications/hooks/usePushRegistration';
 import { NotificationsListScreen } from '@presentation/notifications/screens/NotificationsListScreen';
 import { PetDetailScreen } from '@presentation/pets/screens/PetDetailScreen';
 import { PetFormScreen } from '@presentation/pets/screens/PetFormScreen';
@@ -63,6 +64,9 @@ const useNavigationTheme = (): Theme => {
 export const RootNavigator = (): JSX.Element => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const theme = useNavigationTheme();
+  // TD-026: registers this device silently on login and on app start with a
+  // live session. Disabled by itself while there is no session.
+  usePushRegistrationStatus();
 
   return (
     <NavigationContainer theme={theme}>
