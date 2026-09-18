@@ -16,8 +16,14 @@ interface BadgeProps {
 /**
  * badges.md lists the sizes as sm/md without pixel values, so they are composed
  * from existing tokens: sm pairs `caption` with radius-xs and 4/8 padding, md
- * pairs `bodySmall` with radius-sm and 4/12. Backgrounds use the `*Soft` tokens
- * because colors.md forbids pastel colours as text colour.
+ * pairs `bodySmall` with radius-sm and 4/12.
+ *
+ * Colours follow the rule colors.md states ("forbids pastel colours as text
+ * colour"): the `*Soft` token is the FILL and the chromatic accent is the BORDER,
+ * but the LABEL is `text`. Using the accent as the label colour — which is what
+ * this component used to do — measured 1.42:1 (warning) to 2.08:1 (error) in
+ * light mode, i.e. the label was unreadable. `text` clears AA on every `*Soft`
+ * fill in both palettes (14.67–15.92:1 light, 8.36–12.65:1 dark).
  */
 const SIZES: Record<
   BadgeSize,
@@ -45,10 +51,10 @@ const SIZES: Record<
 const makeStyles = (theme: ColorTokens) => ({
   base: { alignSelf: 'flex-start' as const, borderWidth: 1 },
   default: { backgroundColor: theme.surfaceAlt, borderColor: theme.border, color: theme.textMuted },
-  success: { backgroundColor: theme.successSoft, borderColor: theme.success, color: theme.success },
-  warning: { backgroundColor: theme.warningSoft, borderColor: theme.warning, color: theme.warning },
-  error: { backgroundColor: theme.errorSoft, borderColor: theme.error, color: theme.error },
-  info: { backgroundColor: theme.infoSoft, borderColor: theme.info, color: theme.info },
+  success: { backgroundColor: theme.successSoft, borderColor: theme.success, color: theme.text },
+  warning: { backgroundColor: theme.warningSoft, borderColor: theme.warning, color: theme.text },
+  error: { backgroundColor: theme.errorSoft, borderColor: theme.error, color: theme.text },
+  info: { backgroundColor: theme.infoSoft, borderColor: theme.info, color: theme.text },
 });
 
 export const Badge = ({ label, variant = 'default', size = 'sm', style, testID }: BadgeProps) => {

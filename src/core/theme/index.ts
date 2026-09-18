@@ -1,6 +1,6 @@
 export { breakpointPadding, breakpoints, isDesktop, isTablet } from './breakpoints';
-export type { ColorTokens } from './colors';
-export { colors } from './colors';
+export type { CardTone, ColorTokenName, ColorTokens } from './colors';
+export { cardToneBackground, colors } from './colors';
 export { durations, easings } from './motion';
 export type { RadiusTokens } from './radius';
 export { radius } from './radius';

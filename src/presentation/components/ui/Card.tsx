@@ -1,5 +1,12 @@
-import type { ColorTokens } from '@core/theme';
-import { radius, shadows, spacing, useThemedStyles } from '@core/theme';
+import type { CardTone, ColorTokens } from '@core/theme';
+import {
+  cardToneBackground,
+  radius,
+  shadows,
+  spacing,
+  useTheme,
+  useThemedStyles,
+} from '@core/theme';
 import type { ReactNode } from 'react';
 import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
 
@@ -8,14 +15,12 @@ import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
  * they are expressed as slots rather than variants. */
 export type CardVariant = 'basic' | 'pastel' | 'interactive';
 export type CardSize = 'sm' | 'md' | 'lg' | 'xl';
-export type CardTone =
-  | 'primary'
-  | 'secondary'
-  | 'accent'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'info';
+
+/**
+ * The tone union and its token mapping live in the colour layer, so a supported
+ * tone can never point at a token that only exists in one palette (TD-044).
+ */
+export type { CardTone };
 
 interface CardProps {
   children: ReactNode;
@@ -58,13 +63,6 @@ const makeStyles = (theme: ColorTokens) => ({
     borderColor: theme.border,
     backgroundColor: theme.surface,
   },
-  tonePrimary: { backgroundColor: theme.primarySoft },
-  toneSecondary: { backgroundColor: theme.secondarySoft },
-  toneAccent: { backgroundColor: theme.accentSoft },
-  toneSuccess: { backgroundColor: theme.successSoft },
-  toneWarning: { backgroundColor: theme.warningSoft },
-  toneError: { backgroundColor: theme.errorSoft },
-  toneInfo: { backgroundColor: theme.infoSoft },
   body: { padding: spacing.s4, gap: spacing.s3, flex: 1 },
   header: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.s3 },
 });
@@ -82,6 +80,7 @@ export const Card = ({
   style,
   testID,
 }: CardProps) => {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const content = (
     <View style={styles.body}>
@@ -93,9 +92,7 @@ export const Card = ({
   );
 
   const pastelStyle =
-    variant === 'pastel'
-      ? styles[`tone${tone.charAt(0).toUpperCase()}${tone.slice(1)}` as keyof typeof styles]
-      : null;
+    variant === 'pastel' ? { backgroundColor: theme[cardToneBackground[tone]] } : null;
   const baseStyle: StyleProp<ViewStyle> = [
     styles.base,
     pastelStyle,

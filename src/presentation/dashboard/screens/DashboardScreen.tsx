@@ -456,15 +456,16 @@ const makeStyles = (theme: ColorTokens) => ({
     ...typography.bodySmall,
     color: theme.textMuted,
   },
-  // `warningSoft` is not overridden for dark mode, so it stays near-white there
-  // while `text` turns near-white too (1.00:1). `surfaceAlt` is a real token in
-  // both palettes, and the border keeps it reading as a notice.
+  // A notice, not an error, so it takes the warning tone. `warning` is used for
+  // the border only: as TEXT it measures 1.42:1 on `warningSoft` in light mode
+  // (the same defect TD-040 tracks for Badge's chromatic variants). The body uses
+  // `text`, which clears AA on this fill in both palettes (15.92:1 / 9.16:1).
   offlineBox: {
     gap: spacing.s1,
-    backgroundColor: theme.surfaceAlt,
+    backgroundColor: theme.warningSoft,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: theme.warning,
     padding: spacing.s4,
   },
   offlineTitle: {

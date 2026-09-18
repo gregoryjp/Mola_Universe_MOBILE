@@ -40,7 +40,11 @@ const makeStyles = (theme: ColorTokens) => ({
   },
   pressed: { opacity: 0.85 },
   label: { color: theme.textMuted },
-  labelSelected: { color: theme.primaryDark },
+  // `primaryDark` on `primarySoft` measured 2.56:1 (light) / 3.17:1 (dark) — far
+  // below AA for `bodySmall`. The selected state is carried by the `primary`
+  // border and the `primarySoft` fill, so the label can use `text` (15.54:1 /
+  // 8.36:1) without losing the affordance.
+  labelSelected: { color: theme.text },
 });
 
 export const Chip = ({

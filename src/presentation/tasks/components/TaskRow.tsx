@@ -113,13 +113,13 @@ export const TaskRow = ({
           {dueLabel ? <Text style={styles.metaText}>{dueLabel}</Text> : null}
           {assigneeName ? <Text style={styles.metaText}>{assigneeName}</Text> : null}
           {task.isOverdue && !isCompleted ? (
-            <View style={styles.pill}>
+            <View style={[styles.pill, styles.pillError]}>
               <TriangleAlert size={12} strokeWidth={2.5} color={theme.text} />
               <Text style={styles.pillText}>Atrasada</Text>
             </View>
           ) : null}
           {task.priority === 'HIGH' && !isCompleted ? (
-            <View style={styles.pill}>
+            <View style={[styles.pill, styles.pillWarning]}>
               <Text style={styles.pillText}>Prioridad alta</Text>
             </View>
           ) : null}
@@ -129,7 +129,7 @@ export const TaskRow = ({
             </View>
           ) : null}
           {completionFailed ? (
-            <View style={styles.pill}>
+            <View style={[styles.pill, styles.pillError]}>
               <Text style={styles.pillText}>No se pudo completar</Text>
             </View>
           ) : null}
@@ -200,11 +200,14 @@ const makeStyles = (theme: ColorTokens) => ({
     paddingVertical: 2,
     backgroundColor: theme.surfaceAlt,
   },
-  // Every pill shares one neutral fill. The chromatic `*Soft` tokens are not
-  // overridden for dark mode, so there they stay near-white and `text` lands at
-  // 1.00:1 (warningSoft) / 1.09:1 (errorSoft) — invisible. `surfaceAlt` is a
-  // real token in both palettes (15.24:1 light, 13.28:1 dark), and the words
-  // carry the meaning, so no pill depends on colour alone.
+  // "Hogar" is a fact about the task, so it stays neutral. Alerts use the
+  // semantic `*Soft` fills, which are defined for BOTH palettes and clear AA
+  // with `text` on top (warning 15.92:1 light / 9.16:1 dark, error 14.67:1 /
+  // 12.30:1). Overdue is a breached deadline, so it takes `error`; high priority
+  // is a standing attribute, so it takes `warning`. The words carry the meaning,
+  // so no pill depends on colour alone.
+  pillWarning: { backgroundColor: theme.warningSoft },
+  pillError: { backgroundColor: theme.errorSoft },
   pillText: {
     ...typography.caption,
     color: theme.text,
