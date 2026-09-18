@@ -2,7 +2,12 @@ import { colors } from '@core/theme';
 import { AccountScreen } from '@presentation/account/screens/AccountScreen';
 import { ForgotPasswordScreen } from '@presentation/auth/screens/ForgotPasswordScreen';
 import { LoginScreen } from '@presentation/auth/screens/LoginScreen';
+import { OnboardingScreen } from '@presentation/auth/screens/OnboardingScreen';
 import { RegisterScreen } from '@presentation/auth/screens/RegisterScreen';
+import { ResetPasswordOtpScreen } from '@presentation/auth/screens/ResetPasswordOtpScreen';
+import { ResetPasswordScreen } from '@presentation/auth/screens/ResetPasswordScreen';
+import { ResetPasswordSuccessScreen } from '@presentation/auth/screens/ResetPasswordSuccessScreen';
+import { VerifyEmailScreen } from '@presentation/auth/screens/VerifyEmailScreen';
 import { CalendarEventDetailScreen } from '@presentation/calendar/screens/CalendarEventDetailScreen';
 import { CalendarEventFormScreen } from '@presentation/calendar/screens/CalendarEventFormScreen';
 import { RecurringExpenseFormScreen } from '@presentation/expenses/recurring/screens/RecurringExpenseFormScreen';
@@ -69,6 +74,11 @@ const useNavigationTheme = (): Theme => {
 
 export const RootNavigator = (): JSX.Element => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  // An authenticated-but-unverified user (registered, not yet through OTP)
+  // gets the VerifyEmail-only branch below instead of MainTabs. `undefined`/
+  // `null` user (e.g. mid-hydration) is not treated as unverified — only an
+  // explicit `false` routes here.
+  const isEmailUnverified = useAuthStore((state) => state.user?.emailVerified === false);
   const theme = useNavigationTheme();
   // TD-026: registers this device silently on login and on app start with a
   // live session. Disabled by itself while there is no session.
@@ -79,9 +89,21 @@ export const RootNavigator = (): JSX.Element => {
   return (
     <NavigationContainer theme={theme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
+        {!isAuthenticated ? (
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="ResetPasswordOtp" component={ResetPasswordOtpScreen} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            <Stack.Screen name="ResetPasswordSuccess" component={ResetPasswordSuccessScreen} />
+          </>
+        ) : isEmailUnverified ? (
+          <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+        ) : (
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             <Stack.Screen name="CreateHousehold" component={CreateHouseholdScreen} />
             <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
             <Stack.Screen name="TaskForm" component={TaskFormScreen} />
@@ -108,12 +130,6 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="MomentForm" component={MomentFormScreen} />
             <Stack.Screen name="Account" component={AccountScreen} />
             <Stack.Screen name="Meow" component={MeowScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </>
         )}
       </Stack.Navigator>

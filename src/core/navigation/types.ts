@@ -20,6 +20,11 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
+  ResetPasswordOtp: { email: string; verificationToken: string };
+  ResetPassword: { email: string; verificationToken: string; code: string };
+  ResetPasswordSuccess: undefined;
+  VerifyEmail: undefined;
+  Onboarding: undefined;
   CreateHousehold: undefined;
   TaskDetail: { taskId: string };
   TaskForm: undefined;
