@@ -16,7 +16,14 @@ export const ForgotPasswordScreen = ({ navigation }: Props): JSX.Element => {
   const styles = useThemedStyles(makeStyles);
 
   const handleSubmit = (): void => {
-    forgotPassword.mutate(email);
+    forgotPassword.mutate(email, {
+      onSuccess: (data) => {
+        navigation.navigate('ResetPasswordOtp', {
+          email,
+          verificationToken: data.verificationToken,
+        });
+      },
+    });
   };
 
   return (
@@ -33,7 +40,9 @@ export const ForgotPasswordScreen = ({ navigation }: Props): JSX.Element => {
         testID="forgot-email"
       />
       {forgotPassword.isError ? (
-        <Text style={styles.error}>{forgotPassword.error.message}</Text>
+        <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+          {forgotPassword.error.message}
+        </Text>
       ) : null}
       {forgotPassword.isSuccess ? (
         <Text style={styles.success}>{forgotPassword.data.message}</Text>
