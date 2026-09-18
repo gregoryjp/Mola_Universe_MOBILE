@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   useHouseholdTasks: vi.fn(),
   useHouseholds: vi.fn(),
   usePhrase: vi.fn(),
+  useCompleteTask: vi.fn(),
   navigate: vi.fn(),
 }));
 
@@ -24,6 +25,9 @@ vi.mock('@presentation/households/hooks/useHouseholds', () => ({
   useHouseholds: mocks.useHouseholds,
 }));
 vi.mock('@presentation/phrases/hooks/usePhrase', () => ({ usePhrase: mocks.usePhrase }));
+vi.mock('@presentation/tasks/hooks/useTaskMutations', () => ({
+  useCompleteTask: mocks.useCompleteTask,
+}));
 vi.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mocks.navigate }),
 }));
@@ -31,7 +35,17 @@ vi.mock('@react-navigation/native', () => ({
 import { TasksListScreen } from '@presentation/tasks/screens/TasksListScreen';
 import { useHouseholdStore } from '@shared/store/householdStore';
 
-const task = (id: string, title: string): Task => ({
+/** Built relative to the real clock so the grouping assertions never depend on
+ * the calendar date the suite happens to run on. */
+const isoInDays = (days: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
+const task = (id: string, title: string, overrides: Partial<Task> = {}): Task => ({
   id,
   createdBy: 'u1',
   assignedTo: null,
@@ -42,7 +56,7 @@ const task = (id: string, title: string): Task => ({
   category: 'GENERAL',
   priority: 'MEDIUM',
   status: 'PENDING',
-  dueDate: '2026-09-20',
+  dueDate: isoInDays(0),
   completedAt: null,
   completedBy: null,
   approvedAt: null,
@@ -52,6 +66,7 @@ const task = (id: string, title: string): Task => ({
   recurrence: 'NONE',
   createdAt: '2026-09-17T09:00:00.000Z',
   updatedAt: '2026-09-17T09:00:00.000Z',
+  ...overrides,
 });
 
 const collectText = (node: unknown): string => {
@@ -66,31 +81,39 @@ const collectText = (node: unknown): string => {
 
 const textOf = (renderer: ReactTestRenderer): string => collectText(renderer.toJSON());
 
+const findByTestID = (renderer: ReactTestRenderer, testID: string) =>
+  renderer.root.findAll((node) => node.props.testID === testID)[0];
+
 const navigation = { navigate: vi.fn(), goBack: vi.fn() };
 
 interface HouseholdResult {
   tasks: Task[];
   isLoading: boolean;
   isError: boolean;
-  error: null;
+  error: null | { code: string; message: string };
   data: { tasks: Task[] } | undefined;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   fetchNextPage: () => void;
+  refetch: () => void;
 }
 
-const given = (options: {
-  householdId: string | null;
+interface GivenOptions {
+  householdId?: string | null;
   householdTasks?: Task[];
   personalTasks?: Task[];
   householdData?: boolean;
+  householdError?: { code: string; message: string } | null;
   phrase?: string | null;
-}): ReactTestRenderer => {
+}
+
+const given = (options: GivenOptions = {}): ReactTestRenderer => {
   const householdTasks = options.householdTasks ?? [];
   const personalTasks = options.personalTasks ?? [];
 
   useHouseholdStore.setState({
-    activeHouseholdId: options.householdId,
+    // A deliberate `null` must survive, so the default is not applied with `??`.
+    activeHouseholdId: options.householdId === undefined ? 'hh-1' : options.householdId,
     isHydrated: true,
     hasChosen: true,
   });
@@ -104,12 +127,13 @@ const given = (options: {
   const householdResult: HouseholdResult = {
     tasks: householdTasks,
     isLoading: false,
-    isError: false,
-    error: null,
+    isError: options.householdError !== undefined && options.householdError !== null,
+    error: options.householdError ?? null,
     data: options.householdData === false ? undefined : { tasks: householdTasks },
     hasNextPage: false,
     isFetchingNextPage: false,
     fetchNextPage: vi.fn(),
+    refetch: vi.fn(),
   };
   mocks.useHouseholdTasks.mockReturnValue(householdResult);
   mocks.useTasksList.mockReturnValue({
@@ -134,6 +158,7 @@ const given = (options: {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.useCompleteTask.mockReturnValue({ mutate: vi.fn(), isPending: false });
 });
 
 describe('TasksListScreen (P0-5)', () => {
@@ -141,11 +166,10 @@ describe('TasksListScreen (P0-5)', () => {
     const renderer = given({
       householdId: 'hh-1',
       householdTasks: [task('t1', 'Tarea del hogar')],
-      personalTasks: [task('t2', 'Tarea personal')],
+      personalTasks: [task('t2', 'Tarea personal', { scope: 'PERSONAL', householdId: null })],
     });
 
     const text = textOf(renderer);
-    expect(text).toContain('Del hogar');
     expect(text).toContain('Tarea del hogar');
     expect(text).toContain('Tarea personal');
 
@@ -153,7 +177,10 @@ describe('TasksListScreen (P0-5)', () => {
   });
 
   it('asks for a household when none is active', () => {
-    const renderer = given({ householdId: null, personalTasks: [task('t2', 'Tarea personal')] });
+    const renderer = given({
+      householdId: null,
+      personalTasks: [task('t2', 'Tarea personal', { scope: 'PERSONAL', householdId: null })],
+    });
 
     expect(textOf(renderer)).toContain('Selecciona un hogar para ver sus tareas');
 
@@ -161,23 +188,27 @@ describe('TasksListScreen (P0-5)', () => {
   });
 
   it('asks the phrase bank for a TASKS line, not a generic one', () => {
-    const renderer = given({ householdId: 'hh-1' });
+    const renderer = given();
 
     expect(mocks.usePhrase).toHaveBeenCalledWith('TASKS', 'DAY_START');
 
     renderer.unmount();
   });
 
-  it('shows the line from the phrase bank above the task sections', () => {
-    const renderer = given({ householdId: 'hh-1', phrase: 'Hoy tienes tareas esperando.' });
+  it('shows the line from the phrase bank above the task groups', () => {
+    const renderer = given({ phrase: 'Hoy tienes tareas esperando.' });
 
     expect(textOf(renderer)).toContain('Hoy tienes tareas esperando.');
 
     renderer.unmount();
   });
 
-  it('shows an empty state for the household section', () => {
+  it('shows an empty state when the household filter finds nothing', () => {
     const renderer = given({ householdId: 'hh-1', householdTasks: [] });
+
+    act(() => {
+      findByTestID(renderer, 'tasks-filter-HOUSEHOLD')?.props.onPress();
+    });
 
     expect(textOf(renderer)).toContain('Sin tareas de hogar todavía');
 
@@ -201,5 +232,96 @@ describe('TasksListScreen (P0-5)', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('TaskDetail', { taskId: 't1' });
 
     renderer.unmount();
+  });
+
+  describe('grouping', () => {
+    it('groups by real dates and skips the groups that are empty', () => {
+      const renderer = given({
+        householdTasks: [
+          task('t-today', 'Para hoy', { dueDate: isoInDays(0) }),
+          task('t-tomorrow', 'Para mañana', { dueDate: isoInDays(1) }),
+          task('t-upcoming', 'Más adelante', { dueDate: isoInDays(6) }),
+        ],
+      });
+
+      expect(findByTestID(renderer, 'tasks-group-today')).toBeDefined();
+      expect(findByTestID(renderer, 'tasks-group-tomorrow')).toBeDefined();
+      expect(findByTestID(renderer, 'tasks-group-upcoming')).toBeDefined();
+      // No completed task in the fixture, so the group must not be drawn at all.
+      expect(findByTestID(renderer, 'tasks-group-completed')).toBeUndefined();
+
+      renderer.unmount();
+    });
+
+    it('keeps overdue work with today rather than in a group of its own', () => {
+      const renderer = given({
+        householdTasks: [task('t-late', 'Se me pasó', { dueDate: isoInDays(-3), isOverdue: true })],
+      });
+
+      expect(findByTestID(renderer, 'tasks-group-today')).toBeDefined();
+      expect(textOf(renderer)).toContain('Atrasada');
+
+      renderer.unmount();
+    });
+
+    it('drops cancelled tasks — they are not actionable', () => {
+      const renderer = given({
+        householdTasks: [task('t-cancelled', 'Cancelada', { status: 'CANCELLED' })],
+      });
+
+      expect(textOf(renderer)).not.toContain('Cancelada');
+
+      renderer.unmount();
+    });
+  });
+
+  describe('completing a task', () => {
+    it('persists through the real mutation instead of faking the state', () => {
+      const mutate = vi.fn();
+      mocks.useCompleteTask.mockReturnValue({ mutate, isPending: false });
+      const renderer = given({ householdTasks: [task('t1', 'Sacar la basura')] });
+
+      act(() => {
+        findByTestID(renderer, 'task-t1-complete')?.props.onPress();
+      });
+
+      expect(mutate).toHaveBeenCalledWith({ taskId: 't1' }, expect.anything());
+
+      renderer.unmount();
+    });
+
+    it('blocks a second tap while the first is in flight', () => {
+      // Never resolves: the control stays in its pending state.
+      mocks.useCompleteTask.mockReturnValue({ mutate: vi.fn(), isPending: true });
+      const renderer = given({ householdTasks: [task('t1', 'Sacar la basura')] });
+
+      act(() => {
+        findByTestID(renderer, 'task-t1-complete')?.props.onPress();
+      });
+
+      const control = findByTestID(renderer, 'task-t1-complete');
+      expect(control?.props.accessibilityState.disabled).toBe(true);
+
+      renderer.unmount();
+    });
+
+    it('rolls back and says so when the server refuses', () => {
+      const mutate = vi.fn((_vars, options?: { onError?: (error: Error) => void }) => {
+        options?.onError?.(new Error('boom'));
+      });
+      mocks.useCompleteTask.mockReturnValue({ mutate, isPending: false });
+      const renderer = given({ householdTasks: [task('t1', 'Sacar la basura')] });
+
+      act(() => {
+        findByTestID(renderer, 'task-t1-complete')?.props.onPress();
+      });
+
+      expect(textOf(renderer)).toContain('No se pudo completar');
+      expect(findByTestID(renderer, 'task-t1-complete')?.props.accessibilityState.disabled).toBe(
+        false,
+      );
+
+      renderer.unmount();
+    });
   });
 });
