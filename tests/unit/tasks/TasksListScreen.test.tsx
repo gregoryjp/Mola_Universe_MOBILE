@@ -17,6 +17,9 @@ const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
 }));
 
+/** Refetch spies, recreated per test so the call counts start at zero. */
+const refetches = { household: vi.fn(), personal: vi.fn() };
+
 vi.mock('@presentation/tasks/hooks/useTasksList', () => ({ useTasksList: mocks.useTasksList }));
 vi.mock('@presentation/tasks/hooks/useHouseholdTasks', () => ({
   useHouseholdTasks: mocks.useHouseholdTasks,
@@ -94,6 +97,7 @@ interface HouseholdResult {
   data: { tasks: Task[] } | undefined;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
+  isRefetching: boolean;
   fetchNextPage: () => void;
   refetch: () => void;
 }
@@ -132,8 +136,9 @@ const given = (options: GivenOptions = {}): ReactTestRenderer => {
     data: options.householdData === false ? undefined : { tasks: householdTasks },
     hasNextPage: false,
     isFetchingNextPage: false,
+    isRefetching: false,
     fetchNextPage: vi.fn(),
-    refetch: vi.fn(),
+    refetch: refetches.household,
   };
   mocks.useHouseholdTasks.mockReturnValue(householdResult);
   mocks.useTasksList.mockReturnValue({
@@ -141,10 +146,11 @@ const given = (options: GivenOptions = {}): ReactTestRenderer => {
     isLoading: false,
     isError: false,
     error: null,
-    refetch: vi.fn(),
+    refetch: refetches.personal,
     fetchNextPage: vi.fn(),
     hasNextPage: false,
     isFetchingNextPage: false,
+    isRefetching: false,
     data: { pages: [] },
   });
 
@@ -158,6 +164,8 @@ const given = (options: GivenOptions = {}): ReactTestRenderer => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  refetches.household = vi.fn();
+  refetches.personal = vi.fn();
   mocks.useCompleteTask.mockReturnValue({ mutate: vi.fn(), isPending: false });
 });
 
@@ -320,6 +328,40 @@ describe('TasksListScreen (P0-5)', () => {
       expect(findByTestID(renderer, 'task-t1-complete')?.props.accessibilityState.disabled).toBe(
         false,
       );
+
+      renderer.unmount();
+    });
+  });
+
+  describe('refreshing', () => {
+    const pullToRefresh = (renderer: ReactTestRenderer): void => {
+      const scroll = findByTestID(renderer, 'tasks-scroll');
+      act(() => {
+        scroll?.props.refreshControl.props.onRefresh();
+      });
+    };
+
+    it('refetches both visible sources when the list is pulled', () => {
+      const renderer = given({ householdTasks: [task('t1', 'Sacar la basura')] });
+
+      pullToRefresh(renderer);
+
+      expect(refetches.household).toHaveBeenCalledTimes(1);
+      expect(refetches.personal).toHaveBeenCalledTimes(1);
+
+      renderer.unmount();
+    });
+
+    it('leaves a filtered-out source alone', () => {
+      const renderer = given({ householdTasks: [task('t1', 'Sacar la basura')] });
+
+      act(() => {
+        findByTestID(renderer, 'tasks-filter-PERSONAL')?.props.onPress();
+      });
+      pullToRefresh(renderer);
+
+      expect(refetches.personal).toHaveBeenCalledTimes(1);
+      expect(refetches.household).not.toHaveBeenCalled();
 
       renderer.unmount();
     });

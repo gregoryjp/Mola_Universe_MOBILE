@@ -16,7 +16,7 @@ import { useHouseholdStore } from '@shared/store/householdStore';
 import { Plus } from 'lucide-react-native';
 import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { TaskRow } from '../components/TaskRow';
 import { useHouseholdTasks } from '../hooks/useHouseholdTasks';
 import { useCompleteTask } from '../hooks/useTaskMutations';
@@ -125,9 +125,21 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
     buckets.completed.length;
   const isLoading = (showHousehold && household.isLoading) || (showPersonal && personal.isLoading);
 
+  /** Both visible sources refresh together; a filtered-out one is left alone. */
+  const isRefreshing =
+    (showHousehold && household.isRefetching) || (showPersonal && personal.isRefetching);
+  const refresh = (): void => {
+    if (showHousehold) void household.refetch();
+    if (showPersonal) void personal.refetch();
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} testID="tasks-scroll">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refresh} />}
+        testID="tasks-scroll"
+      >
         <Text style={styles.header} accessibilityRole="header">
           Tareas
         </Text>
