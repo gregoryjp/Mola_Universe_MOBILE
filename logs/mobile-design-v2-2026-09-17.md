@@ -114,6 +114,17 @@ reconstrucción sobre `#2E7D5F` coincide con el commit anterior y la reconstrucc
 (80%) y la marca en sí no cambian: **0 de los píxeles opacos de la marca difieren**; solo
 cambian los 870240 píxeles de fondo y el borde con alfa parcial. Sigue siendo `RGB` opaco.
 
+**Confirmado en el árbol nativo** (`prebuild` + inspección, no inferencia): `values/colors.xml`
+→ `iconBackground #0F1419`; `values-night/colors.xml` → `splashscreen_background #0F1419`
+(la misma clave que el modo claro, sin override de icono, que es lo correcto: el fondo del
+icono adaptativo es un solo color para los dos esquemas); `styles.xml` →
+`windowSplashScreenAnimatedIcon` sigue apuntando a `@drawable/splashscreen_logo` y
+`windowSplashScreenBackground` a `@color/splashscreen_background`. Los dos `ic_launcher*.xml`
+de `mipmap-anydpi-v26/` son los **únicos** consumidores de `iconBackground`. Cero ficheros con
+`2E7D5F` en todo `android/`. Es decir: **el cambio de color no puede tocar el splash** — van
+por claves distintas — y el foreground del icono (`ic_launcher_foreground.webp`) no se
+modificó, que es justamente lo que deja vivo el GAP 12.
+
 ---
 
 ## 4. Wordmark provisional en dark mode (commit `068147d`)
@@ -138,6 +149,15 @@ montar**, y al cambiar el esquema en caliente la marca quedaba sin tintar (tinta
 `useTheme` ahora delega en un hook `useIsDarkScheme`, para que el esquema se resuelva en un
 solo sitio.
 
+**Comprobación de que TD-044 no lo afecta** (2026-09-18). TD-044 reescribió la paleta
+(`src/core/theme/colors.ts`) y `Card`, `Badge`, `Chip`, `TaskRow` y el Dashboard, pero **no
+tocó** `BrandLogo.tsx`, `src/shared/assets/brand/`, ni `useTheme.ts`. La razón es estructural:
+la rama lee `useColorScheme() === 'dark'` y los assets estáticos, no ningún token de color —
+el wordmark no consulta la paleta. Y ahora hay un guard que lo fija:
+`tests/unit/brand/BrandLogo.test.tsx` (light → `logo-primary`, dark → `logo-icon` cuadrado y
+nunca el wordmark, vuelta a light, más la geometría de los PNG en disco). Verificado por
+mutación. La comprobación nativa sigue en la lista de **PENDING DEVICE VALIDATION**.
+
 ---
 
 ## 5. Estado del dark mode
@@ -152,7 +172,9 @@ solo sitio.
 
 ## 6. Verificación
 
-- `npm run verify` → **verde**: lint 183 ficheros, `tsc --noEmit` limpio, 49 ficheros / 281 tests.
+- `npm run verify` → **verde**: `biome check` 248 ficheros, `tsc --noEmit` con **0 errores**,
+  **100 ficheros / 733 tests** pasando (línea base al cerrar TD-044 y TD-045; eran 49/281 al
+  escribir la primera versión de este informe).
 - `npx expo config --type public` → `userInterfaceStyle: automatic`, plugin del splash y
   `adaptiveIcon` resueltos, y los tres ficheros referenciados existen.
 - `npx expo prebuild --platform android --no-install` + auditoría de los recursos generados
@@ -165,7 +187,16 @@ solo sitio.
   umbral: 0 diferencias en la zona opaca de la marca (sección 3.1).
 - Barrido a nivel de píxel de los 13 PNG de `assets/` y `src/shared/assets/`: **ninguno**
   contiene `#2E7D5F`.
-- Análisis de la máscara circular sobre `ic_launcher_foreground.webp` (GAP 12).
+- Análisis de la máscara circular sobre `ic_launcher_foreground.webp` (GAP 12 / TD-045).
+- `prebuild` + auditoría del árbol nativo tras el cambio de color: `values/colors.xml` con
+  `iconBackground #0F1419`, `values-night/colors.xml` con `splashscreen_background #0F1419`
+  sin tocar, `windowSplashScreenAnimatedIcon` apuntando a `@drawable/splashscreen_logo`, y
+  **0 ficheros** con `2E7D5F` en todo `android/`.
+- Guardas de test nuevas: `tests/unit/theme/colors.test.ts` (paridad de tokens entre claro y
+  oscuro por tipo + contraste de los pares `tone`×`text` en las dos paletas) y
+  `tests/unit/brand/BrandLogo.test.tsx` (el wordmark vuelve en light, el símbolo cuadrado en
+  dark, y los PNG de marca en disco conservan su geometría). Ambas verificadas por mutación:
+  se reintrodujo el defecto y las dos fallan.
 
 ### Lo que NO se puede verificar aquí
 
@@ -179,6 +210,16 @@ recommended that you test your splash screen on a release build."*
 O sea: para ver el icono y el splash hacen falta `npx expo prebuild` + una **build nativa**
 (`npx expo run:ios` / `run:android`, o EAS). `expo start` no basta. El dark mode sí se puede
 ver en Expo Go.
+
+### PENDING DEVICE VALIDATION (lista cerrada, no declarar hecho sin hardware)
+
+| Qué | Se comprueba | Por qué no se cierra aquí |
+|---|---|---|
+| **GAP 12 / TD-045** | el icono con máscara **circle**, **squircle** y **rounded square** | El recorte del círculo está medido (17.55% en safe zone), pero cuánto importa depende del launcher |
+| **Brand light/dark** | el wordmark en light y el símbolo en dark, en una build nativa | El guard de test cubre la rama, no el render nativo |
+| **TD-043** | teclado iOS, teclado Android y viewport pequeño en las pantallas de Auth | Sin simulador no hay teclado ni safe area reales |
+| **Tasks** | comportamiento táctil del pull-to-refresh | Se prueba la estructura, no la física del gesto |
+| **Tasks assignee** | nombre y avatar de un miembro real de `/households/{id}/members` | **PENDING REAL-DATA VALIDATION**: hoy el cableado está testeado con mocks, no con datos reales de un hogar |
 
 ### Efectos colaterales de `prebuild`, revisados
 
@@ -225,24 +266,63 @@ intercambio por asset de `068147d` por el asset real, y quitar el `useIsDarkSche
 
 ### GAP 12 — La marca es ancha y la máscara del icono adaptativo es circular
 
-Hallazgo nuevo, aparecido al auditar el foreground generado. El icono adaptativo se
-escaló al **66% del ancho del lienzo**, que es correcto para un cuadrado, pero **el
-viewport visible de Android es un círculo** (72dp de 108dp) y la marca tiene aspecto
-**1.63:1**. Consecuencia, medida sobre `ic_launcher_foreground.webp` (432×432, marca
-286×176, semidiagonal 168px):
+Registrado como **TD-045**. Dos correcciones sobre el hallazgo original, ambas medidas.
 
-| Zona | Radio | Marca recortada |
+**Corrección 1 — qué marca es.** El icono no contiene el wordmark: contiene el **símbolo** (el
+arco sonriente de `design/brand/logo-icon.svg`, un único `path` sobre un viewBox de 128), que
+mide 1.63:1 por geometría propia. No hay wordmark que comprimir ni composición que rehacer:
+el problema es enteramente de escala.
+
+**Corrección 2 — la métrica.** El número anterior (5.06% / 12.11%) se calculó sobre el `.webp`
+de 432px y midiendo el recorte sobre el ancho. Para una máscara circular lo que cuenta es el
+punto de tinta **más lejano del centro del lienzo**, comparado con el radio del círculo. Con
+la definición de Android (máscara 72dp sobre una capa de 108dp; safe zone garantizada 66dp):
+
+| Círculo | Radio, en % del semi-lado |
+|---|---|
+| Viewport de máscara (72/108) | **66.67%** |
+| Safe zone garantizada (66/108) | **61.11%** |
+
+Medido sobre el asset que `app.json` cablea (`assets/adaptive-icon.png`, 1024², tinta 676×414,
+bbox centrado en `511.5, 511.5`, radio de tinta **74.12%**):
+
+| Zona | Recorte | Escala necesaria |
 |---|---|---|
-| viewport de máscara (72/108) | 144px | **5.06%** |
-| safe zone (66/108) | 132px | **12.11%** |
+| Viewport de máscara (72/108) | **10.05%** | 90.0% |
+| Safe zone (66/108) | **17.55%** | **82.5%** |
 
-Para que la marca quepa entera habría que bajarla al **56.8%** del ancho (viewport) o al
-**52.0%** (safe zone), con lo que el icono se vería más pequeño. Es inherente: una marca
-ancha no puede llenar una máscara redonda.
+**`prebuild` no lo arregla, y esto es lo importante.** El `ic_launcher_foreground.webp` que
+genera (162², hdpi) mide 108×66 en su capa — el mismo 1.63:1 y el mismo 74.12% que el fuente.
+Es decir, expo mapea el lienzo del asset a la capa completa de 108dp **sin aplicar ningún
+inset de safe zone**. No hay bandera de `app.json` que lo haga: el asset tiene que llegar ya
+encajado.
 
-No se ha cambiado: los launchers con máscara *squircle* o cuadrado redondeado recortan
-bastante menos que el círculo, así que el 66% no es necesariamente un error. Requiere
-decisión (ver sección 8).
+**El asset adecuado no existe.** El único que cabe en el círculo es
+`assets/android-icon-foreground.png` (radio 54.12%), pero es **otra marca** —perfil de tinta
+1/3 y orientación invertida, no el arco sonriente— y no lo referencia `app.json`, `src/` ni
+`tests/`. `logo-icon-1024.png` sí es la marca correcta, pero se sale aún más (82.14%).
+
+**El encargo, en medidas**, sobre un lienzo de 1024²:
+
+1. Fuente: `design/brand/logo-icon.svg`, **sin redibujar** (es un vector real: re-export, no
+   pieza nueva).
+2. Radio de tinta **≤ 55% del semi-lado**. Equivale a **ancho de tinta ≤ 565px** para tocar
+   justo la safe zone, y **≈508px (49.6% del lienzo)** para dejar el margen que ya tiene el
+   asset del repo que sí cabe.
+3. Centrado por el **círculo envolvente mínimo**, no por el bbox.
+4. Sin deformar: la proporción 1.63:1 se mantiene. Se reduce, no se comprime.
+5. Solo afecta a `assets/adaptive-icon.png`. **`assets/icon.png` (iOS/web) no cambia**: la
+   máscara de iOS es un cuadrado redondeado, así que una marca ancha no se recorta en las
+   puntas. Encogerla para que quepa en un círculo que iOS no dibuja empeoraría el icono.
+
+Hueco adicional: `app.json` **no** define `android.adaptiveIcon.monochromeImage`, así que los
+**iconos tematizados de Android 13+ no están soportados**. La `android-icon-monochrome.png` que
+hay en `assets/` no sirve: es la marca vieja.
+
+**No se ha cambiado nada**, a propósito: un radio medido demuestra el defecto, pero «cuánto
+espacio muerto es aceptable alrededor del símbolo dentro de un círculo» es criterio de diseño,
+y la mayoría de launchers actuales usan *squircle*, que recorta bastante menos que un círculo.
+**PENDING DEVICE VALIDATION** con la máscara *circle*, *squircle* y *rounded square*.
 
 ---
 
@@ -250,10 +330,14 @@ decisión (ver sección 8).
 
 1. **Pedir `logo-primary-light.svg`** (APP, lo está haciendo Claude). Al llegar, sustituye
    la provisional de `068147d`.
-2. **Decidir el GAP 12**: si la marca se baja al 56.8% del ancho para que la máscara
-   circular no le coma el 5.06% de las puntas, o se deja al 66% asumiendo que la mayoría de
-   launchers usan squircle. Es una línea en el generador de `assets/adaptive-icon.png`.
-3. **Build nativa** para ver icono y splash de verdad (requiere macOS para iOS).
+2. **Encargar el asset de `assets/adaptive-icon.png`** (TD-045). No es una decisión abierta:
+   es un re-export medido de `design/brand/logo-icon.svg`, sin redibujar, con el símbolo
+   centrado por su círculo envolvente mínimo y un radio de tinta **≤ 55% del semi-lado**
+   (ancho de tinta ≤ 565px sobre 1024 para tocar justo la safe zone; ≈508px para dejar
+   margen). `assets/icon.png` (iOS) **no** se toca. Requiere herramienta de diseño: en el
+   repo no hay ningún generador de assets, los PNG llegan ya hechos.
+3. **Build nativa** para ver icono y splash de verdad (requiere macOS para iOS). Al mirar el
+   icono, comprobar la máscara **circle**, **squircle** y **rounded square**.
 4. Reiniciar los dos servidores de Metro que siguen vivos y obsoletos (8081 y 8082, de hace
    ~6 h): `Ctrl+C` y `npx expo start --clear`.
 5. Decidir los GAP 1, 3, 4, 5 y 6 del informe anterior (paleta y contraste del design

@@ -39,6 +39,7 @@
 
 | TD-043 | Media | `src/presentation/auth/screens/*.tsx`, `src/presentation/components/ui/` | **No existe la primitiva `Screen` del Design System, y ninguna pantalla de Auth evita el teclado.** Medido en `src/`: **0 ocurrencias de `KeyboardAvoidingView` y 0 de `Keyboard`** — la única mención es un comentario en `LoginScreen.tsx:20` que dice que el patrón no existe — y **0 usos** de `keyboardShouldPersistTaps`, `keyboardDismissMode` o `automaticallyAdjustKeyboardInsets`. El DS expone 14 primitivas (`Avatar`…`Spinner`) pero **no `Screen`**, así que cada pantalla repite a mano su `View` contendedor y la cobertura de SafeArea es desigual: `WelcomeScreen` usa `SafeAreaView` (vía `react-native-safe-area-context`), el resto usa `paddingTop: spacing.s16` fijo. Las 6 pantallas de Auth con inputs (Login, Register, ForgotPassword, ResetPasswordOtp, ResetPassword, VerifyEmail) centran el contenido con `justifyContent: 'center'` dentro de un `View` sin ScrollView ni avoidance: en iOS, con el teclado abierto, el CTA de envío puede quedar tapado sin forma de desplazarse hasta él. Es un defecto de dispositivo, no de estilo | ✅ Implementada (2026-09-18) — **PENDING DEVICE VALIDATION** — creada la primitiva `Screen` en el DS (`src/presentation/components/ui/Screen.tsx`) y migradas **las 7 pantallas de Auth con inputs** (Login, Register, ForgotPassword, ResetPasswordOtp, ResetPassword, VerifyEmail, Onboarding). Ver ficha **`## TD-043`**. **No verificable en este entorno** (sin dispositivo ni simulador): probados estructura, props, ramas de `Platform`, scroll y tests; el comportamiento real del teclado queda **pendiente de validación física** |
 | TD-044 | **Alta** | `src/core/theme/colors.ts`, `src/presentation/components/ui/Card.tsx`, `src/presentation/meow/screens/MeowScreen.tsx` | **En tema oscuro el texto sobre los `*Soft` es ilegible.** `colors.dark` solo redefine los 7 tokens que `colors.md` define (`background`, `surface`, `surfaceAlt`, `primary`, `text`, `textMuted`, `border`), así que `warningSoft`/`errorSoft`/`successSoft`/`infoSoft`/`primarySoft`/`secondarySoft`/`accentSoft` **conservan sus valores claros**. `text` del tema oscuro (`#F5F5F5`) sobre ellos mide **1.00:1** (`warningSoft`), **1.03:1** (`successSoft`) y **1.09:1** (`errorSoft`): no es contraste bajo, es **texto del mismo color que el fondo**. Los mismos pares en claro dan 14.67–15.92:1, de ahí que el defecto no se vea en el tema por defecto; `userInterfaceStyle` es **`automatic`**, así que sí se alcanza en la build nativa. Sitio vivo medido: `MeowScreen.tsx:75` (`<Card variant="pastel" tone="success">` envolviendo la respuesta de Meow) y cualquier `Card` con `tone` o `Badge` cromático futuro. Detectado y corregido **primero como parche local** en las dos pantallas del checkpoint HOY/TASKS (`TaskRow`, `DashboardScreen`), que pasaban píldoras y aviso offline a `surfaceAlt` (definido en ambos temas: 15.24:1 claro / 13.28:1 oscuro). Ese parche **ya no existe**: se eliminó al corregir la raíz, porque ya no era necesario. El arreglo de raíz era el mismo que pedía TD-040 | ✅ **Resuelto — raíz corregida en el Design System, no en pantalla** (2026-09-18). Ver ficha **`## TD-044`**. `colors.ts` deja de heredar: la paleta oscura se declara explícita y anotada con `ColorTokens`, con los 16 tokens derivados por una regla escrita en el propio fichero (no a ojo) y los 7 de `colors.md` verbatim. El contrato pasa a ser **comprobable**: `cardToneBackground` vive en la capa de color, `Card` deriva de él su `tone`, y **67 tests** fallan si un tone apunta a un token ausente *o* vuelve a heredar el valor claro (verificado por mutación: reintroducir el defecto devuelve `1.00:1`). Cobertura medida: los 7 tones dan `text` a **8.36–12.65:1** en oscuro y **14.67–15.92:1** en claro, y **ningún** relleno de tone baja del de referencia `surfaceAlt`. `MeowScreen` queda arreglado **sin tocarlo**. Los dos workarounds locales de `TaskRow`/`DashboardScreen` **eliminados**. Efecto colateral corregido en el mismo paso: `Badge` y `Chip` usaban un pastel como color de texto (1.42–2.56:1) — ver TD-040 |
+| TD-045 | **Alta** (bloquea el icono en Android) | `assets/adaptive-icon.png`, `design/brand/logo-icon.svg`, `app.json` (`android.adaptiveIcon`) | **El foreground del icono adaptativo se sale de la safe zone y la máscara circular lo recorta.** Medido sobre el asset que `app.json` cablea (`assets/adaptive-icon.png`, 1024²): la tinta — el símbolo sonriente de `logo-icon.svg`, **no** el wordmark — ocupa 676×414 px = **1.63:1**, con un radio máximo de **74.12% del semi-lado**. La máscara de Android es un círculo de 72dp sobre 108dp (**66.67%**) y la safe zone garantizada 66dp (**61.11%**), así que el extremo de la marca cae **10.05% fuera del viewport** y **17.55% fuera de la safe zone**: habría que escalarla al **82.5%**. Comprobado que **no es culpa de `prebuild`**: el `ic_launcher_foreground.webp` generado (162², hdpi) reproduce el mismo 1.63:1 y el mismo 74.12%, es decir expo mapea el lienzo del asset a la capa completa de 108dp **sin aplicar ningún inset de safe zone** — el asset tiene que llegar ya encajado. iOS **no** está afectado: su máscara es un cuadrado redondeado, no un círculo. El asset adecuado **no existe**: `assets/android-icon-foreground.png` sí cabe (54.12%) pero es **otra marca** (perfil de tinta 1/3, orientación invertida) y no lo referencia `app.json`, `src/` ni `tests/`; `logo-icon-1024.png` es la marca correcta pero todavía más ancha (82.14%) | **PENDING DEVICE VALIDATION** — necesita un asset de diseño: re-exportar `design/brand/logo-icon.svg` (**sin redibujar, sin deformar, sin comprimir**) con el símbolo centrado y su radio de tinta **≤ 55% del semi-lado** — ancho de tinta **≤ 565px sobre 1024** para tocar justo la safe zone, **≈508px (49.6%)** para dejar margen, que es lo que ya hace el asset del repo que sí cabe. **No se aplica por cálculo.** Ver ficha **`## TD-045`** |
 
 ## Detalle TD-021+ (promovidos del informe M5, 2026-09-17)
 
@@ -594,6 +595,94 @@ La cobertura de este TD es **aritmética y estructural**, y así se declara. Fal
 3. `Badge`/`Chip` en oscuro, que hoy solo están cubiertos por el cálculo de contraste.
 
 
+## TD-045 — la marca no cabe en la máscara circular del icono adaptativo (2026-09-18)
+
+Este TD es la mitad geométrica de lo que el checkpoint llama «GAP 9 — icono». La mitad
+cromática ya está cerrada en `b0bc85e` (ver §3.1 de `logs/mobile-design-v2-2026-09-17.md`):
+el fondo del icono pasó de `#2E7D5F` a `#0F1419` y ese `#2E7D5F` **no existe en ningún asset
+ni en ningún fichero de configuración** (comprobado a nivel de texto y a nivel de píxel en
+los 13 PNG). El informe de diseño llama a esta mitad **GAP 12**; es el mismo problema.
+
+### La premisa, corregida antes de tocar nada
+
+El enunciado decía «marca 1.63:1». Es correcto, pero conviene precisar **qué** marca: el
+icono **no** contiene el wordmark. Contiene el símbolo (el arco sonriente de
+`design/brand/logo-icon.svg`, un único `path` sobre un viewBox de 128), que mide 1.63:1 por
+geometría propia. Por eso **no hay wordmark que comprimir ni que recomponer**: la única
+incógnita es la escala.
+
+### La métrica, definida
+
+Para una máscara circular no importa el ancho del bbox sino el punto de tinta **más lejano
+del centro del lienzo**. Android define la máscara como un círculo de 72dp sobre una capa de
+108dp, con una safe zone garantizada de 66dp:
+
+| Círculo | Fichero | Radio, en % del semi-lado |
+|---|---|---|
+| Viewport de máscara | 72/108 | **66.67%** |
+| Safe zone garantizada | 66/108 | **61.11%** |
+
+### Lo medido
+
+| Asset | Tinta | Aspecto | Radio de tinta | Viewport 72dp | Safe zone 66dp |
+|---|---|---|---|---|---|
+| `assets/adaptive-icon.png` (**el que usa `app.json`**) | 676×414 | 1.63:1 | **74.12%** | recorta 10.05% | **recorta 17.55%** |
+| `ic_launcher_foreground.webp` (**el generado por `prebuild`**) | 108×66 | 1.64:1 | **74.12%** | recorta 10.05% | recorta 17.55% |
+| `src/shared/assets/brand/logo-icon-1024.png` (marca correcta) | 784×480 | 1.63:1 | 82.14% | recorta 18.84% | recorta 25.60% |
+| `assets/android-icon-foreground.png` (**otra marca**) | 230×208 | 1.11:1 | 54.12% | cabe | cabe |
+| `assets/icon.png` (iOS/web; opaco) | 819×502 | 1.63:1 | 88.78% | — | — |
+
+El bbox de `adaptive-icon.png` está **centrado** (`511.5, 511.5`), así que solo hay que
+escalar, no recolocar.
+
+### `prebuild` no lo arregla, y eso es lo importante
+
+La fila más útil de la tabla es la segunda: el `.webp` que genera `expo prebuild` mide
+108×66 en su capa de 162px — idéntico porcentaje que el fuente. Es decir, **expo mapea el
+lienzo del asset a la capa completa de 108dp y no aplica ningún inset de safe zone**. No hay
+ninguna bandera de `app.json` que lo haga: el asset tiene que llegar ya encajado.
+
+iOS no entra aquí: su máscara es un cuadrado redondeado, así que una marca ancha no se
+recorta en las puntas. Por eso `assets/icon.png` se queda como está — encogerlo para que
+quepa en un círculo que iOS no dibuja sería empeorar el icono por nada.
+
+### El asset que hay que producir (esto es lo que se pide a diseño)
+
+**No existe todavía.** El que cabe en el círculo (`android-icon-foreground.png`) es otra
+marca, sin referencia en `app.json`, `src/` ni `tests/`, y con la orientación invertida; el
+que tiene la marca correcta (`logo-icon-1024.png`) se sale aún más.
+
+El encargo, en medidas, sobre un lienzo de 1024²:
+
+1. **Fuente**: `design/brand/logo-icon.svg`, **sin redibujar**. Es un vector real (128×128,
+   un solo `path`), así que es un re-export, no una pieza nueva.
+2. **Radio de tinta ≤ 55% del semi-lado** (= 563px). Equivale a un **ancho de tinta ≤ 565px**
+   si se quiere tocar justo la safe zone, y **≈508px (49.6% del lienzo)** si se quiere el
+   margen que ya tiene el asset del repo que sí cabe.
+3. **Centrado**: el símbolo se centra por su círculo envolvente mínimo, no por su bbox.
+4. **Sin deformar**: la proporción 1.63:1 se mantiene. Se reduce, no se comprime.
+5. Solo afecta a `assets/adaptive-icon.png`. `assets/icon.png` (iOS/web) no cambia.
+
+Opcional, pero es un hueco real: `app.json` **no** define
+`android.adaptiveIcon.monochromeImage`, así que los **iconos tematizados de Android 13+ no
+están soportados**. Hacerlo bien necesita una variante monocroma del símbolo aprobado — la
+`android-icon-monochrome.png` que hay en `assets/` no sirve, es la marca vieja.
+
+### Qué NO se ha hecho, a propósito
+
+- No se ha escalado el asset por cálculo. Un radio medido demuestra el defecto; no decide el
+  encargo, porque «cuánto espacio muerto es aceptable alrededor de la marca dentro de un
+  círculo» es criterio de diseño.
+- No se ha redibujado ni deformado la marca, ni se ha añadido padding inventado.
+- No se ha tocado iOS, ni el fondo `#0F1419`, ni la decisión light/dark del wordmark.
+
+### Qué queda PENDING DEVICE VALIDATION
+
+Con la máscara **circle**, **squircle** y **rounded square** de los launchers reales, más el
+icono de iOS. Un `squircle` recorta bastante menos que un círculo, así que el 74.12% actual
+puede no ser un defecto visible en todos los launchers — y por eso este TD no se cierra con
+aritmética. **No declarado resuelto.**
+
 ## TD-028 — por qué la raíz no se cierra por configuración (2026-09-17)
 
 Se atacó la raíz y **se revirtió**. No fue falta de intento: fue una medición. El encargo decía
@@ -710,4 +799,17 @@ por tocar `vitest.config.ts`.
   deuda de código sino **trabajo no autorizado todavía**: Diary espera la decisión de gestión de clave
   (es cifrado en cliente, no un CRUD), Storage espera caso de uso confirmado, y Billing es
   *entitlement-only* por decisión de producto.
+- **TD-045** es la mitad geométrica del «GAP 9 — icono» (el informe de diseño lo llama GAP 12) y
+  cierra el patrón que abrió TD-044: **la premisa también estaba a medias**. El defecto reportado
+  partía de «marca 1.63:1», y es cierto, pero esa marca es el **símbolo**, no el wordmark — así que
+  no había nada que recomponer y todo el problema se reducía a la escala. Merece la pena registrar
+  por qué **no se cierra con aritmética**: un radio medido demuestra que el extremo de la marca cae
+  17.55% fuera de la safe zone, pero cuánto espacio muerto es aceptable alrededor de un símbolo
+  dentro de un círculo es criterio de diseño. Además, la mayoría de launchers modernos usan
+  *squircle*, que recorta bastante menos que un círculo, así que el 74.12% actual puede no ser un
+  defecto visible en todos los dispositivos. De ahí que quede **PENDING DEVICE VALIDATION** con la
+  especificación exacta del asset en vez de un cambio aplicado. La comprobación de que
+  `expo prebuild` **no** aplica ningún inset de safe zone (el `.webp` generado conserva el mismo
+  1.63:1 y el mismo 74.12% que el fuente) es el dato que evita buscar una bandera de configuración
+  que no existe.
 
