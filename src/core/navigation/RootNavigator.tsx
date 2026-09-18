@@ -11,7 +11,6 @@ import { ResetPasswordSuccessScreen } from '@presentation/auth/screens/ResetPass
 import { SplashScreen } from '@presentation/auth/screens/SplashScreen';
 import { ValuePropsScreen } from '@presentation/auth/screens/ValuePropsScreen';
 import { VerifyEmailScreen } from '@presentation/auth/screens/VerifyEmailScreen';
-import { WelcomeScreen } from '@presentation/auth/screens/WelcomeScreen';
 import { CalendarEventDetailScreen } from '@presentation/calendar/screens/CalendarEventDetailScreen';
 import { CalendarEventFormScreen } from '@presentation/calendar/screens/CalendarEventFormScreen';
 import { RecurringExpenseFormScreen } from '@presentation/expenses/recurring/screens/RecurringExpenseFormScreen';
@@ -104,7 +103,6 @@ export const RootNavigator = (): JSX.Element => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="ValueProps" component={ValuePropsScreen} />
             <Stack.Screen name="ChooseMethod" component={ChooseMethodScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />

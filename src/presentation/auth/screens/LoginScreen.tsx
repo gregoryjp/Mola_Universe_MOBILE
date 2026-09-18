@@ -2,7 +2,7 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
 import { BrandLogo } from '@presentation/components/brand/BrandLogo';
-import { Button } from '@presentation/components/ui';
+import { Button, Screen } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { Text, View } from 'react-native';
@@ -17,15 +17,21 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
  * at the bottom as AA-compliant links — relative to `LoginForm`'s primary
  * "Entrar" button.
  *
- * No `SafeAreaView`/`KeyboardAvoidingView` here: neither pattern exists yet on
- * any auth screen in this module (ForgotPasswordScreen, RegisterScreen), so
- * this stays consistent with its siblings instead of fixing the gap only here.
+ * Layout comes from `Screen` with `align="spread"`: the header pins to the top,
+ * the secondary links to the bottom, and the form takes the middle. The
+ * primitive also owns the safe area, the scroll and the keyboard, which this
+ * screen previously did without (TD-043).
  */
 export const LoginScreen = ({ navigation }: Props): JSX.Element => {
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <View style={styles.container}>
+    <Screen
+      align="spread"
+      keyboardAware
+      dismissKeyboardOnTap
+      contentContainerStyle={styles.screenPadding}
+    >
       <View style={styles.header}>
         <BrandLogo width={140} />
         <Text style={styles.headline}>Bienvenido de nuevo</Text>
@@ -50,18 +56,15 @@ export const LoginScreen = ({ navigation }: Props): JSX.Element => {
           testID="login-register"
         />
       </View>
-    </View>
+    </Screen>
   );
 };
 
 const makeStyles = (theme: ColorTokens) => ({
-  container: {
-    flex: 1,
-    justifyContent: 'space-between' as const,
-    backgroundColor: theme.background,
-    paddingHorizontal: spacing.s6,
+  // The header sits high on the screen by design; `Screen` supplies the
+  // horizontal gutter and the bottom inset.
+  screenPadding: {
     paddingTop: spacing.s16,
-    paddingBottom: spacing.s6,
   },
   header: {
     alignItems: 'center' as const,

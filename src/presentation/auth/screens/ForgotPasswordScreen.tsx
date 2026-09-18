@@ -1,15 +1,20 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, Input } from '@presentation/components/ui';
+import { Button, Input, Screen } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { useForgotPassword } from '../hooks/useForgotPassword';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
+/**
+ * `Screen` owns the safe area, the scroll and the keyboard. The single field
+ * plus the submit button is exactly the stack that used to end up under the
+ * keyboard on a small phone (TD-043).
+ */
 export const ForgotPasswordScreen = ({ navigation }: Props): JSX.Element => {
   const [email, setEmail] = useState('');
   const forgotPassword = useForgotPassword();
@@ -27,7 +32,7 @@ export const ForgotPasswordScreen = ({ navigation }: Props): JSX.Element => {
   };
 
   return (
-    <View style={styles.container}>
+    <Screen align="center" keyboardAware dismissKeyboardOnTap gap={spacing.s4}>
       <Text style={styles.title}>Recuperar contraseña</Text>
       <Text style={styles.subtitle}>Te enviaremos un código a tu email</Text>
       <Input
@@ -62,26 +67,20 @@ export const ForgotPasswordScreen = ({ navigation }: Props): JSX.Element => {
         onPress={() => navigation.navigate('Login')}
         variant="linkNeutral"
       />
-    </View>
+    </Screen>
   );
 };
 
 const makeStyles = (theme: ColorTokens) => ({
-  container: {
-    flex: 1,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    backgroundColor: theme.background,
-    padding: spacing.s6,
-    gap: spacing.s4,
-  },
   title: {
     ...typography.h2,
     color: theme.text,
+    textAlign: 'center' as const,
   },
   subtitle: {
     ...typography.bodySmall,
     color: theme.textMuted,
+    textAlign: 'center' as const,
   },
   error: {
     ...typography.bodySmall,

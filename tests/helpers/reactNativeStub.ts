@@ -11,6 +11,8 @@
  * behaviour (what gets rendered, what a press calls), not its styling.
  */
 
+import { cloneElement, type ReactElement } from 'react';
+
 const hostComponent = (name: string): string => name;
 
 export const reactNativeStub = {
@@ -24,6 +26,19 @@ export const reactNativeStub = {
   Image: hostComponent('Image'),
   ActivityIndicator: hostComponent('ActivityIndicator'),
   FlatList: hostComponent('FlatList'),
+  KeyboardAvoidingView: hostComponent('KeyboardAvoidingView'),
+  // Clones its child and hands it the press handler, the way the real component
+  // injects touch handlers — so a test can drive tap-to-dismiss for real.
+  TouchableWithoutFeedback: ({
+    children,
+    onPress,
+  }: {
+    children: ReactElement<{ onPress?: () => void }>;
+    onPress?: () => void;
+  }): ReactElement => cloneElement(children, { onPress }),
+  Keyboard: {
+    dismiss: (): void => undefined,
+  },
   SafeAreaView: hostComponent('SafeAreaView'),
 
   StyleSheet: {

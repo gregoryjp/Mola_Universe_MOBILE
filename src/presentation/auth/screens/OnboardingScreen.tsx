@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, Chip, Input } from '@presentation/components/ui';
+import { Button, Chip, Input, Screen } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import type { JSX } from 'react';
@@ -13,6 +13,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
 type HouseholdChoice = 'create' | 'later';
 
+/**
+ * Top-aligned rather than centred: this is a short form the user reads downwards,
+ * not a single hero panel. `Screen` supplies the safe area, the scroll and the
+ * keyboard (TD-043).
+ */
 export const OnboardingScreen = ({ navigation }: Props): JSX.Element => {
   const user = useAuthStore((state) => state.user);
   const [name, setName] = useState(user?.name ?? '');
@@ -42,7 +47,7 @@ export const OnboardingScreen = ({ navigation }: Props): JSX.Element => {
   };
 
   return (
-    <View style={styles.container}>
+    <Screen align="top" keyboardAware dismissKeyboardOnTap gap={spacing.s3}>
       <Text style={styles.heading}>Cuéntanos un poco de ti</Text>
 
       <Input
@@ -88,17 +93,11 @@ export const OnboardingScreen = ({ navigation }: Props): JSX.Element => {
         variant="linkNeutral"
         testID="onboarding-skip"
       />
-    </View>
+    </Screen>
   );
 };
 
 const makeStyles = (theme: ColorTokens) => ({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background,
-    padding: spacing.s4,
-    gap: spacing.s3,
-  },
   heading: {
     ...typography.h2,
     color: theme.text,

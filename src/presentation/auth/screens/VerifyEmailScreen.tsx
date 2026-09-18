@@ -1,12 +1,12 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, OtpInput } from '@presentation/components/ui';
+import { Button, OtpInput, Screen } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import type { JSX } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Text, View } from 'react-native';
+import { AccessibilityInfo, Text } from 'react-native';
 import { useLogout } from '../hooks/useLogout';
 import { useResendVerification } from '../hooks/useResendVerification';
 import { useVerifyOtp } from '../hooks/useVerifyOtp';
@@ -154,7 +154,7 @@ export const VerifyEmailScreen = ({ navigation }: Props): JSX.Element => {
   };
 
   return (
-    <View style={styles.container}>
+    <Screen align="center" keyboardAware dismissKeyboardOnTap gap={spacing.s4}>
       <Text style={styles.title}>Verifica tu email</Text>
       <Text style={styles.subtitle}>Enviamos un código de 6 dígitos a {user?.email}</Text>
 
@@ -207,22 +207,15 @@ export const VerifyEmailScreen = ({ navigation }: Props): JSX.Element => {
         accessibilityHint="Cierra la sesión y vuelve al inicio"
         testID="verify-email-signout"
       />
-    </View>
+    </Screen>
   );
 };
 
 const makeStyles = (theme: ColorTokens) => ({
-  container: {
-    flex: 1,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    backgroundColor: theme.background,
-    padding: spacing.s6,
-    gap: spacing.s4,
-  },
   title: {
     ...typography.h2,
     color: theme.text,
+    textAlign: 'center' as const,
   },
   subtitle: {
     ...typography.bodySmall,

@@ -1,11 +1,11 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, OtpInput } from '@presentation/components/ui';
+import { Button, OtpInput, Screen } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { useForgotPassword } from '../hooks/useForgotPassword';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ResetPasswordOtp'>;
@@ -23,6 +23,12 @@ const CODE_LENGTH = 6;
  */
 const RESEND_COOLDOWN_SECONDS = 30;
 
+/**
+ * `Screen` owns the safe area, the scroll and the keyboard. The OTP field keeps
+ * focus while the keyboard is open, so the "Continuar" CTA has to stay reachable
+ * without dismissing it (TD-043); `keyboardShouldPersistTaps` is handled inside
+ * the primitive for exactly this.
+ */
 export const ResetPasswordOtpScreen = ({ navigation, route }: Props): JSX.Element => {
   const { email } = route.params;
   const [verificationToken, setVerificationToken] = useState(route.params.verificationToken);
@@ -55,7 +61,7 @@ export const ResetPasswordOtpScreen = ({ navigation, route }: Props): JSX.Elemen
   };
 
   return (
-    <View style={styles.container}>
+    <Screen align="center" keyboardAware dismissKeyboardOnTap gap={spacing.s4}>
       <Text style={styles.title}>Verifica tu código</Text>
       <Text style={styles.subtitle}>Enviamos un código de 6 dígitos a {email}</Text>
       <OtpInput value={code} onChange={setCode} length={CODE_LENGTH} testID="reset-otp" />
@@ -82,22 +88,15 @@ export const ResetPasswordOtpScreen = ({ navigation, route }: Props): JSX.Elemen
         accessibilityHint="Continúa hacia la nueva contraseña"
         testID="reset-otp-continue"
       />
-    </View>
+    </Screen>
   );
 };
 
 const makeStyles = (theme: ColorTokens) => ({
-  container: {
-    flex: 1,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    backgroundColor: theme.background,
-    padding: spacing.s6,
-    gap: spacing.s4,
-  },
   title: {
     ...typography.h2,
     color: theme.text,
+    textAlign: 'center' as const,
   },
   subtitle: {
     ...typography.bodySmall,

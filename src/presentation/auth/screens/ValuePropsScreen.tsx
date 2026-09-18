@@ -1,169 +1,214 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
-import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button } from '@presentation/components/ui';
+import { breakpoints, durations, easings, spacing, typography, useThemedStyles } from '@core/theme';
+import { BrandLogo } from '@presentation/components/brand/BrandLogo';
+import { Mascot } from '@presentation/components/brand/Mascot';
+import { Button, Screen } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
-import { useState } from 'react';
-import {
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { useEffect, useRef } from 'react';
+import { AccessibilityInfo, Animated, Easing, Text, useWindowDimensions, View } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ValueProps'>;
 
-interface Slide {
-  key: string;
-  title: string;
-  description: string;
-}
-
 /**
- * Copy matches modules that actually exist today (Tasks/Households, Pets,
- * Moments, Savings) — no invented capabilities.
- */
-const SLIDES: Slide[] = [
-  {
-    key: 'households',
-    title: 'Organiza tu hogar',
-    description: 'Reparte tareas del hogar y llévalas al día con quienes vives.',
-  },
-  {
-    key: 'pets',
-    title: 'Cuida a los tuyos',
-    description: 'Registra a tus mascotas y no se te pase ningún cuidado.',
-  },
-  {
-    key: 'moments',
-    title: 'Guarda los momentos',
-    description: 'Captura los momentos que importan junto a tu círculo cercano.',
-  },
-  {
-    key: 'savings',
-    title: 'Ahorra en equipo',
-    description: 'Define metas de ahorro y avancen juntos hacia ellas.',
-  },
-];
-
-const LAST_INDEX = SLIDES.length - 1;
-
-/**
- * Simple horizontal `ScrollView` + `pagingEnabled` carousel with dot
- * pagination — no carousel library is a dependency of this project, and the
- * copy is short enough that this covers it without pulling one in.
+ * The one and only entry screen: the first thing an unauthenticated, hydrated
+ * user sees, and the whole of the introduction before account creation.
  *
- * The primary action and the skip link both go straight to `ChooseMethod`
- * (per spec): swiping is how the user moves between slides, the CTA always
- * moves the user forward out of the intro, it just relabels to "Comenzar" on
- * the last slide to read naturally.
+ * Three flexible zones on a single scrollable column — brand/intro, the Meow
+ * moment, actions. No absolute positioning and no fixed heights: the middle zone
+ * absorbs the slack on tall phones (more air) and collapses to its content on
+ * short ones, where the `Screen` primitive's scroll takes over.
+ *
+ * This replaced a separate `WelcomeScreen` plus a four-slide carousel. There is
+ * deliberately no carousel, no pager, no "Siguiente" and no "Omitir": a product
+ * should demonstrate its value through itself, not through four marketing
+ * slides the user has to swipe past to reach a button.
+ *
+ * The two actions avoid `variant="primary"`/`"link"`: their brand-green-on-white
+ * pairings measure 2.06:1, below AA (TD-040). `primaryTonal` (8.43:1) and
+ * `linkNeutral` (16.23:1) are the additive Design System variants that keep the
+ * MOLA token while clearing the contrast minimum.
  */
 export const ValuePropsScreen = ({ navigation }: Props): JSX.Element => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const { width } = useWindowDimensions();
   const styles = useThemedStyles(makeStyles);
+  const { height, width } = useWindowDimensions();
 
-  const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>): void => {
-    const page = Math.round(event.nativeEvent.contentOffset.x / width);
-    setActiveIndex(Math.min(Math.max(page, 0), LAST_INDEX));
-  };
+  // Start at the final values: if the reduce-motion probe never resolves (or
+  // fails), the screen is still fully visible instead of stuck at opacity 0.
+  const introOpacity = useRef(new Animated.Value(1)).current;
+  const introOffset = useRef(new Animated.Value(0)).current;
+  const actionsOpacity = useRef(new Animated.Value(1)).current;
+  const actionsOffset = useRef(new Animated.Value(0)).current;
 
-  const goToChooseMethod = (): void => navigation.navigate('ChooseMethod');
+  useEffect(() => {
+    let active = true;
+
+    void AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
+      if (!active || reduceMotion) return;
+
+      introOpacity.setValue(0);
+      introOffset.setValue(ENTRANCE_OFFSET);
+      actionsOpacity.setValue(0);
+      actionsOffset.setValue(ENTRANCE_OFFSET);
+
+      const entrance = (opacity: Animated.Value, offset: Animated.Value) =>
+        Animated.parallel([
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: durations.short,
+            easing: Easing.bezier(...easings.out),
+            useNativeDriver: true,
+          }),
+          Animated.timing(offset, {
+            toValue: 0,
+            duration: durations.short,
+            easing: Easing.bezier(...easings.out),
+            useNativeDriver: true,
+          }),
+        ]);
+
+      // Brand settles first, actions follow — the eye lands on the promise
+      // before the button.
+      Animated.sequence([
+        entrance(introOpacity, introOffset),
+        entrance(actionsOpacity, actionsOffset),
+      ]).start();
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [actionsOffset, actionsOpacity, introOffset, introOpacity]);
+
+  const compact = height < 700;
+  const narrow = width < breakpoints.mobile;
+  const mascotWidth = Math.round(
+    Math.max(compact ? MASCOT_MIN : MASCOT_MIN + 24, Math.min(MASCOT_MAX, width * MASCOT_RATIO)),
+  );
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleMomentumScrollEnd}
-        testID="value-props-scroll"
+    <Screen
+      align="top"
+      contentContainerStyle={{ paddingTop: compact ? spacing.s5 : spacing.s8 }}
+      testID="value-props"
+    >
+      {/* ── 1. BRAND / INTRO ─────────────────────────────────────────── */}
+      <Animated.View
+        style={[styles.brand, { opacity: introOpacity, transform: [{ translateY: introOffset }] }]}
       >
-        {SLIDES.map((slide) => (
-          <View key={slide.key} style={[styles.slide, { width }]}>
-            <Text style={styles.title}>{slide.title}</Text>
-            <Text style={styles.description}>{slide.description}</Text>
-          </View>
-        ))}
-      </ScrollView>
+        <BrandLogo width={LOGO_WIDTH} />
+        <Text style={[styles.headline, narrow && styles.headlineNarrow]} accessibilityRole="header">
+          Tu universo familiar,{'\n'}en un solo lugar
+        </Text>
+        <Text style={styles.subtitle}>
+          Organiza tareas, cuida a los tuyos y no pierdas de vista lo que importa.
+        </Text>
+      </Animated.View>
 
-      <View style={styles.dots} testID="value-props-dots">
-        {SLIDES.map((slide, index) => (
-          <View
-            key={slide.key}
-            style={[styles.dot, index === activeIndex ? styles.dotActive : null]}
-          />
-        ))}
+      {/* ── 2. MOMENTO MOLA ─────────────────────────────────────────── */}
+      {/* Decorative: `pointerEvents` keeps Meow from swallowing taps, and
+          `Mascot` hides herself from screen readers without a label. */}
+      <View style={styles.moment} pointerEvents="none">
+        <Mascot width={mascotWidth} />
       </View>
 
-      <View style={styles.actions}>
+      {/* ── 3. ACTION AREA ──────────────────────────────────────────── */}
+      <Animated.View
+        style={[
+          styles.actions,
+          { opacity: actionsOpacity, transform: [{ translateY: actionsOffset }] },
+        ]}
+      >
         <Button
-          label={activeIndex === LAST_INDEX ? 'Comenzar' : 'Siguiente'}
-          onPress={goToChooseMethod}
+          label="Comenzar"
+          onPress={() => navigation.navigate('ChooseMethod')}
           variant="primaryTonal"
           size="xl"
-          testID="value-props-primary"
+          style={styles.cta}
+          accessibilityHint="Empieza a crear tu cuenta"
+          testID="value-props-start"
         />
-        <Button
-          label="Omitir"
-          onPress={goToChooseMethod}
-          variant="linkNeutral"
-          style={styles.skip}
-          testID="value-props-skip"
-        />
-      </View>
-    </View>
+        <View style={styles.secondary}>
+          <Text style={styles.secondaryText}>¿Ya tienes una cuenta?</Text>
+          <Button
+            label="Iniciar sesión"
+            onPress={() => navigation.navigate('Login')}
+            variant="linkNeutral"
+            style={styles.inlineLink}
+            accessibilityHint="Entra con tu cuenta existente"
+            testID="value-props-login"
+          />
+        </View>
+      </Animated.View>
+    </Screen>
   );
 };
 
+/** Small enough to read as a settle rather than a slide. */
+const ENTRANCE_OFFSET = 10;
+
+/** Below the old 160 so the headline, not the wordmark, carries the hierarchy. */
+const LOGO_WIDTH = 132;
+
+/** Bounded: a mascot that scales without limit would dominate tall phones. */
+const MASCOT_MIN = 96;
+const MASCOT_MAX = 160;
+const MASCOT_RATIO = 0.3;
+
 const makeStyles = (theme: ColorTokens) => ({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background,
-    paddingTop: spacing.s16,
-    paddingBottom: spacing.s6,
-    gap: spacing.s6,
-  },
-  slide: {
+  brand: {
     alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    paddingHorizontal: spacing.s8,
-    gap: spacing.s3,
+    gap: spacing.s5,
   },
-  title: {
-    ...typography.h2,
+  headline: {
+    ...typography.h1,
     color: theme.text,
     textAlign: 'center' as const,
+    maxWidth: 320,
   },
-  description: {
+  /**
+   * Measured in the running app: at `h1` (32px) the first line, "Tu universo
+   * familiar,", is wider than a 320px phone can give it (272px of content box),
+   * so the block falls to three lines. `h2` (24px) restores the two-line balance
+   * the composition is built on, and only applies below `mobile` so standard
+   * phones keep the larger headline.
+   */
+  headlineNarrow: {
+    ...typography.h2,
+  },
+  subtitle: {
     ...typography.body,
     color: theme.textMuted,
     textAlign: 'center' as const,
+    maxWidth: 300,
   },
-  dots: {
-    flexDirection: 'row' as const,
+  moment: {
+    flexGrow: 1,
+    alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    gap: spacing.s2,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: theme.border,
-  },
-  dotActive: {
-    backgroundColor: theme.primary,
+    paddingVertical: spacing.s6,
   },
   actions: {
     gap: spacing.s3,
-    paddingHorizontal: spacing.s6,
   },
-  // The skip link keeps its content width and centres itself; only the primary
-  // action stretches, so the two do not read as a single stacked pair.
-  skip: {
-    alignSelf: 'center' as const,
+  cta: {
+    alignSelf: 'stretch' as const,
+  },
+  secondary: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    flexWrap: 'wrap' as const,
+    gap: spacing.s1,
+  },
+  secondaryText: {
+    ...typography.body,
+    color: theme.textMuted,
+  },
+  // The link shares the sentence's baseline instead of opening a 16px gap
+  // around itself, which would break "…cuenta? Iniciar sesión" into two islands.
+  inlineLink: {
+    paddingHorizontal: 0,
   },
 });

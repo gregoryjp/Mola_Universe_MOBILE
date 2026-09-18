@@ -20,6 +20,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // The real package reaches into a `react-native` subpath that a per-test
+      // `vi.mock('react-native')` cannot intercept — see tests/helpers/safeAreaStub.ts.
+      'react-native-safe-area-context': path.resolve(__dirname, './tests/helpers/safeAreaStub.ts'),
       '@core': path.resolve(__dirname, './src/core'),
       '@domain': path.resolve(__dirname, './src/domain'),
       '@data': path.resolve(__dirname, './src/data'),

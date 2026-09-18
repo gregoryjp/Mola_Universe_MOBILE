@@ -1,11 +1,11 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, Input } from '@presentation/components/ui';
+import { Button, Input, Screen } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { useResetPassword } from '../hooks/useResetPassword';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ResetPassword'>;
@@ -13,6 +13,10 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ResetPassword'>;
 /** Backend rule confirmed in openapi.ts: `newPassword` has `minLength: 8`. */
 const MIN_PASSWORD_LENGTH = 8;
 
+/**
+ * `Screen` owns the safe area, the scroll and the keyboard. Two password fields
+ * plus the submit button leave the CTA below the fold on a short phone (TD-043).
+ */
 export const ResetPasswordScreen = ({ navigation, route }: Props): JSX.Element => {
   const { verificationToken, code } = route.params;
   const [newPassword, setNewPassword] = useState('');
@@ -33,7 +37,7 @@ export const ResetPasswordScreen = ({ navigation, route }: Props): JSX.Element =
   };
 
   return (
-    <View style={styles.container}>
+    <Screen align="center" keyboardAware dismissKeyboardOnTap gap={spacing.s4}>
       <Text style={styles.title}>Crea tu nueva contraseña</Text>
       <Input
         label="Nueva contraseña"
@@ -79,22 +83,15 @@ export const ResetPasswordScreen = ({ navigation, route }: Props): JSX.Element =
         accessibilityHint="Guarda tu nueva contraseña"
         testID="reset-password-submit"
       />
-    </View>
+    </Screen>
   );
 };
 
 const makeStyles = (theme: ColorTokens) => ({
-  container: {
-    flex: 1,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    backgroundColor: theme.background,
-    padding: spacing.s6,
-    gap: spacing.s4,
-  },
   title: {
     ...typography.h2,
     color: theme.text,
+    textAlign: 'center' as const,
   },
   error: {
     ...typography.bodySmall,

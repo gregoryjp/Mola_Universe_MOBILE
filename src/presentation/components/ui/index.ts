@@ -15,6 +15,8 @@ export { IconButton } from './IconButton';
 export type { InputSize, InputType } from './Input';
 export { Input } from './Input';
 export { OtpInput } from './OtpInput';
+export type { ScreenEdge, ScreenProps } from './Screen';
+export { Screen } from './Screen';
 export type { SkeletonVariant } from './Skeleton';
 export { Skeleton } from './Skeleton';
 export type { SpinnerSize } from './Spinner';
