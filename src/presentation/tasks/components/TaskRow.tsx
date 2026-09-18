@@ -113,13 +113,13 @@ export const TaskRow = ({
           {dueLabel ? <Text style={styles.metaText}>{dueLabel}</Text> : null}
           {assigneeName ? <Text style={styles.metaText}>{assigneeName}</Text> : null}
           {task.isOverdue && !isCompleted ? (
-            <View style={[styles.pill, styles.pillOverdue]}>
+            <View style={styles.pill}>
               <TriangleAlert size={12} strokeWidth={2.5} color={theme.text} />
               <Text style={styles.pillText}>Atrasada</Text>
             </View>
           ) : null}
           {task.priority === 'HIGH' && !isCompleted ? (
-            <View style={[styles.pill, styles.pillHigh]}>
+            <View style={styles.pill}>
               <Text style={styles.pillText}>Prioridad alta</Text>
             </View>
           ) : null}
@@ -129,7 +129,7 @@ export const TaskRow = ({
             </View>
           ) : null}
           {completionFailed ? (
-            <View style={[styles.pill, styles.pillError]}>
+            <View style={styles.pill}>
               <Text style={styles.pillText}>No se pudo completar</Text>
             </View>
           ) : null}
@@ -200,17 +200,11 @@ const makeStyles = (theme: ColorTokens) => ({
     paddingVertical: 2,
     backgroundColor: theme.surfaceAlt,
   },
-  pillOverdue: {
-    backgroundColor: theme.errorSoft,
-  },
-  pillHigh: {
-    backgroundColor: theme.warningSoft,
-  },
-  pillError: {
-    backgroundColor: theme.errorSoft,
-  },
-  // Always `text`: every chromatic token lands between 1.55:1 and 2.87:1 on the
-  // soft surfaces, so the tint marks the pill and the words carry the meaning.
+  // Every pill shares one neutral fill. The chromatic `*Soft` tokens are not
+  // overridden for dark mode, so there they stay near-white and `text` lands at
+  // 1.00:1 (warningSoft) / 1.09:1 (errorSoft) — invisible. `surfaceAlt` is a
+  // real token in both palettes (15.24:1 light, 13.28:1 dark), and the words
+  // carry the meaning, so no pill depends on colour alone.
   pillText: {
     ...typography.caption,
     color: theme.text,

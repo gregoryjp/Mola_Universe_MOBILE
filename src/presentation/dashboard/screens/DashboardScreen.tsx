@@ -1,6 +1,6 @@
 import type { MainTabParamList, RootStackParamList, TabScreenProps } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
-import { breakpoints, spacing, typography, useThemedStyles } from '@core/theme';
+import { breakpoints, radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type {
   DashboardEvent,
   DashboardShoppingList,
@@ -456,10 +456,15 @@ const makeStyles = (theme: ColorTokens) => ({
     ...typography.bodySmall,
     color: theme.textMuted,
   },
+  // `warningSoft` is not overridden for dark mode, so it stays near-white there
+  // while `text` turns near-white too (1.00:1). `surfaceAlt` is a real token in
+  // both palettes, and the border keeps it reading as a notice.
   offlineBox: {
     gap: spacing.s1,
-    backgroundColor: theme.warningSoft,
-    borderRadius: 12,
+    backgroundColor: theme.surfaceAlt,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: theme.border,
     padding: spacing.s4,
   },
   offlineTitle: {
