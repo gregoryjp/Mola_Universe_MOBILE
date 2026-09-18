@@ -37,7 +37,7 @@
 | TD-041 | **Alta** | `package.json`, `src/data/sos/location/expoLocation.ts` | **Dependencia importada por código en producción y nunca declarada:** `expoLocation.ts:1` hace `import * as Location from 'expo-location'`, pero **`expo-location` no estaba en `package.json` en ningún commit** (`git log -S"expo-location" -- package.json` no devuelve nada). Sobrevivía porque sí estaba en `package-lock.json` y en `node_modules` local: `npm ci` lo instalaba, `npm install` lo **purgaba** como extraneous, y entonces `tsc` fallaba con `TS2307: Cannot find module 'expo-location'`. Un `npm install` en una máquina limpia rompía el typecheck y el bundle. Detectado al purgar dependencias durante la investigación de TD-028 | ✅ Resuelto — declarado `expo-location: ~57.0.18` en `package.json` (la misma versión que ya fijaba el lock, así que el lock quedó **idéntico**). Encontrado por accidente, pero habría roto la build nativa |
 | TD-042 | **Alta** | `src/presentation/auth/screens/VerifyEmailScreen.tsx`, backend `src/modules/auth/services/authService.ts` | **No existe forma de reenviar el código de verificación de email — un código expirado o bloqueado deja la cuenta inutilizable.** Contrato actual: `POST /auth/verify-otp` `{verificationToken, code}` (el `verificationToken` es el `challengeId` que devuelve `/auth/register`). Comportamiento observado leyendo `authService.ts`: código expirado → `AUTH_OTP_EXPIRED` (400, sin recuperación); 5 intentos fallidos → `AUTH_OTP_BLOCKED` (429, sin recuperación); código incorrecto → `AUTH_INVALID_CREDENTIALS` (401, el mismo código que usa `/auth/login`, así que el mensaje del backend dice "Invalid email or password" — Mobile sobrescribe esa copia solo para esta pantalla); ya verificado → `AUTH_ALREADY_VERIFIED` (400, se trata como éxito). El endpoint `POST /auth/resend-verification` **existe pero no sirve para esto**: regenera `emailVerificationToken` (campo de un flujo distinto, basado en enlace, usado solo por `/auth/verify-email`), no `emailVerificationCode`/`emailVerificationChallengeId` (los campos que `verify-otp` valida). **Hallazgo adicional:** `forgotPassword`, `resetPassword` y `verifyOTPCode` leen/escriben exactamente esos mismos cuatro campos (`emailVerificationCode`, `emailVerificationChallengeId`, `emailVerificationCodeExpiresAt`, `emailVerificationCodeAttempts`) — un código de verificación de email pendiente y un código de reseteo de contraseña pendiente para el mismo usuario se pisan entre sí. No se ha explotado esta coincidencia desde Mobile (decisión explícita: no acoplar Mobile a un comportamiento de backend no documentado) — se registra como pista para quien resuelva el TD, no como solución. Lo que Mobile necesita: un endpoint de resend dedicado a la verificación por OTP (mismos campos que `verify-otp` valida) que devuelva un `verificationToken` fresco, con la misma forma que ya devuelve `/register`. Mientras tanto, `VerifyEmailScreen.tsx` no ofrece reenvío (copia honesta: "Revisa tu carpeta de spam") y el único escape de un código expirado/bloqueado es cerrar sesión — lo que devuelve a Login sin resolver el bloqueo, porque el email ya existe y `/auth/register` lo rechaza (`AUTH_ERRORS.EMAIL_EXISTS`). No localicé tests de backend para el caso expirado/bloqueado de `verify-otp` específicamente (sí hay cobertura de integración para `resend-verification`, que es el endpoint equivocado para este caso) | ✅ Resuelto por Backend (2026-09-18) — `resend-verification` ahora llama `resendVerificationOtp`, que usa un slot de campos **propio e independiente** (`emailVerificationOtpCode`/`OtpChallengeId`/`OtpExpiresAt`/`OtpAttempts`, separado de `emailVerificationCode`/`ChallengeId` que usa `forgotPassword`) — el acoplamiento descrito arriba ya no existe. La respuesta incluye `verificationToken`, `otpExpiresAt`, `otpExpiresIn`; `EMAIL_VERIFICATION_OTP_VALIDITY_SECONDS = 60` (confirmado en `authService.ts:29`). Reenviar invalida el código anterior de inmediato (nuevo `challengeId` sobrescrito). Mobile ya lo consume — ver `VerifyEmailScreen.tsx` |
 
-| TD-043 | Media | `src/presentation/auth/screens/*.tsx`, `src/presentation/components/ui/` | **No existe la primitiva `Screen` del Design System, y ninguna pantalla de Auth evita el teclado.** Medido en `src/`: **0 ocurrencias de `KeyboardAvoidingView` y 0 de `Keyboard`** — la única mención es un comentario en `LoginScreen.tsx:20` que dice que el patrón no existe — y **0 usos** de `keyboardShouldPersistTaps`, `keyboardDismissMode` o `automaticallyAdjustKeyboardInsets`. El DS expone 14 primitivas (`Avatar`…`Spinner`) pero **no `Screen`**, así que cada pantalla repite a mano su `View` contendedor y la cobertura de SafeArea es desigual: `WelcomeScreen` usa `SafeAreaView` (vía `react-native-safe-area-context`), el resto usa `paddingTop: spacing.s16` fijo. Las 6 pantallas de Auth con inputs (Login, Register, ForgotPassword, ResetPasswordOtp, ResetPassword, VerifyEmail) centran el contenido con `justifyContent: 'center'` dentro de un `View` sin ScrollView ni avoidance: en iOS, con el teclado abierto, el CTA de envío puede quedar tapado sin forma de desplazarse hasta él. Es un defecto de dispositivo, no de estilo | Pendiente — crear `Screen` en el DS (`SafeAreaView` + `ScrollView` con `keyboardShouldPersistTaps="handled"` + `automaticallyAdjustKeyboardInsets` + `KeyboardAvoidingView` con `Platform.OS`) y adoptarla en las pantallas de Auth. **No verificable en este entorno** (sin dispositivo ni simulador): solo se puede probar la estructura y los tests, no el comportamiento real del teclado |
+| TD-043 | Media | `src/presentation/auth/screens/*.tsx`, `src/presentation/components/ui/` | **No existe la primitiva `Screen` del Design System, y ninguna pantalla de Auth evita el teclado.** Medido en `src/`: **0 ocurrencias de `KeyboardAvoidingView` y 0 de `Keyboard`** — la única mención es un comentario en `LoginScreen.tsx:20` que dice que el patrón no existe — y **0 usos** de `keyboardShouldPersistTaps`, `keyboardDismissMode` o `automaticallyAdjustKeyboardInsets`. El DS expone 14 primitivas (`Avatar`…`Spinner`) pero **no `Screen`**, así que cada pantalla repite a mano su `View` contendedor y la cobertura de SafeArea es desigual: `WelcomeScreen` usa `SafeAreaView` (vía `react-native-safe-area-context`), el resto usa `paddingTop: spacing.s16` fijo. Las 6 pantallas de Auth con inputs (Login, Register, ForgotPassword, ResetPasswordOtp, ResetPassword, VerifyEmail) centran el contenido con `justifyContent: 'center'` dentro de un `View` sin ScrollView ni avoidance: en iOS, con el teclado abierto, el CTA de envío puede quedar tapado sin forma de desplazarse hasta él. Es un defecto de dispositivo, no de estilo | ✅ Implementada (2026-09-18) — **PENDING DEVICE VALIDATION** — creada la primitiva `Screen` en el DS (`src/presentation/components/ui/Screen.tsx`) y migradas **las 7 pantallas de Auth con inputs** (Login, Register, ForgotPassword, ResetPasswordOtp, ResetPassword, VerifyEmail, Onboarding). Ver ficha **`## TD-043`**. **No verificable en este entorno** (sin dispositivo ni simulador): probados estructura, props, ramas de `Platform`, scroll y tests; el comportamiento real del teclado queda **pendiente de validación física** |
 
 ## Detalle TD-021+ (promovidos del informe M5, 2026-09-17)
 
@@ -396,6 +396,66 @@ era `width: '100%'`): medido en Forgot Password, el botón pasó de **147×48** 
 Queda **abierta, como decisión de diseño y no como defecto**, la altura del CTA primario: **56 px**
 (`size="xl"`) en Welcome y ValueProps frente a **48 px** (`size="lg"`) en las pantallas de formulario.
 Los enlaces secundarios también mezclan `size="sm"` (32 px) con el tamaño por defecto (40 px).
+
+
+## TD-043 — la primitiva `Screen` (2026-09-18)
+
+### Qué se hizo
+
+Una sola primitiva, `src/presentation/components/ui/Screen.tsx`, adoptada por **las 7 pantallas de
+Auth con inputs**: Login, Register, ForgotPassword, ResetPasswordOtp, ResetPassword, VerifyEmail y
+Onboarding. Resuelve, en un único sitio: safe area, `keyboardShouldPersistTaps`, scroll cuando el
+viewport no alcanza, columna flexible, padding inferior derivado del inset (no de una constante),
+tap-fuera-para-cerrar opcional, `maxWidth` para tablets/web y un `gap` de columna.
+
+No hay seis copias de `KeyboardAvoidingView` + `ScrollView`.
+
+### Divergencia con la propuesta original (deliberada)
+
+La propuesta inicial enumeraba `automaticallyAdjustKeyboardInsets` **además** de
+`KeyboardAvoidingView`. No se implementó, y la razón es mecánica: ambos compensan el teclado, y
+usarlos juntos produce **doble compensación** — el contenido sube dos veces y el CTA rebasa el borde
+superior. Se eligió `KeyboardAvoidingView`, que es el que permite decidir el `behavior` y excluir
+las plataformas que ya compensan solas.
+
+### Comportamiento por plataforma
+
+| Plataforma | Qué hace `Screen` | Por qué |
+|---|---|---|
+| iOS | `KeyboardAvoidingView` con `behavior="padding"` envolviendo el scroll | iOS dibuja el teclado **sobre** la ventana; el contenedor tiene que ceder el espacio |
+| Android | **Nada extra** — el `ScrollView` simplemente recibe menos alto | `app.json` deja `softwareKeyboardLayoutMode` sin definir, lo que selecciona el modo `resize` por defecto: la activity ya se encoge. Añadir avoidance encima compensaría dos veces |
+| Web | **Nada** | No hay teclado en pantalla móvil que dejar sitio |
+
+La inclusión de `android.softwareKeyboardLayoutMode` en `app.json` se verificó **antes** de elegir
+este diseño: el default es `resize`, no `pan`.
+
+### Detalles que no son obvios
+
+- El inset inferior entra como **padding de contenido**, no como edge de safe area: con el teclado
+  arriba el inset no significa nada, y apilarlo sobre el padding del `KeyboardAvoidingView` deja una
+  franja muerta bajo el CTA.
+- El `ScrollView` va **dentro** del `TouchableWithoutFeedback`, nunca alrededor: así el
+  tap-para-cerrar no se traga los taps ni rompe el arrastre.
+- Sin `marginTop` ajustado a un modelo concreto ni `automaticallyAdjustKeyboardInsets`.
+
+### Qué queda PENDING DEVICE VALIDATION
+
+Bloqueado por entorno (Linux sin Xcode, sin `adb`, sin Android SDK, sin simulador). Solo se puede
+probar la estructura, no la física del teclado. Falta comprobar:
+
+1. **iOS con teclado**: el input activo y el CTA de continuar visibles, en Login/Register/VerifyEmail.
+2. **Android con teclado**: que no haya doble compensación (el CTA no se va por arriba).
+3. **Small viewport** (iPhone SE / similar): que el scroll llegue a todo sin recortes.
+
+**TD-043 no se marca como completamente validada** hasta cubrir esos tres puntos.
+
+### Tests
+
+`tests/unit/ui/Screen.test.tsx` cubre la primitiva (safe area, `keyboardShouldPersistTaps`, ramas de
+`Platform`, `align`, `dismissKeyboardOnTap`) y `tests/unit/auth/ValuePropsScreen.test.tsx` cubre las
+dos únicas salidas de la entrada unificada. El mock de `react-native-safe-area-context` es un stub
+compartido (`tests/helpers/safeAreaStub.ts`) con insets mutables, más un alias en `vitest.config.ts`
+para el subpath `codegenNativeComponent` que esquiva el mock de `react-native`.
 
 
 ## TD-028 — por qué la raíz no se cierra por configuración (2026-09-17)
