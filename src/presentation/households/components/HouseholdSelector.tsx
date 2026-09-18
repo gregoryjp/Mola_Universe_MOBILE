@@ -5,7 +5,6 @@ import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
 import { ScrollView, Text, TouchableOpacity } from 'react-native';
 import { useHouseholds } from '../hooks/useHouseholds';
-import { CreateHouseholdButton } from './CreateHouseholdButton';
 
 interface ChipProps {
   label: string;
@@ -35,7 +34,14 @@ const Chip = ({ label, active, onPress }: ChipProps): JSX.Element => {
   );
 };
 
-/** Lets the user pick the active household (or "Personal"). */
+/**
+ * Lets the user pick the active household (or "Personal").
+ *
+ * Deliberately no "crear hogar" chip here: creating a household is household
+ * management, and this selector is mounted on nine screens (tasks, shopping,
+ * expenses, inventory...), where that action does not belong. Casa owns the
+ * setup flow — see HouseholdHubScreen.
+ */
 export const HouseholdSelector = (): JSX.Element => {
   const { data, isLoading, isError } = useHouseholds();
   const activeHouseholdId = useHouseholdStore((state) => state.activeHouseholdId);
@@ -63,7 +69,6 @@ export const HouseholdSelector = (): JSX.Element => {
           onPress={() => setActiveHousehold(household.id)}
         />
       ))}
-      <CreateHouseholdButton />
     </ScrollView>
   );
 };

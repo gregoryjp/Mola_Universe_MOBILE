@@ -19,6 +19,7 @@ import { ExpenseDetailScreen } from '@presentation/expenses/screens/ExpenseDetai
 import { ExpenseFormScreen } from '@presentation/expenses/screens/ExpenseFormScreen';
 import { useDefaultActiveHousehold } from '@presentation/households/hooks/useDefaultActiveHousehold';
 import { CreateHouseholdScreen } from '@presentation/households/screens/CreateHouseholdScreen';
+import { HouseholdHubScreen } from '@presentation/households/screens/HouseholdHubScreen';
 import { InventoryItemDetailScreen } from '@presentation/inventory/screens/InventoryItemDetailScreen';
 import { InventoryListScreen } from '@presentation/inventory/screens/InventoryListScreen';
 import { MeowScreen } from '@presentation/meow/screens/MeowScreen';
@@ -119,6 +120,7 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             <Stack.Screen name="CreateHousehold" component={CreateHouseholdScreen} />
+            <Stack.Screen name="HouseholdHub" component={HouseholdHubScreen} />
             <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
             <Stack.Screen name="TaskForm" component={TaskFormScreen} />
             <Stack.Screen name="ShoppingItemForm" component={ShoppingItemFormScreen} />

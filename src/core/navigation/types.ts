@@ -28,6 +28,8 @@ export type RootStackParamList = {
   VerifyEmail: undefined;
   Onboarding: undefined;
   CreateHousehold: undefined;
+  /** "Casa": groups the household capabilities by intention (see HouseholdHubScreen). */
+  HouseholdHub: undefined;
   TaskDetail: { taskId: string };
   TaskForm: undefined;
   ShoppingItemForm: { listId: string };

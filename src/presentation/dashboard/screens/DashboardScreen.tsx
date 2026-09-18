@@ -195,6 +195,22 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
       ? undefined
       : households?.find((household) => household.id === activeHouseholdId);
 
+  // "En casa" is the way into Casa, so it cannot depend on a household being
+  // active: a user who only has "Personal" selected (or none at all) still needs
+  // a door to the hub, otherwise Inventario and the household setup stay out of
+  // reach from Hoy.
+  const householdCount = households?.length ?? 0;
+  const houseTitle = activeHousehold
+    ? activeHousehold.name
+    : householdCount > 0
+      ? 'Personal'
+      : 'Sin hogar';
+  const houseMeta = activeHousehold
+    ? plural(activeHousehold.memberCount, 'persona', 'personas')
+    : householdCount > 0
+      ? 'Toca para cambiar de hogar'
+      : 'Crea tu hogar para compartir';
+
   const hasDayContent = openTasks.length > 0 || events.length > 0 || lists.length > 0;
 
   return (
@@ -352,22 +368,32 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
         />
       ) : null}
 
-      {activeHousehold ? (
-        <View style={styles.section}>
-          <SectionHeader title="En casa" testID="hoy-household" />
-          <View style={styles.houseRow}>
-            <House size={20} strokeWidth={2} color={styles.moreIcon.color} />
-            <View style={styles.houseText}>
-              <Text style={styles.houseName} numberOfLines={1}>
-                {activeHousehold.name}
-              </Text>
-              <Text style={styles.houseMeta}>
-                {plural(activeHousehold.memberCount, 'persona', 'personas')}
-              </Text>
-            </View>
+      <View style={styles.section}>
+        <SectionHeader
+          title="En casa"
+          actionLabel="Abrir"
+          actionAccessibilityLabel="Abrir Casa"
+          onAction={() => navigateTo('HouseholdHub')}
+          testID="hoy-household"
+        />
+        <TouchableOpacity
+          style={styles.houseRow}
+          onPress={() => navigateTo('HouseholdHub')}
+          accessibilityRole="button"
+          accessibilityLabel={`Casa: ${houseTitle}`}
+          accessibilityHint="Abre Casa, el sistema de tu hogar"
+          testID="hoy-household-row"
+        >
+          <House size={20} strokeWidth={2} color={styles.moreIcon.color} />
+          <View style={styles.houseText}>
+            <Text style={styles.houseName} numberOfLines={1}>
+              {houseTitle}
+            </Text>
+            <Text style={styles.houseMeta}>{houseMeta}</Text>
           </View>
-        </View>
-      ) : null}
+          <ChevronRight size={18} strokeWidth={2} color={styles.moreChevron.color} />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.section}>
         <SectionHeader title="Más en MOLA" testID="hoy-more" />

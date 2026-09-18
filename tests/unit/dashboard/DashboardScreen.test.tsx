@@ -6,7 +6,6 @@ vi.mock(
   'react-native',
   async () => (await import('../../helpers/reactNativeStub')).reactNativeStub,
 );
-vi.mock('lucide-react-native', async () => (await import('../../helpers/lucideStub')).lucideStub);
 
 const mocks = vi.hoisted(() => ({
   useDashboardSummary: vi.fn(),
@@ -218,10 +217,28 @@ describe('DashboardScreen — Hoy', () => {
     renderer.unmount();
   });
 
-  it('omits the household summary when there is no active household', () => {
+  it('keeps a door to Casa even when no household is active', () => {
     const renderer = given({ householdId: null });
 
-    expect(findByTestID(renderer, 'hoy-household')).toBeUndefined();
+    // "En casa" is the only entry point to the Casa hub, which is in turn the
+    // only entry point to Inventario — hiding it on the Personal scope would
+    // orphan that whole section.
+    const row = findByTestID(renderer, 'hoy-household-row');
+    expect(row).toBeDefined();
+    expect(textOfNode(row)).toContain('Personal');
+
+    act(() => {
+      row?.props.onPress();
+    });
+    expect(navigation.navigate).toHaveBeenCalledWith('HouseholdHub');
+
+    renderer.unmount();
+  });
+
+  it('points at the household setup when the user has no household at all', () => {
+    const renderer = given({ householdId: null, households: [] });
+
+    expect(textOfNode(findByTestID(renderer, 'hoy-household-row'))).toContain('Sin hogar');
 
     renderer.unmount();
   });
