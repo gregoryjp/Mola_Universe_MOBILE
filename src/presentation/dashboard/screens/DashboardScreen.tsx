@@ -1,29 +1,46 @@
 import type { MainTabParamList, RootStackParamList, TabScreenProps } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
-import { spacing, typography, useTheme, useThemedStyles } from '@core/theme';
-import { Avatar, Card, ErrorState, IconButton, Spinner } from '@presentation/components/ui';
+import { breakpoints, spacing, typography, useThemedStyles } from '@core/theme';
+import type {
+  DashboardEvent,
+  DashboardShoppingList,
+} from '@domain/dashboard/entities/DashboardSummary';
+import type { Task } from '@domain/tasks/entities/Task';
+import { BrandLogo } from '@presentation/components/brand/BrandLogo';
+import {
+  Avatar,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  QuickAction,
+  SectionHeader,
+  Skeleton,
+} from '@presentation/components/ui';
+import { useHouseholds } from '@presentation/households/hooks/useHouseholds';
+import { TaskRow } from '@presentation/tasks/components/TaskRow';
 import { useAuthStore } from '@shared/store/authStore';
+import { useHouseholdStore } from '@shared/store/householdStore';
 import {
   Bell,
   Calendar,
   Cat,
+  ChevronRight,
+  House,
   Image as ImageIcon,
   ListTodo,
   PawPrint,
   PiggyBank,
   ShieldAlert,
-  ShoppingCart,
   User,
   Users,
   Wallet,
 } from 'lucide-react-native';
 import type { ComponentType, JSX } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useDashboardSummary } from '../hooks/useDashboardSummary';
 
-/** Every real, reachable route this screen can navigate to — spans both the
- * tab navigator (TasksList, ShoppingLists, Calendar) and the root stack
- * (everything pushed on top of it), since Dashboard already links to both. */
+/** Every real, reachable route this screen can navigate to — spans both the tab
+ * navigator and the root stack, since Hoy links to both. */
 type AppRoute = keyof MainTabParamList | keyof RootStackParamList;
 
 type Props = TabScreenProps<'Dashboard'>;
@@ -33,6 +50,22 @@ interface IconProps {
   color?: string;
   strokeWidth?: number;
 }
+
+interface SectionLink {
+  key: string;
+  label: string;
+  icon: ComponentType<IconProps>;
+  route: AppRoute;
+}
+
+/**
+ * How many rows each day section shows before "Ver todas" takes over.
+ * Progressive disclosure: Hoy is a place to act on the next few things, not a
+ * second copy of the Tareas and Agenda tabs.
+ */
+const MAX_TASKS = 3;
+const MAX_EVENTS = 2;
+const MAX_LISTS = 2;
 
 const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MONTHS = [
@@ -51,11 +84,8 @@ const MONTHS = [
 ];
 
 /** No Intl dependency on purpose — avoids relying on Hermes ICU data. */
-const formatFriendlyDate = (iso: string): string => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '';
-  return `${WEEKDAYS[date.getDay()]}, ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
-};
+const formatFriendlyDate = (date: Date): string =>
+  `${WEEKDAYS[date.getDay()]}, ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
 
 const greetingFor = (hour: number): string => {
   if (hour < 12) return 'Buenos días';
@@ -63,173 +93,331 @@ const greetingFor = (hour: number): string => {
   return 'Buenas noches';
 };
 
-interface StatTileProps {
-  label: string;
-  value: number;
-  onPress: () => void;
-}
-
-const StatTile = ({ label, value, onPress }: StatTileProps): JSX.Element => {
-  const styles = useThemedStyles(makeStyles);
-
-  return (
-    <Card
-      variant="interactive"
-      size="sm"
-      onPress={onPress}
-      accessibilityLabel={`${label}: ${value}`}
-      style={styles.stat}
-    >
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </Card>
-  );
+/** "a, b y c" — no trailing comma, because Spanish does not use one. */
+const joinNatural = (parts: string[]): string => {
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0] ?? '';
+  const head = parts.slice(0, -1).join(', ');
+  return `${head} y ${parts[parts.length - 1]}`;
 };
 
-interface SectionLink {
+const plural = (count: number, singular: string, pluralForm: string): string =>
+  `${count} ${count === 1 ? singular : pluralForm}`;
+
+const isOpenTask = (task: Task): boolean =>
+  task.status !== 'COMPLETED' && task.status !== 'CANCELLED';
+
+/**
+ * The quick captures that have a real destination. There is deliberately no
+ * "buscar" here: no search route exists, and a dead control is worse than none.
+ */
+const QUICK_ACTIONS: {
   key: string;
   label: string;
   icon: ComponentType<IconProps>;
   route: AppRoute;
-}
-
-/**
- * Every entry here is a real, already-shipped screen (no placeholder routes) —
- * "En casa" groups day-to-day household use, "Más" groups finance/account/
- * safety, so the former 13-button wall reads as two short, scannable groups
- * instead of one undifferentiated list.
- */
-const EN_CASA: SectionLink[] = [
-  { key: 'tasks', label: 'Tareas', icon: ListTodo, route: 'TasksList' },
-  { key: 'shopping', label: 'Compras', icon: ShoppingCart, route: 'ShoppingLists' },
-  { key: 'calendar', label: 'Calendario', icon: Calendar, route: 'Calendar' },
-  { key: 'pets', label: 'Mascotas', icon: PawPrint, route: 'Pets' },
-  { key: 'moments', label: 'Momentos', icon: ImageIcon, route: 'Moments' },
+}[] = [
+  { key: 'task', label: 'Nueva tarea', icon: ListTodo, route: 'TaskForm' },
+  { key: 'event', label: 'Nuevo evento', icon: Calendar, route: 'CalendarEventForm' },
+  { key: 'expense', label: 'Nuevo gasto', icon: Wallet, route: 'ExpenseForm' },
+  { key: 'sos', label: 'SOS', icon: ShieldAlert, route: 'SOSActivation' },
 ];
 
-const MAS: SectionLink[] = [
-  { key: 'expenses', label: 'Gastos', icon: Wallet, route: 'Expenses' },
+/**
+ * The sections that are NOT one of the five tabs, and therefore have no other
+ * way in. Hoy is their only entry point, so this list survives the redesign —
+ * as a compact row per section instead of a grid of tinted cards.
+ */
+const MORE_LINKS: SectionLink[] = [
+  { key: 'pets', label: 'Mascotas', icon: PawPrint, route: 'Pets' },
+  { key: 'moments', label: 'Momentos', icon: ImageIcon, route: 'Moments' },
   { key: 'savings', label: 'Ahorros', icon: PiggyBank, route: 'Savings' },
   { key: 'sos', label: 'SOS', icon: ShieldAlert, route: 'SOSActivation' },
   { key: 'contacts', label: 'Contactos de confianza', icon: Users, route: 'TrustedContacts' },
-  { key: 'account', label: 'Cuenta', icon: User, route: 'Account' },
   { key: 'meow', label: 'Meow', icon: Cat, route: 'Meow' },
+  { key: 'account', label: 'Cuenta', icon: User, route: 'Account' },
 ];
 
-interface SectionTileProps {
+interface MoreRowProps {
   link: SectionLink;
   onPress: () => void;
 }
 
-const SectionTile = ({ link, onPress }: SectionTileProps): JSX.Element => {
-  const theme = useTheme();
+const MoreRow = ({ link, onPress }: MoreRowProps): JSX.Element => {
   const styles = useThemedStyles(makeStyles);
   const Icon = link.icon;
 
   return (
-    <Card
-      variant="interactive"
-      size="sm"
+    <TouchableOpacity
+      style={styles.moreRow}
       onPress={onPress}
+      accessibilityRole="button"
       accessibilityLabel={link.label}
-      style={styles.tile}
+      testID={`more-${link.key}`}
     >
-      <Icon size={20} strokeWidth={2} color={theme.text} />
-      <Text style={styles.tileLabel} numberOfLines={1}>
+      <Icon size={20} strokeWidth={2} color={styles.moreIcon.color} />
+      <Text style={styles.moreLabel} numberOfLines={1}>
         {link.label}
       </Text>
-    </Card>
+      <ChevronRight size={18} strokeWidth={2} color={styles.moreChevron.color} />
+    </TouchableOpacity>
   );
 };
 
 export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
-  const { data, isLoading, isError, error, refetch } = useDashboardSummary();
+  const { data, isLoading, isError, error, refetch, isRefetching } = useDashboardSummary();
   const userName = useAuthStore((state) => state.user?.name ?? '');
-  const theme = useTheme();
+  const activeHouseholdId = useHouseholdStore((state) => state.activeHouseholdId);
+  const { data: households } = useHouseholds({ enabled: true });
   const styles = useThemedStyles(makeStyles);
 
-  const greeting = greetingFor(new Date().getHours());
+  const now = new Date();
+  const greeting = greetingFor(now.getHours());
   const navigateTo = (route: AppRoute): void => navigation.navigate(route as never);
 
+  // Distinguishable without NetInfo: the API client reports a transport failure
+  // as NETWORK_ERROR, so "no connection" is told apart from "the server said no".
+  const isOffline = isError && error.code === 'NETWORK_ERROR';
+
+  const openTasks = (data?.tasksToday ?? []).filter(isOpenTask);
+  const events = data?.eventsToday ?? [];
+  const lists = data?.openShoppingLists ?? [];
+
+  const dayParts = [
+    openTasks.length > 0 ? plural(openTasks.length, 'tarea', 'tareas') : '',
+    events.length > 0 ? plural(events.length, 'evento', 'eventos') : '',
+    lists.length > 0 ? `${plural(lists.length, 'lista', 'listas')} de la compra` : '',
+  ].filter((part) => part !== '');
+  const daySummary = joinNatural(dayParts);
+
+  const activeHousehold =
+    activeHouseholdId === null
+      ? undefined
+      : households?.find((household) => household.id === activeHouseholdId);
+
+  const hasDayContent = openTasks.length > 0 || events.length > 0 || lists.length > 0;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />}
+      testID="hoy-scroll"
+    >
       <View style={styles.headerRow}>
-        <View style={styles.headerText}>
-          <Text style={styles.heading}>Hoy</Text>
-          <Text style={styles.greeting} numberOfLines={1}>
-            {userName ? `${greeting}, ${userName}` : greeting}
-          </Text>
-          {data ? <Text style={styles.date}>{formatFriendlyDate(data.date)}</Text> : null}
-        </View>
+        <BrandLogo width={104} />
         <View style={styles.headerActions}>
           <IconButton
             icon={Bell}
             accessibilityLabel="Notificaciones"
             onPress={() => navigateTo('NotificationsList')}
           />
-          <Pressable
+          <TouchableOpacity
             onPress={() => navigateTo('Account')}
             accessibilityRole="button"
             accessibilityLabel="Cuenta"
           >
             <Avatar name={userName || '?'} size={40} />
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </View>
 
-      {isLoading ? <Spinner /> : null}
-      {isError ? <ErrorState message={error.message} onRetry={() => void refetch()} /> : null}
+      <View style={styles.greetingBlock}>
+        <Text style={styles.greeting} accessibilityRole="header">
+          {userName ? `${greeting}, ${userName.split(' ')[0]}` : greeting}
+        </Text>
+        <Text style={styles.date}>{formatFriendlyDate(now)}</Text>
+      </View>
 
-      {data ? (
-        <>
-          {data.meowSummary ? (
-            <Card size="sm" style={styles.meowCard}>
-              <View style={styles.meowRow}>
-                <Cat size={18} strokeWidth={2} color={theme.textMuted} />
-                <Text style={styles.meowText}>{data.meowSummary}</Text>
-              </View>
-            </Card>
-          ) : null}
-
-          <View style={styles.statsRow}>
-            <StatTile
-              label="Tareas"
-              value={data.tasksToday.length}
-              onPress={() => navigateTo('TasksList')}
-            />
-            <StatTile
-              label="Eventos"
-              value={data.eventsToday.length}
-              onPress={() => navigateTo('Calendar')}
-            />
-            <StatTile
-              label="Listas"
-              value={data.openShoppingLists.length}
-              onPress={() => navigateTo('ShoppingLists')}
-            />
-          </View>
-        </>
+      {isOffline ? (
+        <View style={styles.offlineBox} testID="hoy-offline">
+          <Text style={styles.offlineTitle}>Sin conexión</Text>
+          <Text style={styles.offlineText}>
+            No hemos podido actualizar tu día. Lo que ves puede estar desactualizado.
+          </Text>
+        </View>
       ) : null}
 
-      <View style={styles.group}>
-        <Text style={styles.groupTitle}>En casa</Text>
-        <View style={styles.tilesGrid}>
-          {EN_CASA.map((link) => (
-            <SectionTile key={link.key} link={link} onPress={() => navigateTo(link.route)} />
-          ))}
+      {!isOffline && isError ? (
+        <ErrorState message={error.message} onRetry={() => void refetch()} />
+      ) : null}
+
+      {isLoading ? (
+        <View style={styles.skeletons} testID="hoy-loading">
+          <Skeleton variant="text" width="60%" />
+          <Skeleton variant="list" />
+          <Skeleton variant="list" />
         </View>
+      ) : null}
+
+      {!isLoading && !isError ? (
+        <View style={styles.dayBlock}>
+          <Text style={styles.daySummary} testID="hoy-day-summary">
+            {hasDayContent ? daySummary : 'Hoy no tienes nada programado.'}
+          </Text>
+          {hasDayContent ? (
+            <Text style={styles.dayHint}>Esto es lo que tienes por delante.</Text>
+          ) : null}
+        </View>
+      ) : null}
+
+      {data?.meowSummary ? (
+        <TouchableOpacity
+          style={styles.meowRow}
+          onPress={() => navigateTo('Meow')}
+          accessibilityRole="button"
+          accessibilityLabel={`Meow: ${data.meowSummary}`}
+          accessibilityHint="Abre Meow para preguntar más"
+          testID="hoy-meow"
+        >
+          <Cat size={18} strokeWidth={2} color={styles.meowIcon.color} />
+          <Text style={styles.meowText}>{data.meowSummary}</Text>
+          <ChevronRight size={18} strokeWidth={2} color={styles.moreChevron.color} />
+        </TouchableOpacity>
+      ) : null}
+
+      <View style={styles.quickRow}>
+        {QUICK_ACTIONS.map((action) => (
+          <QuickAction
+            key={action.key}
+            icon={action.icon}
+            label={action.label}
+            onPress={() => navigateTo(action.route)}
+            accessibilityLabel={action.label}
+            testID={`quick-${action.key}`}
+          />
+        ))}
       </View>
 
-      <View style={styles.group}>
-        <Text style={styles.groupTitle}>Más</Text>
-        <View style={styles.tilesGrid}>
-          {MAS.map((link) => (
-            <SectionTile key={link.key} link={link} onPress={() => navigateTo(link.route)} />
+      {openTasks.length > 0 ? (
+        <View style={styles.section}>
+          <SectionHeader
+            title="Tareas de hoy"
+            count={openTasks.length}
+            actionLabel="Ver todas"
+            actionAccessibilityLabel="Ver todas las tareas"
+            onAction={() => navigateTo('TasksList')}
+            testID="hoy-tasks"
+          />
+          {openTasks.slice(0, MAX_TASKS).map((task) => (
+            <TaskRow
+              key={task.id}
+              task={task}
+              onPress={() => navigation.navigate('TaskDetail', { taskId: task.id })}
+              testID={`hoy-task-${task.id}`}
+            />
+          ))}
+        </View>
+      ) : null}
+
+      {events.length > 0 ? (
+        <View style={styles.section}>
+          <SectionHeader
+            title="Agenda de hoy"
+            count={events.length}
+            actionLabel="Ver agenda"
+            actionAccessibilityLabel="Ver la agenda"
+            onAction={() => navigateTo('Calendar')}
+            testID="hoy-events"
+          />
+          {events.slice(0, MAX_EVENTS).map((event) => (
+            <EventRow key={event.id} event={event} />
+          ))}
+        </View>
+      ) : null}
+
+      {lists.length > 0 ? (
+        <View style={styles.section}>
+          <SectionHeader
+            title="Listas abiertas"
+            count={lists.length}
+            actionLabel="Ir a compras"
+            actionAccessibilityLabel="Ir a las listas de la compra"
+            onAction={() => navigateTo('ShoppingLists')}
+            testID="hoy-lists"
+          />
+          {lists.slice(0, MAX_LISTS).map((list) => (
+            <ListRow key={list.id} list={list} />
+          ))}
+        </View>
+      ) : null}
+
+      {!isLoading && !isError && !hasDayContent ? (
+        <EmptyState
+          title="Tu día está despejado"
+          description="Cuando tengas tareas, eventos o listas para hoy aparecerán aquí."
+          actionLabel="Crear una tarea"
+          onAction={() => navigateTo('TaskForm')}
+          testID="hoy-empty"
+        />
+      ) : null}
+
+      {activeHousehold ? (
+        <View style={styles.section}>
+          <SectionHeader title="En casa" testID="hoy-household" />
+          <View style={styles.houseRow}>
+            <House size={20} strokeWidth={2} color={styles.moreIcon.color} />
+            <View style={styles.houseText}>
+              <Text style={styles.houseName} numberOfLines={1}>
+                {activeHousehold.name}
+              </Text>
+              <Text style={styles.houseMeta}>
+                {plural(activeHousehold.memberCount, 'persona', 'personas')}
+              </Text>
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      <View style={styles.section}>
+        <SectionHeader title="Más en MOLA" testID="hoy-more" />
+        <View style={styles.moreList}>
+          {MORE_LINKS.map((link) => (
+            <MoreRow key={link.key} link={link} onPress={() => navigateTo(link.route)} />
           ))}
         </View>
       </View>
     </ScrollView>
   );
+};
+
+const EventRow = ({ event }: { event: DashboardEvent }): JSX.Element => {
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <View style={styles.plainRow} testID={`hoy-event-${event.id}`}>
+      <Text style={styles.plainTitle} numberOfLines={1}>
+        {event.title}
+      </Text>
+      <Text style={styles.plainMeta}>{EVENT_TYPE_LABELS[event.type]}</Text>
+    </View>
+  );
+};
+
+const ListRow = ({ list }: { list: DashboardShoppingList }): JSX.Element => {
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <View style={styles.plainRow} testID={`hoy-list-${list.id}`}>
+      <Text style={styles.plainTitle} numberOfLines={1}>
+        {list.name}
+      </Text>
+    </View>
+  );
+};
+
+/** The backend's `CalendarEventType`, in the reader's language. */
+const EVENT_TYPE_LABELS: Record<DashboardEvent['type'], string> = {
+  GENERAL: 'General',
+  BIRTHDAY: 'Cumpleaños',
+  APPOINTMENT: 'Cita',
+  PAYMENT: 'Pago',
+  SUBSCRIPTION: 'Suscripción',
+  INSURANCE: 'Seguro',
+  MAINTENANCE: 'Mantenimiento',
+  PET: 'Mascota',
+  TRIP: 'Viaje',
+  CUSTOM: 'Evento',
 };
 
 const makeStyles = (theme: ColorTokens) => ({
@@ -238,82 +426,154 @@ const makeStyles = (theme: ColorTokens) => ({
     backgroundColor: theme.background,
   },
   content: {
-    padding: spacing.s4,
-    gap: spacing.s5,
+    paddingHorizontal: spacing.s6,
+    paddingTop: spacing.s6,
+    paddingBottom: spacing.s16,
+    gap: spacing.s6,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+    maxWidth: breakpoints.tablet,
   },
   headerRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'space-between' as const,
-    gap: spacing.s3,
-  },
-  headerText: {
-    flex: 1,
-    gap: spacing.s1,
+    gap: spacing.s4,
   },
   headerActions: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: spacing.s3,
+    gap: spacing.s2,
   },
-  heading: {
-    ...typography.h1,
-    color: theme.text,
+  greetingBlock: {
+    gap: spacing.s1,
   },
   greeting: {
-    ...typography.body,
-    color: theme.textMuted,
+    ...typography.h2,
+    color: theme.text,
   },
   date: {
-    ...typography.caption,
+    ...typography.bodySmall,
     color: theme.textMuted,
   },
-  meowCard: {
-    backgroundColor: theme.surfaceAlt,
+  offlineBox: {
+    gap: spacing.s1,
+    backgroundColor: theme.warningSoft,
+    borderRadius: 12,
+    padding: spacing.s4,
+  },
+  offlineTitle: {
+    ...typography.body,
+    color: theme.text,
+  },
+  offlineText: {
+    ...typography.bodySmall,
+    color: theme.text,
+  },
+  skeletons: {
+    gap: spacing.s3,
+  },
+  dayBlock: {
+    gap: spacing.s1,
+  },
+  daySummary: {
+    ...typography.bodyLarge,
+    color: theme.text,
+  },
+  dayHint: {
+    ...typography.caption,
+    color: theme.textMuted,
   },
   meowRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: spacing.s2,
+    gap: spacing.s3,
+    paddingVertical: spacing.s3,
+    paddingHorizontal: spacing.s4,
+    borderRadius: 12,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  meowIcon: {
+    color: theme.textMuted,
   },
   meowText: {
     ...typography.bodySmall,
-    color: theme.textMuted,
+    color: theme.text,
     flex: 1,
   },
-  statsRow: {
+  quickRow: {
     flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
     gap: spacing.s2,
   },
-  stat: {
-    flex: 1,
+  section: {
+    gap: spacing.s2,
+  },
+  plainRow: {
+    flexDirection: 'row' as const,
     alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    gap: spacing.s3,
+    paddingVertical: spacing.s3,
+    paddingHorizontal: spacing.s4,
+    borderRadius: 12,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
   },
-  statValue: {
-    ...typography.h3,
+  plainTitle: {
+    ...typography.body,
     color: theme.text,
+    flexShrink: 1,
   },
-  statLabel: {
+  plainMeta: {
     ...typography.caption,
     color: theme.textMuted,
   },
-  group: {
-    gap: spacing.s2,
+  houseRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: spacing.s3,
+    paddingVertical: spacing.s3,
+    paddingHorizontal: spacing.s4,
+    borderRadius: 12,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
   },
-  groupTitle: {
-    ...typography.bodySmall,
+  houseText: {
+    flex: 1,
+  },
+  houseName: {
+    ...typography.body,
+    color: theme.text,
+  },
+  houseMeta: {
+    ...typography.caption,
     color: theme.textMuted,
   },
-  tilesGrid: {
+  moreList: {
+    gap: spacing.s1,
+  },
+  moreRow: {
     flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
+    alignItems: 'center' as const,
     gap: spacing.s3,
+    // 12 + a 24px line + 12 = the 44px minimum target without a card around it.
+    paddingVertical: spacing.s3,
+    paddingHorizontal: spacing.s1,
   },
-  tile: {
-    width: '47%' as const,
-  },
-  tileLabel: {
-    ...typography.bodySmall,
+  moreIcon: {
     color: theme.text,
+  },
+  moreChevron: {
+    color: theme.textMuted,
+  },
+  moreLabel: {
+    ...typography.body,
+    color: theme.text,
+    flex: 1,
   },
 });

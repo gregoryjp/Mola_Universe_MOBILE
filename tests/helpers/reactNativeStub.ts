@@ -26,6 +26,7 @@ export const reactNativeStub = {
   Image: hostComponent('Image'),
   ActivityIndicator: hostComponent('ActivityIndicator'),
   FlatList: hostComponent('FlatList'),
+  RefreshControl: hostComponent('RefreshControl'),
   KeyboardAvoidingView: hostComponent('KeyboardAvoidingView'),
   // Clones its child and hands it the press handler, the way the real component
   // injects touch handlers — so a test can drive tap-to-dismiss for real.
