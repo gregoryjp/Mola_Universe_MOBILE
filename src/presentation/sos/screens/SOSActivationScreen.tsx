@@ -2,7 +2,7 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { SosEventStatus } from '@domain/sos/entities/Sos';
-import { Button, Input, Spinner } from '@presentation/components/ui';
+import { Button, Input, ScreenHeader, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { type JSX, useEffect, useState } from 'react';
 import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -83,7 +83,7 @@ export const SOSActivationScreen = ({ navigation }: Props): JSX.Element => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>SOS</Text>
+      <ScreenHeader title="SOS" onBack={() => navigation.goBack()} testID="sos-header" />
 
       {contacts.data && contacts.data.length === 0 ? (
         <View style={styles.warningBox}>
@@ -235,10 +235,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s2,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   warningBox: {
     backgroundColor: theme.warningSoft,

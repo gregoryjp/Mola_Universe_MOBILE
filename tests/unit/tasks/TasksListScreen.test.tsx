@@ -7,7 +7,6 @@ vi.mock(
   'react-native',
   async () => (await import('../../helpers/reactNativeStub')).reactNativeStub,
 );
-vi.mock('lucide-react-native', async () => (await import('../../helpers/lucideStub')).lucideStub);
 
 const mocks = vi.hoisted(() => ({
   useTasksList: vi.fn(),

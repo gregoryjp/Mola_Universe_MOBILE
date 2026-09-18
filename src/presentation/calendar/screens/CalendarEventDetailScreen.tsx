@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, Spinner } from '@presentation/components/ui';
+import { Button, ScreenHeader, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -23,8 +23,11 @@ export const CalendarEventDetailScreen = ({ route, navigation }: Props): JSX.Ele
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>{event.data?.title ?? 'Evento'}</Text>
-
+      <ScreenHeader
+        title={event.data?.title ?? 'Evento'}
+        onBack={() => navigation.goBack()}
+        testID="calendar-event-header"
+      />
       {event.isLoading ? <Spinner /> : null}
       {event.isError ? <Text style={styles.error}>{event.error.message}</Text> : null}
 
@@ -86,10 +89,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s4,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   block: {
     gap: spacing.s1,

@@ -2,7 +2,7 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { PetMedicalRecordType } from '@domain/pets/entities/Pet';
-import { Button, ErrorState, Input, Spinner } from '@presentation/components/ui';
+import { Button, ErrorState, Input, ScreenHeader, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
@@ -109,7 +109,11 @@ export const PetDetailScreen = ({ navigation, route }: Props): JSX.Element => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>{current.name}</Text>
+      <ScreenHeader
+        title={current.name}
+        onBack={() => navigation.goBack()}
+        testID="pet-detail-header"
+      />
       <Text style={styles.meta}>
         {current.species}
         {current.breed ? ` · ${current.breed}` : ''}
@@ -332,10 +336,6 @@ const makeStyles = (theme: ColorTokens) => ({
     flex: 1,
     backgroundColor: theme.background,
     padding: spacing.s4,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   section: {
     gap: spacing.s1,

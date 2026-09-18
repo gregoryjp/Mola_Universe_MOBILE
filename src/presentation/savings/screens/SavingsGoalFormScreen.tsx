@@ -2,7 +2,7 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { SavingsBoardPreset } from '@domain/savings/entities/SavingsGoal';
-import { Button, Input } from '@presentation/components/ui';
+import { Button, Input, ScreenHeader } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
@@ -61,7 +61,11 @@ export const SavingsGoalFormScreen = ({ navigation }: Props): JSX.Element => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>Nueva meta de ahorro</Text>
+      <ScreenHeader
+        title="Nueva meta de ahorro"
+        onBack={() => navigation.goBack()}
+        testID="savings-goal-form-header"
+      />
 
       <Input
         label="Nombre"
@@ -203,10 +207,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s2,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   sectionTitle: {
     ...typography.bodySmall,

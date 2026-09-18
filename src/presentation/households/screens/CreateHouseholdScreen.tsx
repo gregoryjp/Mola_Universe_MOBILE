@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, Input } from '@presentation/components/ui';
+import { Button, Input, ScreenHeader } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
@@ -24,7 +24,11 @@ export const CreateHouseholdScreen = ({ navigation }: Props): JSX.Element => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Crear hogar</Text>
+      <ScreenHeader
+        title="Crear hogar"
+        onBack={() => navigation.goBack()}
+        testID="create-household-header"
+      />
 
       <Input
         label="Nombre"
@@ -63,10 +67,6 @@ const makeStyles = (theme: ColorTokens) => ({
     backgroundColor: theme.background,
     padding: spacing.s4,
     gap: spacing.s3,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   error: {
     ...typography.bodySmall,

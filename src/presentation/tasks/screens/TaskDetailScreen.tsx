@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, ErrorState, Spinner } from '@presentation/components/ui';
+import { Button, ErrorState, ScreenHeader, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { Text, View } from 'react-native';
@@ -35,7 +35,11 @@ export const TaskDetailScreen = ({ route, navigation }: Props): JSX.Element => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{task.title}</Text>
+      <ScreenHeader
+        title={task.title}
+        onBack={() => navigation.goBack()}
+        testID="task-detail-header"
+      />
       <Text style={styles.meta}>
         {task.priority} · {task.status}
         {task.isOverdue ? ' · atrasada' : ''}
@@ -80,10 +84,6 @@ const makeStyles = (theme: ColorTokens) => ({
     justifyContent: 'center' as const,
     backgroundColor: theme.background,
     padding: spacing.s6,
-  },
-  title: {
-    ...typography.h2,
-    color: theme.text,
   },
   meta: {
     ...typography.bodySmall,

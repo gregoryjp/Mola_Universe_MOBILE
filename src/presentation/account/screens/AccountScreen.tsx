@@ -2,7 +2,7 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import { useLogout } from '@presentation/auth/hooks/useLogout';
-import { Button, Card } from '@presentation/components/ui';
+import { Button, Card, ScreenHeader } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import type { JSX } from 'react';
@@ -22,7 +22,7 @@ export const AccountScreen = ({ navigation }: Props): JSX.Element => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>Cuenta</Text>
+      <ScreenHeader title="Cuenta" onBack={() => navigation.goBack()} testID="account-header" />
 
       <Card size="sm">
         <Text style={styles.name}>{user?.name ?? 'Sesión activa'}</Text>
@@ -62,10 +62,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s4,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   name: {
     ...typography.bodyLarge,

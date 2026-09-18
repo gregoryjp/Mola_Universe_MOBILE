@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Badge, Button, Spinner } from '@presentation/components/ui';
+import { Badge, Button, ScreenHeader, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import type { JSX } from 'react';
@@ -36,7 +36,11 @@ export const MomentDetailScreen = ({ route, navigation }: Props): JSX.Element =>
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.heading}>{data?.title ?? 'Momento'}</Text>
+        <ScreenHeader
+          title={data?.title ?? 'Momento'}
+          onBack={() => navigation.goBack()}
+          testID="moment-detail-header"
+        />
         {data ? (
           <Badge
             label={isCancelled ? 'Cancelado' : data.type === 'EVENT' ? 'Quedada' : 'Encuesta'}
@@ -161,11 +165,6 @@ const makeStyles = (theme: ColorTokens) => ({
     alignItems: 'center' as const,
     justifyContent: 'space-between' as const,
     gap: spacing.s2,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
-    flexShrink: 1,
   },
   block: {
     gap: spacing.s1,

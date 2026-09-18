@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, Input } from '@presentation/components/ui';
+import { Button, Input, ScreenHeader } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import type { JSX } from 'react';
@@ -37,8 +37,11 @@ export const ExpenseFormScreen = ({ navigation }: Props): JSX.Element => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Nuevo gasto</Text>
-
+      <ScreenHeader
+        title="Nuevo gasto"
+        onBack={() => navigation.goBack()}
+        testID="expense-form-header"
+      />
       <Input
         label="Descripción"
         value={description}
@@ -87,10 +90,6 @@ const makeStyles = (theme: ColorTokens) => ({
     backgroundColor: theme.background,
     padding: spacing.s4,
     gap: spacing.s2,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   hint: {
     ...typography.caption,

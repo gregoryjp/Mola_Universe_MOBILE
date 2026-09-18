@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, Input, Spinner } from '@presentation/components/ui';
+import { Button, Input, ScreenHeader, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
@@ -60,8 +60,11 @@ export const SavingsGoalDetailScreen = ({ route, navigation }: Props): JSX.Eleme
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>{goal.data?.name ?? 'Meta de ahorro'}</Text>
-
+      <ScreenHeader
+        title={goal.data?.name ?? 'Meta de ahorro'}
+        onBack={() => navigation.goBack()}
+        testID="savings-goal-header"
+      />
       {goal.isLoading ? <Spinner /> : null}
       {goal.isError ? <Text style={styles.error}>{goal.error.message}</Text> : null}
 
@@ -178,10 +181,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s4,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   summary: {
     gap: 2,

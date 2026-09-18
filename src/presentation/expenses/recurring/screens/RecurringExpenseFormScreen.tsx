@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, Input } from '@presentation/components/ui';
+import { Button, Input, ScreenHeader } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { type JSX, useState } from 'react';
 import { ScrollView, Text } from 'react-native';
@@ -62,9 +62,11 @@ export const RecurringExpenseFormScreen = ({ navigation, route }: Props): JSX.El
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>
-        {isRestock ? 'Reponer gasto recurrente' : 'Nuevo gasto recurrente'}
-      </Text>
+      <ScreenHeader
+        title={isRestock ? 'Reponer gasto recurrente' : 'Nuevo gasto recurrente'}
+        onBack={() => navigation.goBack()}
+        testID="recurring-expense-form-header"
+      />
       {isRestock && current ? (
         <Text style={styles.hint}>
           {current.name} · {current.currency}
@@ -133,10 +135,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s4,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   hint: {
     ...typography.caption,

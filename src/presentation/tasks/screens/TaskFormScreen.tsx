@@ -2,7 +2,7 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { TaskPriority } from '@domain/tasks/entities/Task';
-import { Button, Input } from '@presentation/components/ui';
+import { Button, Input, ScreenHeader } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
@@ -28,8 +28,11 @@ export const TaskFormScreen = ({ navigation }: Props): JSX.Element => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Nueva tarea</Text>
-
+      <ScreenHeader
+        title="Nueva tarea"
+        onBack={() => navigation.goBack()}
+        testID="task-form-header"
+      />
       <Input
         label="Título"
         value={title}
@@ -85,10 +88,6 @@ const makeStyles = (theme: ColorTokens) => ({
     backgroundColor: theme.background,
     padding: spacing.s4,
     gap: spacing.s3,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   label: {
     ...typography.bodySmall,

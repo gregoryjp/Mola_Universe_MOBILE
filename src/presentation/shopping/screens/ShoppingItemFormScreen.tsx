@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, Input } from '@presentation/components/ui';
+import { Button, Input, ScreenHeader } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
@@ -27,8 +27,11 @@ export const ShoppingItemFormScreen = ({ route, navigation }: Props): JSX.Elemen
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Añadir item</Text>
-
+      <ScreenHeader
+        title="Añadir item"
+        onBack={() => navigation.goBack()}
+        testID="shopping-item-form-header"
+      />
       <Input
         label="Nombre"
         value={name}
@@ -74,10 +77,6 @@ const makeStyles = (theme: ColorTokens) => ({
     backgroundColor: theme.background,
     padding: spacing.s4,
     gap: spacing.s3,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   error: {
     ...typography.bodySmall,

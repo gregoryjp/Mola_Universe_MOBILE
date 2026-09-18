@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, ErrorState, Input, Spinner } from '@presentation/components/ui';
+import { Button, ErrorState, Input, ScreenHeader, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuthStore } from '@shared/store/authStore';
 import type { JSX } from 'react';
@@ -61,7 +61,11 @@ export const ExpenseDetailScreen = ({ route, navigation }: Props): JSX.Element =
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>{data.description}</Text>
+      <ScreenHeader
+        title={data.description}
+        onBack={() => navigation.goBack()}
+        testID="expense-detail-header"
+      />
       <Text style={styles.amount}>
         {data.amount} {data.currency}
       </Text>
@@ -165,10 +169,6 @@ const makeStyles = (theme: ColorTokens) => ({
     justifyContent: 'center' as const,
     backgroundColor: theme.background,
     padding: spacing.s6,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   amount: {
     ...typography.h2,

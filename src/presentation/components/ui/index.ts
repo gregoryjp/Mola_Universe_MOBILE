@@ -19,6 +19,7 @@ export type { QuickActionIconProps, QuickActionProps } from './QuickAction';
 export { QuickAction } from './QuickAction';
 export type { ScreenEdge, ScreenProps } from './Screen';
 export { Screen } from './Screen';
+export { ScreenHeader } from './ScreenHeader';
 export type { SectionHeaderProps } from './SectionHeader';
 export { SectionHeader } from './SectionHeader';
 export type { SkeletonVariant } from './Skeleton';

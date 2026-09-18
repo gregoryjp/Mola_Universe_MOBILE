@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, EmptyState, ErrorState, Spinner } from '@presentation/components/ui';
+import { Button, EmptyState, ErrorState, ScreenHeader, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { Linking, ScrollView, Text, View } from 'react-native';
@@ -20,7 +20,7 @@ import { usePushRegistrationStatus } from '../hooks/usePushRegistration';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NotificationsList'>;
 
-export const NotificationsListScreen = (_props: Props): JSX.Element => {
+export const NotificationsListScreen = ({ navigation }: Props): JSX.Element => {
   const notifications = useNotificationsList();
   const preferences = useNotificationPreferences();
   const markAsRead = useMarkNotificationRead();
@@ -113,7 +113,11 @@ export const NotificationsListScreen = (_props: Props): JSX.Element => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>Notificaciones</Text>
+      <ScreenHeader
+        title="Notificaciones"
+        onBack={() => navigation.goBack()}
+        testID="notifications-header"
+      />
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Avisos push en este dispositivo</Text>
@@ -165,10 +169,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s4,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   section: {
     gap: spacing.s1,

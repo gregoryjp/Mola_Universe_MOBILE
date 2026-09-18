@@ -2,7 +2,7 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { MeowCapability, MeowCapabilityParams } from '@domain/meow/entities/Meow';
-import { Card, ErrorState } from '@presentation/components/ui';
+import { Card, ErrorState, ScreenHeader } from '@presentation/components/ui';
 import { HouseholdSelector } from '@presentation/households/components/HouseholdSelector';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useHouseholdStore } from '@shared/store/householdStore';
@@ -24,7 +24,7 @@ const GROUPS: CapabilityGroup[] = ['READ', 'WRITE', 'PREMIUM'];
  * action is a typed call to `POST /meow/capabilities/:capability`, so running one
  * costs zero tokens and returns a deterministic confirmation.
  */
-export const MeowScreen = (_props: Props): JSX.Element => {
+export const MeowScreen = ({ navigation }: Props): JSX.Element => {
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
   const [selected, setSelected] = useState<MeowCapability | null>(null);
   const execute = useMeowCapability();
@@ -41,7 +41,7 @@ export const MeowScreen = (_props: Props): JSX.Element => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>Meow</Text>
+      <ScreenHeader title="Meow" onBack={() => navigation.goBack()} testID="meow-header" />
       <Text style={styles.subtitle}>
         12 acciones concretas. Eliges la acción y Meow la ejecuta: sin chat libre y sin historial.
       </Text>
@@ -106,10 +106,6 @@ const makeStyles = (theme: ColorTokens) => ({
     padding: spacing.s4,
     gap: spacing.s4,
     paddingBottom: spacing.s12,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   subtitle: {
     ...typography.body,

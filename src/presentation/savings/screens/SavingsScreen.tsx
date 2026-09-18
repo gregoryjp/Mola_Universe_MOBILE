@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, EmptyState, Spinner } from '@presentation/components/ui';
+import { Button, EmptyState, ScreenHeader, Spinner } from '@presentation/components/ui';
 import { HouseholdSelector } from '@presentation/households/components/HouseholdSelector';
 import { PhraseBanner } from '@presentation/phrases/components/PhraseBanner';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -23,7 +23,7 @@ export const SavingsScreen = ({ navigation }: Props): JSX.Element => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>Ahorros</Text>
+      <ScreenHeader title="Ahorros" onBack={() => navigation.goBack()} testID="savings-header" />
       <PhraseBanner module="SAVINGS" context="DAY_START" testID="savings-phrase" />
       <HouseholdSelector />
 
@@ -97,10 +97,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s4,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   section: {
     gap: spacing.s1,

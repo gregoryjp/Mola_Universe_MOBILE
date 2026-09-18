@@ -117,4 +117,21 @@ describe('SavingsScreen phrase integration', () => {
 
     renderer.unmount();
   });
+
+  it('offers a way back, so opening Ahorros from Casa is not a dead end', () => {
+    const renderer = given({ householdId: 'hh-1' });
+
+    const back = renderer.root.findAll(
+      (node) =>
+        node.props.accessibilityLabel === 'Volver' && typeof node.props.onPress === 'function',
+    )[0];
+    expect(back).toBeDefined();
+
+    act(() => {
+      back?.props.onPress();
+    });
+    expect(navigation.goBack).toHaveBeenCalledTimes(1);
+
+    renderer.unmount();
+  });
 });

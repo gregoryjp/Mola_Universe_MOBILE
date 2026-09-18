@@ -2,11 +2,11 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
 import type { CreatePetInput, Pet } from '@domain/pets/entities/Pet';
-import { Button, ErrorState, Input, Spinner } from '@presentation/components/ui';
+import { Button, ErrorState, Input, ScreenHeader, Spinner } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { ScrollView, Text } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useCreatePet, useUpdatePet } from '../hooks/usePetMutations';
 import { usePet } from '../hooks/usePets';
 
@@ -89,6 +89,8 @@ const toInput = (values: PetFormValues): CreatePetInput => {
 };
 
 interface FormProps {
+  title: string;
+  onBack: () => void;
   initial: PetFormValues;
   submitLabel: string;
   isPending: boolean;
@@ -97,6 +99,8 @@ interface FormProps {
 }
 
 const PetForm = ({
+  title,
+  onBack,
   initial,
   submitLabel,
   isPending,
@@ -119,6 +123,7 @@ const PetForm = ({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScreenHeader title={title} onBack={onBack} testID="pet-form-header" />
       <Input
         label="Nombre"
         value={values.name}
@@ -244,16 +249,32 @@ export const PetFormScreen = ({ navigation, route }: Props): JSX.Element => {
   const styles = useThemedStyles(makeStyles);
 
   if (isEditing && existing.isLoading) {
-    return <Spinner style={styles.loader} />;
+    return (
+      <View style={styles.container}>
+        <ScreenHeader
+          title="Editar mascota"
+          onBack={() => navigation.goBack()}
+          testID="pet-form-header"
+        />
+        <Spinner style={styles.loader} />
+      </View>
+    );
   }
 
   if (isEditing && existing.isError) {
     return (
-      <ErrorState
-        message={existing.error.message}
-        onRetry={() => void existing.refetch()}
-        style={styles.loader}
-      />
+      <View style={styles.container}>
+        <ScreenHeader
+          title="Editar mascota"
+          onBack={() => navigation.goBack()}
+          testID="pet-form-header"
+        />
+        <ErrorState
+          message={existing.error.message}
+          onRetry={() => void existing.refetch()}
+          style={styles.loader}
+        />
+      </View>
     );
   }
 
@@ -262,6 +283,8 @@ export const PetFormScreen = ({ navigation, route }: Props): JSX.Element => {
   return (
     <PetForm
       key={petId ?? 'new'}
+      title={isEditing ? 'Editar mascota' : 'Nueva mascota'}
+      onBack={() => navigation.goBack()}
       initial={initial}
       submitLabel={isEditing ? 'Guardar cambios' : 'Añadir mascota'}
       isPending={create.isPending || update.isPending}

@@ -1,7 +1,7 @@
 import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { spacing, typography, useThemedStyles } from '@core/theme';
-import { Button, EmptyState, Spinner } from '@presentation/components/ui';
+import { Button, EmptyState, ScreenHeader, Spinner } from '@presentation/components/ui';
 import {
   memberNameById,
   useHouseholdMembers,
@@ -29,7 +29,11 @@ export const RecurringExpensesListScreen = ({ navigation }: Props): JSX.Element 
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>Gastos recurrentes</Text>
+      <ScreenHeader
+        title="Gastos recurrentes"
+        onBack={() => navigation.goBack()}
+        testID="recurring-header"
+      />
       <Text style={styles.hint}>
         Gastos comunes que se reponen por turnos: el backend calcula a quién le toca según quién
         repuso la última vez.
@@ -79,10 +83,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s4,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   hint: {
     ...typography.caption,

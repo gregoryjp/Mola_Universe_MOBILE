@@ -2,7 +2,7 @@ import type { RootStackParamList } from '@core/navigation/types';
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import type { MomentType } from '@domain/moments/entities/Moment';
-import { Button, Input } from '@presentation/components/ui';
+import { Button, Input, ScreenHeader } from '@presentation/components/ui';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
@@ -76,8 +76,11 @@ export const MomentFormScreen = ({ route, navigation }: Props): JSX.Element => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>{isEdit ? 'Editar momento' : 'Nuevo momento'}</Text>
-
+      <ScreenHeader
+        title={isEdit ? 'Editar momento' : 'Nuevo momento'}
+        onBack={() => navigation.goBack()}
+        testID="moment-form-header"
+      />
       <Input
         label="Título"
         value={title}
@@ -172,10 +175,6 @@ const makeStyles = (theme: ColorTokens) => ({
   content: {
     padding: spacing.s4,
     gap: spacing.s2,
-  },
-  heading: {
-    ...typography.h2,
-    color: theme.text,
   },
   sectionTitle: {
     ...typography.bodySmall,

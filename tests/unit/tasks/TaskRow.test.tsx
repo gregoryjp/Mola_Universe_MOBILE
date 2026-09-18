@@ -6,7 +6,6 @@ vi.mock(
   'react-native',
   async () => (await import('../../helpers/reactNativeStub')).reactNativeStub,
 );
-vi.mock('lucide-react-native', async () => (await import('../../helpers/lucideStub')).lucideStub);
 
 import { TaskRow } from '@presentation/tasks/components/TaskRow';
 
