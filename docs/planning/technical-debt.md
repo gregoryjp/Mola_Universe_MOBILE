@@ -33,12 +33,12 @@
 | TD-037 | Alta | módulo `diary` (no existe en Mobile) | **Diary sin implementar, y bloqueado por una decisión que no es de ingeniería:** el contrato exige `encryptedContent` + `iv` — **AES-256-GCM cifrado en el cliente** (zero-knowledge: el backend nunca ve el texto). Mobile no tiene ninguna librería criptográfica instalada. Antes de escribir código hay que decidir **dónde vive la clave** (derivada de la contraseña, en `expo-secure-store`, o frase de recuperación) y qué pasa si el usuario la pierde | Pendiente — **bloqueado por gestión de clave** |
 | TD-038 | Media | módulo `storage` (no existe en Mobile) | **Storage sin implementar:** el backend sube por **presigned URL** y **no ofrece listado**. Mobile no tiene ni una sola capacidad de subir ficheros (sin `expo-image-picker` ni `expo-document-picker`). Construirlo sin caso de uso confirmado sería adivinar la UI | Pendiente — **esperando confirmación de Producto** |
 | TD-039 | Media | módulo `billing` (no existe en Mobile) | **Billing sin superficie en Mobile, por decisión de producto:** el backend deriva entitlements y `meowAdvanced`, pero no hay pasarela — Stripe **no es ni dependencia del backend** (los campos existen y nunca se escriben) y RevenueCat no está instalado. La decisión tomada es *entitlement-only*: sin compra, sin suscripción. Falta decidir si Mobile muestra el estado del entitlement aunque no haya pasarela | Pendiente — **decisión de producto** |
-| TD-040 | **Alta** | `src/core/theme/colors.ts`, `Button.tsx`, `Badge.tsx`, `Input.tsx` | **Ninguno de los 8 tokens cromáticos sirve como texto en tema claro, y varios fallan también como relleno y como borde.** Medidos sobre `surface` (`#FFFFFF`): `primary` **2.06:1**, `error` **2.47:1**, `success` **1.91:1** (1.67–1.91 según fondo), `accent` **1.71:1**, `warning` **1.55:1**, `secondary` **1.97:1**, `info` **2.08:1**, `primaryDark` **2.87:1** — **ninguno alcanza el 3:1** de texto grande / componentes de interfaz (1.4.11), y mucho menos el 4.5:1 de texto normal. Falla en **las dos direcciones**: como texto sobre claro *y* como relleno con etiqueta blanca — el botón primario (`2.06:1`) y el de peligro (`2.47:1`) no llegan a AA consigo mismos. Los badges empeoran: texto de color sobre su propio `*Soft` cae a **1.42–2.08:1**, y el borde del badge mide lo mismo. **60 usos** de un token cromático como `color:` en **43 ficheros**, más el `Spinner` por prop. El tema **oscuro no se ve afectado** (6.70–10.82:1: el problema es exclusivo de claro) *para este par* — cromáticos sobre `surface`. **El par `text` sobre los `*Soft` en oscuro sí falla, y de forma ilegible: ver TD-044.** Solo `text` (17.40:1) y `textMuted` (5.33:1) son utilizables como texto. Los **tokens no se tocan**; en el checkpoint de Auth sí se añadieron a `Button` dos variantes **aditivas** (`primaryTonal` 8.43:1, `linkNeutral` 16.23:1) sin alterar `primary` ni `link` | Pendiente — **decisión de diseñador**: ¿variantes «text-safe» o cambiar los tokens base? Ver ficha **`## TD-040`** |
+| TD-040 | **Alta** | `src/core/theme/colors.ts`, `Button.tsx`, `Badge.tsx`, `Input.tsx` | **Ninguno de los 8 tokens cromáticos sirve como texto en tema claro, y varios fallan también como relleno y como borde.** Medidos sobre `surface` (`#FFFFFF`): `primary` **2.06:1**, `error` **2.47:1**, `success` **1.91:1** (1.67–1.91 según fondo), `accent` **1.71:1**, `warning` **1.55:1**, `secondary` **1.97:1**, `info` **2.08:1**, `primaryDark` **2.87:1** — **ninguno alcanza el 3:1** de texto grande / componentes de interfaz (1.4.11), y mucho menos el 4.5:1 de texto normal. Falla en **las dos direcciones**: como texto sobre claro *y* como relleno con etiqueta blanca — el botón primario (`2.06:1`) y el de peligro (`2.47:1`) no llegan a AA consigo mismos. Los badges empeoran: texto de color sobre su propio `*Soft` cae a **1.42–2.08:1**, y el borde del badge mide lo mismo. **60 usos** de un token cromático como `color:` en **43 ficheros**, más el `Spinner` por prop. El tema **oscuro no se ve afectado** (6.70–10.82:1: el problema es exclusivo de claro) *para este par* — cromáticos sobre `surface`. **El par `text` sobre los `*Soft` en oscuro sí falla, y de forma ilegible: ver TD-044.** Solo `text` (17.40:1) y `textMuted` (5.33:1) son utilizables como texto. Los **tokens no se tocan**; en el checkpoint de Auth sí se añadieron a `Button` dos variantes **aditivas** (`primaryTonal` 8.43:1, `linkNeutral` 16.23:1) sin alterar `primary` ni `link`. **Recuento propio del 2026-09-18: 62 sitios** de `color: theme.<cromático>` en **46 ficheros** (`error` 44, `primary` 11, `warning` 5, `success` 2), más **21** de `borderColor` (1.4.11) y 1 por prop. **Dos consumidores ya se corrigieron sin necesitar ningún color nuevo**: `Badge` (sus 4 variantes cromáticas) y `Chip` (estado seleccionado) usaban el acento **como color de texto**, lo que `colors.md` prohíbe expresamente y `badges.md` repite; ahora usan `text` y el acento queda en el **borde** y el relleno, así que la semántica visual se conserva. Ese arreglo no exigía decisión de diseñador: `text` ya existía y pasa AA sobre los siete `*Soft` en ambos temas (14.67–15.92:1 claro / 8.36–12.65:1 oscuro). **Los 62 sitios restantes sí la exigen**, porque hoy no existe en la paleta clara ningún valor oscuro con el que sustituirlos. Confirmado además que el tema **oscuro pasa los 14 pares** (6.70–11.92:1), luego TD-040 es **exclusivo del tema claro** | Pendiente — **decisión de diseñador**: ¿variantes «text-safe» o cambiar los tokens base? Ver ficha **`## TD-040`** |
 | TD-041 | **Alta** | `package.json`, `src/data/sos/location/expoLocation.ts` | **Dependencia importada por código en producción y nunca declarada:** `expoLocation.ts:1` hace `import * as Location from 'expo-location'`, pero **`expo-location` no estaba en `package.json` en ningún commit** (`git log -S"expo-location" -- package.json` no devuelve nada). Sobrevivía porque sí estaba en `package-lock.json` y en `node_modules` local: `npm ci` lo instalaba, `npm install` lo **purgaba** como extraneous, y entonces `tsc` fallaba con `TS2307: Cannot find module 'expo-location'`. Un `npm install` en una máquina limpia rompía el typecheck y el bundle. Detectado al purgar dependencias durante la investigación de TD-028 | ✅ Resuelto — declarado `expo-location: ~57.0.18` en `package.json` (la misma versión que ya fijaba el lock, así que el lock quedó **idéntico**). Encontrado por accidente, pero habría roto la build nativa |
 | TD-042 | **Alta** | `src/presentation/auth/screens/VerifyEmailScreen.tsx`, backend `src/modules/auth/services/authService.ts` | **No existe forma de reenviar el código de verificación de email — un código expirado o bloqueado deja la cuenta inutilizable.** Contrato actual: `POST /auth/verify-otp` `{verificationToken, code}` (el `verificationToken` es el `challengeId` que devuelve `/auth/register`). Comportamiento observado leyendo `authService.ts`: código expirado → `AUTH_OTP_EXPIRED` (400, sin recuperación); 5 intentos fallidos → `AUTH_OTP_BLOCKED` (429, sin recuperación); código incorrecto → `AUTH_INVALID_CREDENTIALS` (401, el mismo código que usa `/auth/login`, así que el mensaje del backend dice "Invalid email or password" — Mobile sobrescribe esa copia solo para esta pantalla); ya verificado → `AUTH_ALREADY_VERIFIED` (400, se trata como éxito). El endpoint `POST /auth/resend-verification` **existe pero no sirve para esto**: regenera `emailVerificationToken` (campo de un flujo distinto, basado en enlace, usado solo por `/auth/verify-email`), no `emailVerificationCode`/`emailVerificationChallengeId` (los campos que `verify-otp` valida). **Hallazgo adicional:** `forgotPassword`, `resetPassword` y `verifyOTPCode` leen/escriben exactamente esos mismos cuatro campos (`emailVerificationCode`, `emailVerificationChallengeId`, `emailVerificationCodeExpiresAt`, `emailVerificationCodeAttempts`) — un código de verificación de email pendiente y un código de reseteo de contraseña pendiente para el mismo usuario se pisan entre sí. No se ha explotado esta coincidencia desde Mobile (decisión explícita: no acoplar Mobile a un comportamiento de backend no documentado) — se registra como pista para quien resuelva el TD, no como solución. Lo que Mobile necesita: un endpoint de resend dedicado a la verificación por OTP (mismos campos que `verify-otp` valida) que devuelva un `verificationToken` fresco, con la misma forma que ya devuelve `/register`. Mientras tanto, `VerifyEmailScreen.tsx` no ofrece reenvío (copia honesta: "Revisa tu carpeta de spam") y el único escape de un código expirado/bloqueado es cerrar sesión — lo que devuelve a Login sin resolver el bloqueo, porque el email ya existe y `/auth/register` lo rechaza (`AUTH_ERRORS.EMAIL_EXISTS`). No localicé tests de backend para el caso expirado/bloqueado de `verify-otp` específicamente (sí hay cobertura de integración para `resend-verification`, que es el endpoint equivocado para este caso) | ✅ Resuelto por Backend (2026-09-18) — `resend-verification` ahora llama `resendVerificationOtp`, que usa un slot de campos **propio e independiente** (`emailVerificationOtpCode`/`OtpChallengeId`/`OtpExpiresAt`/`OtpAttempts`, separado de `emailVerificationCode`/`ChallengeId` que usa `forgotPassword`) — el acoplamiento descrito arriba ya no existe. La respuesta incluye `verificationToken`, `otpExpiresAt`, `otpExpiresIn`; `EMAIL_VERIFICATION_OTP_VALIDITY_SECONDS = 60` (confirmado en `authService.ts:29`). Reenviar invalida el código anterior de inmediato (nuevo `challengeId` sobrescrito). Mobile ya lo consume — ver `VerifyEmailScreen.tsx` |
 
 | TD-043 | Media | `src/presentation/auth/screens/*.tsx`, `src/presentation/components/ui/` | **No existe la primitiva `Screen` del Design System, y ninguna pantalla de Auth evita el teclado.** Medido en `src/`: **0 ocurrencias de `KeyboardAvoidingView` y 0 de `Keyboard`** — la única mención es un comentario en `LoginScreen.tsx:20` que dice que el patrón no existe — y **0 usos** de `keyboardShouldPersistTaps`, `keyboardDismissMode` o `automaticallyAdjustKeyboardInsets`. El DS expone 14 primitivas (`Avatar`…`Spinner`) pero **no `Screen`**, así que cada pantalla repite a mano su `View` contendedor y la cobertura de SafeArea es desigual: `WelcomeScreen` usa `SafeAreaView` (vía `react-native-safe-area-context`), el resto usa `paddingTop: spacing.s16` fijo. Las 6 pantallas de Auth con inputs (Login, Register, ForgotPassword, ResetPasswordOtp, ResetPassword, VerifyEmail) centran el contenido con `justifyContent: 'center'` dentro de un `View` sin ScrollView ni avoidance: en iOS, con el teclado abierto, el CTA de envío puede quedar tapado sin forma de desplazarse hasta él. Es un defecto de dispositivo, no de estilo | ✅ Implementada (2026-09-18) — **PENDING DEVICE VALIDATION** — creada la primitiva `Screen` en el DS (`src/presentation/components/ui/Screen.tsx`) y migradas **las 7 pantallas de Auth con inputs** (Login, Register, ForgotPassword, ResetPasswordOtp, ResetPassword, VerifyEmail, Onboarding). Ver ficha **`## TD-043`**. **No verificable en este entorno** (sin dispositivo ni simulador): probados estructura, props, ramas de `Platform`, scroll y tests; el comportamiento real del teclado queda **pendiente de validación física** |
-| TD-044 | **Alta** | `src/core/theme/colors.ts`, `src/presentation/components/ui/Card.tsx`, `src/presentation/meow/screens/MeowScreen.tsx` | **En tema oscuro el texto sobre los `*Soft` es ilegible.** `colors.dark` solo redefine los 7 tokens que `colors.md` define (`background`, `surface`, `surfaceAlt`, `primary`, `text`, `textMuted`, `border`), así que `warningSoft`/`errorSoft`/`successSoft`/`infoSoft`/`primarySoft`/`secondarySoft`/`accentSoft` **conservan sus valores claros**. `text` del tema oscuro (`#F5F5F5`) sobre ellos mide **1.00:1** (`warningSoft`), **1.03:1** (`successSoft`) y **1.09:1** (`errorSoft`): no es contraste bajo, es **texto del mismo color que el fondo**. Los mismos pares en claro dan 14.67–15.92:1, de ahí que el defecto no se vea en el tema por defecto; `userInterfaceStyle` es **`automatic`**, así que sí se alcanza en la build nativa. Sitio vivo medido: `MeowScreen.tsx:75` (`<Card variant="pastel" tone="success">` envolviendo la respuesta de Meow) y cualquier `Card` con `tone` o `Badge` cromático futuro. Detectado y corregido **solo en las dos pantallas del checkpoint HOY/TASKS** (`TaskRow`, `DashboardScreen`): píldoras y aviso offline pasan a `surfaceAlt`, definido en ambos temas (15.24:1 claro / 13.28:1 oscuro). El arreglo de raíz es el mismo que pide TD-040 | Pendiente — **decisión de diseñador** (misma que TD-040: definir los valores oscuros que faltan). `MeowScreen` sigue con el defecto |
+| TD-044 | **Alta** | `src/core/theme/colors.ts`, `src/presentation/components/ui/Card.tsx`, `src/presentation/meow/screens/MeowScreen.tsx` | **En tema oscuro el texto sobre los `*Soft` es ilegible.** `colors.dark` solo redefine los 7 tokens que `colors.md` define (`background`, `surface`, `surfaceAlt`, `primary`, `text`, `textMuted`, `border`), así que `warningSoft`/`errorSoft`/`successSoft`/`infoSoft`/`primarySoft`/`secondarySoft`/`accentSoft` **conservan sus valores claros**. `text` del tema oscuro (`#F5F5F5`) sobre ellos mide **1.00:1** (`warningSoft`), **1.03:1** (`successSoft`) y **1.09:1** (`errorSoft`): no es contraste bajo, es **texto del mismo color que el fondo**. Los mismos pares en claro dan 14.67–15.92:1, de ahí que el defecto no se vea en el tema por defecto; `userInterfaceStyle` es **`automatic`**, así que sí se alcanza en la build nativa. Sitio vivo medido: `MeowScreen.tsx:75` (`<Card variant="pastel" tone="success">` envolviendo la respuesta de Meow) y cualquier `Card` con `tone` o `Badge` cromático futuro. Detectado y corregido **primero como parche local** en las dos pantallas del checkpoint HOY/TASKS (`TaskRow`, `DashboardScreen`), que pasaban píldoras y aviso offline a `surfaceAlt` (definido en ambos temas: 15.24:1 claro / 13.28:1 oscuro). Ese parche **ya no existe**: se eliminó al corregir la raíz, porque ya no era necesario. El arreglo de raíz era el mismo que pedía TD-040 | ✅ **Resuelto — raíz corregida en el Design System, no en pantalla** (2026-09-18). Ver ficha **`## TD-044`**. `colors.ts` deja de heredar: la paleta oscura se declara explícita y anotada con `ColorTokens`, con los 16 tokens derivados por una regla escrita en el propio fichero (no a ojo) y los 7 de `colors.md` verbatim. El contrato pasa a ser **comprobable**: `cardToneBackground` vive en la capa de color, `Card` deriva de él su `tone`, y **67 tests** fallan si un tone apunta a un token ausente *o* vuelve a heredar el valor claro (verificado por mutación: reintroducir el defecto devuelve `1.00:1`). Cobertura medida: los 7 tones dan `text` a **8.36–12.65:1** en oscuro y **14.67–15.92:1** en claro, y **ningún** relleno de tone baja del de referencia `surfaceAlt`. `MeowScreen` queda arreglado **sin tocarlo**. Los dos workarounds locales de `TaskRow`/`DashboardScreen` **eliminados**. Efecto colateral corregido en el mismo paso: `Badge` y `Chip` usaban un pastel como color de texto (1.42–2.56:1) — ver TD-040 |
 
 ## Detalle TD-021+ (promovidos del informe M5, 2026-09-17)
 
@@ -306,7 +306,11 @@ de `primary` (2.06) y `error` (2.47) se reproducen exactas sobre `surface`.
 Es decir: **el botón primario y el de peligro de la app no llegan a AA con su propia etiqueta**. El
 token falla en las dos direcciones a la vez (como texto y como relleno con texto blanco).
 
-**3. Texto de color sobre el fondo suave de su familia** (`Badge.tsx`) — el peor grupo:
+**3. Texto de color sobre el fondo suave de su familia** (`Badge.tsx`) — el peor grupo.
+**Corregido el 2026-09-18** en `Badge.tsx` y `Chip.tsx`: la etiqueta pasa a `text` y el acento se queda
+en borde y relleno, así que la semántica visual no cambia. Fue el único subgrupo que **no** necesitaba
+la decisión de abajo, porque `text` ya existía en la paleta y pasa AA sobre los siete `*Soft` en ambos
+temas. Las cifras siguientes son las del defecto original, conservadas como referencia:
 
 | badge | texto | sobre | ratio |
 | --- | --- | --- | --- |
@@ -325,10 +329,14 @@ propio fondo.
 
 ### Alcance medido
 
-**60 usos** de un token cromático como propiedad `color:` en **43 ficheros**, más `Spinner.tsx:42`
-por prop. Núcleo afectado: `Button.tsx`, `Badge.tsx`, `Input.tsx` (estado de error) y las
-filas/errores de formulario de los 14 módulos de la app. `error` es el más extendido (41 usos, en
-mensajes de validación de casi todas las pantallas).
+Recuento del 2026-09-18: **62 usos** de un token cromático como propiedad `color:` en **46 ficheros**,
+más **21** de `borderColor` (componentes de interfaz, 1.4.11) y 1 por prop (`Spinner.tsx:42`). Reparto
+por token: `error` **44**, `primary` **11**, `warning` **5**, `success` **2**. Núcleo afectado:
+`Button.tsx`, `Input.tsx` (estado de error) y las filas/errores de formulario de los 14 módulos de la
+app — `error` domina porque aparece en los mensajes de validación de casi todas las pantallas.
+
+`Badge.tsx` y `Chip.tsx` **ya no aparecen en este recuento** (corregidos en el mismo checkpoint, ver
+arriba). Sin ese arreglo el número sería 5 sitios mayor.
 
 ### Tema oscuro: no afectado *en este par*
 
@@ -463,6 +471,129 @@ compartido (`tests/helpers/safeAreaStub.ts`) con insets mutables, más un alias 
 para el subpath `codegenNativeComponent` que esquiva el mock de `react-native`.
 
 
+## TD-044 — los tokens oscuros que faltaban (2026-09-18)
+
+### La causa raíz, exacta
+
+`colors.dark` **no era una paleta**: era un `{ ...light }` con siete claves sobrescritas.
+
+```ts
+const dark = { ...light, background: …, surface: …, surfaceAlt: …, primary: …,
+               text: …, textMuted: …, border: … };   // antes
+```
+
+Es decir: solo los siete que `colors.md` sí especifica. Todo lo demás —incluidos los **siete** tokens `*Soft`, que
+son exactamente los que usan los `tone` de `Card`— **se quedaba con el valor claro**. El fallback no
+era visible como error porque *existía*: apuntaba a un hex válido. Solo que era un pastel casi blanco,
+y en oscuro `text` es `#F5F5F5`, así que el texto quedaba **del mismo color que su fondo**:
+
+| par (oscuro, antes) | ratio | |
+| --- | --- | --- |
+| `text` sobre `warningSoft` | **1.00:1** | ✗ |
+| `text` sobre `successSoft` | **1.03:1** | ✗ |
+| `text` sobre `errorSoft` | **1.09:1** | ✗ |
+
+No es «contraste bajo»: es texto invisible. Y no se veía porque el tema por defecto es claro, aunque
+`userInterfaceStyle` está en **`automatic`**, así que **sí** se alcanza en la build nativa.
+
+### La auditoría que pedía el arreglo
+
+- **Qué tokens usa `Card`**: siete, uno por `tone` — `primarySoft`, `secondarySoft`, `accentSoft`,
+  `successSoft`, `warningSoft`, `errorSoft`, `infoSoft`.
+- **Cuáles existían en claro**: los siete.
+- **Cuáles faltaban en oscuro**: **los siete** (más `secondary`, `accent`, `primaryDark`,
+  `textInverse`, `borderStrong`, `error`, `success`, `warning` e `info` — **16 en total**).
+- **Qué componentes los consumen**: `Card` (`tone`), `Badge` y `Chip` (relleno) y los avisos/píldoras
+  de `TaskRow` y `DashboardScreen`.
+- **Qué fallback ocurría**: el de arriba, silencioso, porque la clave *siempre* está presente.
+
+### El arreglo, en la capa de color
+
+`dark` pasa a ser **explícito y anotado `ColorTokens`**, partido en `darkSpecified` (los 7 de
+`colors.md`, verbatim) y `darkDerived` (los 16 restantes). Un token que falte es ahora **error de
+compilación**, no un `undefined` de fondo.
+
+Los valores derivados no se eligieron a ojo: una **regla escrita en el propio fichero** (y comentada
+allí) mantiene el **tono** del token claro, fija la **luminosidad a 0.22** y escala la saturación hasta
+que el matiz se siga leyendo a esa luminosidad. Consecuencia medida: los siete `*Soft` oscuros quedan
+**al menos tan distintos de `surface` como `surfaceAlt`** (1.20–1.82:1 contra 1.14:1 de referencia) y
+`text` sobre ellos da **8.36–12.65:1**.
+
+Los siete tokens que `Card` usa ya no pueden desincronizarse de la paleta porque **el mapeo vive en la
+capa de color**, no en el componente:
+
+```ts
+export const cardToneBackground = {
+  primary: 'primarySoft', secondary: 'secondarySoft', accent: 'accentSoft',
+  success: 'successSoft', warning: 'warningSoft', error: 'errorSoft', info: 'infoSoft',
+} as const satisfies Record<string, ColorTokenName>;
+```
+
+`Card` **deriva de ahí** su prop `tone` (`export type CardTone`), así que «tone soportado» y «token
+existente» son la misma lista por construcción. La semántica pública de `Card` **no cambia**: mismos
+`tone`, mismo `variant`, mismos `size`.
+
+### Workarounds locales eliminados
+
+El parche anterior vivía en dos pantallas, no en la raíz:
+
+| sitio | parche (eliminado) | ahora |
+| --- | --- | --- |
+| `TaskRow.tsx` | las 4 píldoras con relleno neutro `surfaceAlt` | `warningSoft` (prioridad alta), `errorSoft` (atrasada, fallo al completar), `surfaceAlt` (hogar, que es un hecho, no una alerta) |
+| `DashboardScreen.tsx` | aviso offline con `surfaceAlt` + borde neutro | `warningSoft` + borde `warning`, el mismo tratamiento que la variante warning de `Badge` |
+
+`MeowScreen` **no se toca**: su `<Card variant="pastel" tone="success">` se arregla solo, porque el
+arreglo estaba en el token. Ese era el objetivo — arreglar la raíz debe arreglar a los consumidores
+existentes sin visitarlos.
+
+### Efecto colateral detectado y corregido: `Badge` y `Chip`
+
+La auditoría de consumidores destapó que `Badge` usaba **el acento como color de texto sobre su propio
+relleno `*Soft`** — 1.42:1 (`warning`) a 2.08:1 (`error`) en claro — pese a que su propio comentario
+cita la regla de `colors.md` que lo prohíbe. `Chip` hacía lo mismo en estado seleccionado
+(`primaryDark` sobre `primarySoft`, **2.56:1**). Ambos pasan a usar `text` en la etiqueta, con el acento
+en **borde y relleno**: la semántica visual no cambia y **no hace falta ningún token nuevo**, razón por
+la que esto sí se pudo cerrar aquí y los otros 62 sitios de TD-040 no (allí no existe hoy un valor
+oscuro con el que sustituir). Cifras: 14.67–15.92:1 en claro, 8.36–12.65:1 en oscuro.
+
+### Tests
+
+`tests/unit/theme/colors.test.ts` (**67** casos). No comprueba hexes concretos, sino **contratos**, para
+que no se rompan al retocar la paleta:
+
+1. Las dos paletas tienen **exactamente el mismo juego de claves**.
+2. Todo token es un hex de 6 dígitos en ambas.
+3. Los **16 tokens derivados** existen en oscuro.
+4. Cada `tone` de `cardToneBackground` apunta a un token **presente y con valor real** — *este* es el
+   test que falla si en el futuro vuelve a faltar un token que un tone soportado necesita.
+5. `text` sobre el relleno de cada tone pasa AA en **ambas** paletas.
+6. **Regresión TD-044**: ningún relleno de tone puede ser igual en oscuro y en claro.
+7. Los rellenos oscuros son al menos tan distintos de `surface` como `surfaceAlt`.
+8. `Badge` y `Chip`: sus etiquetas pasan AA en ambas paletas.
+
+**Probado por mutación**, no solo por lectura: reintroducir `warningSoft: '#FCF4E5'` en la paleta oscura
+hace fallar **3** tests, y el mensaje reproduce el valor original del defecto — `text on warningSoft =
+1.00:1` — más `dark.warningSoft was left as the light value`. Restaurado y verde.
+
+### Divergencia deliberada: el claro no se toca
+
+En claro, **4 de los 7** rellenos de tone son *menos* distintos de `surface` que `surfaceAlt`
+(`primarySoft` 1.12, `secondarySoft` 1.13, `successSoft` 1.12, `warningSoft` 1.09, contra 1.14). Es una
+debilidad de los pasteles de `colors.md`, no del contrato nuevo, y **no se corrige aquí**: cambiar esos
+valores altera el tema claro aprobado y exige la decisión de diseñador que ya vive en TD-040. El test
+lo refleja con honestidad: la forma estricta de la aserción (`≥ surfaceAlt`) se aplica **solo a la
+paleta oscura**, que es la que este TD deriva, y el caso claro se queda en «no es idéntico a `surface`»
+con los números medidos escritos en el propio test.
+
+### Qué queda PENDING DEVICE VALIDATION
+
+La cobertura de este TD es **aritmética y estructural**, y así se declara. Falta verlo renderizado:
+
+1. Tema oscuro real en iOS y Android (no solo `useTheme` en test).
+2. Inspección visual de los siete `tone` de `Card` en oscuro.
+3. `Badge`/`Chip` en oscuro, que hoy solo están cubiertos por el cálculo de contraste.
+
+
 ## TD-028 — por qué la raíz no se cierra por configuración (2026-09-17)
 
 Se atacó la raíz y **se revirtió**. No fue falta de intento: fue una medición. El encargo decía
@@ -556,7 +687,22 @@ por tocar `vitest.config.ts`.
   heredado: al elegir el color de la acción nueva medí el contraste de los tokens del tema contra la
   superficie, y `primary`, `error` y `success` fallan AA como color de texto. Por eso la acción nueva
   usa `theme.text`, y por eso no toqué `colors.ts`: cambiar un token compartido afecta a toda la app
-  y pertenece a la misma decisión de diseño que TD-031.
+  y pertenece a la misma decisión de diseño que TD-031. **Matiz (2026-09-18):** `colors.ts` sí se tocó
+  después, pero **solo la mitad oscura** (TD-044) — que es donde faltaban tokens, no donde sobraban
+  decisiones. De ahí salió el arreglo de `Badge`/`Chip` documentado arriba. Los valores **claros
+  siguen intactos** y la decisión de TD-040 sigue enteramente abierta.
+- **TD-044** nació del checkpoint HOY/TASKS y es el caso más limpio de *raíz frente a parche* de este
+  registro. La primera respuesta al defecto fue correcta en lo inmediato e incorrecta en lo
+  estructural: las píldoras de `TaskRow` y el aviso de `DashboardScreen` se pasaron a `surfaceAlt`
+  porque los `*Soft` oscuros eran ilegibles (1.00:1). Eso arreglaba **dos pantallas** y dejaba rotas
+  `MeowScreen` y cualquier consumidor futuro, porque la causa no estaba en las pantallas: `colors.dark`
+  era `{ ...light }` con siete claves sobrescritas, así que el *fallback* era silencioso —la clave
+  siempre existía, solo apuntaba al valor claro—. La corrección movió el contrato al lugar correcto
+  (`cardToneBackground` en la capa de color, con `Card` derivando su `tone` de ahí) y **entonces los
+  parches locales dejaron de ser necesarios**: `MeowScreen` se arregló sin abrir el fichero. La lección
+  registrada es que un `{ ...otro }` como paleta convierte un error de definición en un defecto
+  visual, y que por eso la paleta oscura pasa a ser explícita y anotada con `ColorTokens`: ahora un
+  token que falte es un error de compilación.
 - **TD-035 a TD-039** nacieron de la auditoría de los cinco módulos que Mobile todavía no consume
   (Meow, Phrases, Billing, Diary, Storage) y de la implementación de los dos primeros. **TD-035**
   (Meow) y **TD-036** (Phrases) son consecuencia directa de cablear módulos a medias: la capability
