@@ -21,6 +21,18 @@ interface AuthState {
   session: Session | null;
   isAuthenticated: boolean;
   isHydrated: boolean;
+  /**
+   * The OTP challenge id `POST /auth/register` returns. `VerifyEmailScreen`
+   * needs it, but it can't travel as a route param: the navigator swaps from
+   * the unauthenticated stack to the unverified-branch stack the moment
+   * `setAuth` runs, and that swap happens before `RegisterForm`'s `onSuccess`
+   * could navigate with params. Kept here because it's tied to the current
+   * auth session and needs to survive that same remount, not persisted (it's
+   * only meaningful for the in-progress verification of this session).
+   */
+  verificationToken: string | null;
+  /** Backend-authored expiry for `verificationToken`; never derived from a client constant. */
+  verificationExpiresAt: string | null;
   /** Called after a successful login/register/OAuth flow. */
   setAuth: (user: User, session: Session) => Promise<void>;
   /** Swaps tokens (and the rotated session id) after a refresh. */
@@ -31,6 +43,10 @@ interface AuthState {
   hydrate: () => Promise<void>;
   /** Clears local state + persisted session (does not call the backend). */
   signOut: () => Promise<void>;
+  /** Replaces the OTP challenge and its backend-authored expiry atomically. */
+  setVerificationChallenge: (token: string | null, expiresAt: string | null) => void;
+  /** Patches the signed-in user (e.g. after email verification or a profile update). */
+  updateUser: (patch: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -38,6 +54,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   isAuthenticated: false,
   isHydrated: false,
+  verificationToken: null,
+  verificationExpiresAt: null,
   setAuth: async (user, session) => {
     await saveSession(session);
     set({ user, session, isAuthenticated: true });
@@ -65,6 +83,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   signOut: async () => {
     await clearSession();
-    set({ user: null, session: null, isAuthenticated: false });
+    set({
+      user: null,
+      session: null,
+      isAuthenticated: false,
+      verificationToken: null,
+      verificationExpiresAt: null,
+    });
   },
+  setVerificationChallenge: (verificationToken, verificationExpiresAt) =>
+    set({ verificationToken, verificationExpiresAt }),
+  updateUser: (patch) =>
+    set((state) => ({ user: state.user ? { ...state.user, ...patch } : state.user })),
 }));

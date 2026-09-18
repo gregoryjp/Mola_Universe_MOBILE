@@ -33,6 +33,7 @@ const render = (props: {
   onComplete?: (value: string) => void;
   disabled?: boolean;
   error?: string;
+  focusRequestKey?: number;
 }): ReactTestRenderer => {
   focusMocks.clear();
   let renderer: ReactTestRenderer | undefined;
@@ -53,7 +54,9 @@ describe('OtpInput', () => {
 
     for (let index = 0; index < 6; index += 1) {
       const box = byTestId(renderer, `otp-${index}`);
-      expect(box.props.accessibilityLabel).toBe(`Código de verificación - dígito ${index + 1} de 6`);
+      expect(box.props.accessibilityLabel).toBe(
+        `Código de verificación - dígito ${index + 1} de 6`,
+      );
       expect(box.props.keyboardType).toBe('number-pad');
     }
 
@@ -152,6 +155,18 @@ describe('OtpInput', () => {
       expect(box.props.editable).toBe(false);
       expect(box.props.accessibilityState).toEqual({ disabled: true });
     }
+
+    renderer.unmount();
+  });
+
+  it('focuses the first box when focusRequestKey changes', () => {
+    const renderer = render({ value: '', onChange: vi.fn() });
+
+    act(() => {
+      renderer.update(<OtpInput value="" onChange={vi.fn()} testID="otp" focusRequestKey={1} />);
+    });
+
+    expect(focusMocks.get('otp-0')).toHaveBeenCalled();
 
     renderer.unmount();
   });

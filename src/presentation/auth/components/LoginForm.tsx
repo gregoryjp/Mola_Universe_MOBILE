@@ -39,6 +39,7 @@ export const LoginForm = (): JSX.Element => {
         label="Entrar"
         onPress={handleSubmit}
         loading={login.isPending}
+        variant="primaryTonal"
         size="lg"
         accessibilityHint="Inicia sesión con tu email y contraseña"
         testID="login-submit"

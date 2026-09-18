@@ -20,7 +20,8 @@ export const RegisterScreen = ({ navigation }: Props): JSX.Element => {
       <Button
         label="¿Ya tienes cuenta? Inicia sesión"
         onPress={() => navigation.navigate('Login')}
-        variant="link"
+        variant="linkNeutral"
+        testID="register-login"
       />
     </View>
   );

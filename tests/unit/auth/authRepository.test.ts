@@ -152,6 +152,94 @@ describe('AuthRepositoryImpl', () => {
     });
   });
 
+  it('updateProfile PATCHes the raw /users/me resource and maps the updated profile', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        id: 'u1',
+        email: 'a@b.com',
+        firstName: null,
+        lastName: null,
+        displayName: 'Ada Lovelace',
+        birthDate: null,
+        countryCode: null,
+        city: null,
+        phoneNumber: null,
+        avatar: null,
+        emailVerified: true,
+        createdAt: '2026-01-01T00:00:00.000Z',
+      }),
+    );
+
+    const result = await repo.updateProfile({ displayName: 'Ada Lovelace' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${BASE}/users/me`,
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ displayName: 'Ada Lovelace' }),
+      }),
+    );
+    expect(result).toEqual({
+      success: true,
+      value: { ...user, name: 'Ada Lovelace' },
+    });
+  });
+
+  it('updateProfile maps a raw error envelope to a Result', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Bad date', statusCode: 400 },
+        },
+        400,
+      ),
+    );
+
+    const result = await repo.updateProfile({ birthDate: 'not-a-date' });
+
+    expect(result).toEqual({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: 'Bad date', statusCode: 400 },
+    });
+  });
+
+  it('resendVerification requests a fresh email OTP challenge and maps its expiry', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: {
+          verificationToken: 'fresh-challenge',
+          otpExpiresAt: '2026-09-18T10:01:00.000Z',
+          otpExpiresIn: 60,
+          message: 'Sent',
+        },
+      }),
+    );
+
+    const result = await repo.resendVerification('a@b.com');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${BASE}/auth/resend-verification`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ email: 'a@b.com' }),
+      }),
+    );
+    expect(result).toEqual({
+      success: true,
+      value: {
+        verificationToken: 'fresh-challenge',
+        otpExpiresAt: '2026-09-18T10:01:00.000Z',
+        otpExpiresIn: 60,
+        message: 'Sent',
+      },
+    });
+  });
+
   it('fetchProfile maps a raw error envelope to a Result', async () => {
     const fetchMock = vi.mocked(global.fetch);
     fetchMock.mockResolvedValueOnce(

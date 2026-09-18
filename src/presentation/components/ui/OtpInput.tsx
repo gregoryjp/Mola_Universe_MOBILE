@@ -1,6 +1,6 @@
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useTheme, useThemedStyles } from '@core/theme';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   type NativeSyntheticEvent,
   TextInput,
@@ -20,6 +20,8 @@ interface OtpInputProps {
   testID?: string;
   /** Prefix for each box's screen-reader label, e.g. "Código de verificación". */
   accessibilityLabel?: string;
+  /** Changing this value moves focus back to the first digit. */
+  focusRequestKey?: number;
 }
 
 const makeStyles = (theme: ColorTokens) => ({
@@ -53,12 +55,18 @@ export const OtpInput = ({
   error,
   testID,
   accessibilityLabel = 'Código de verificación',
+  focusRequestKey,
 }: OtpInputProps) => {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const inputRefs = useRef<Array<TextInput | null>>([]);
   const digits = Array.from({ length }, (_, index) => value[index] ?? '');
   const hasError = Boolean(error);
+
+  useEffect(() => {
+    if (focusRequestKey === undefined) return;
+    inputRefs.current[0]?.focus();
+  }, [focusRequestKey]);
 
   const commit = (next: string): void => {
     const truncated = next.slice(0, length);

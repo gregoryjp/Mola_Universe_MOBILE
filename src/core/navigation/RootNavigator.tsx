@@ -1,5 +1,6 @@
 import { colors } from '@core/theme';
 import { AccountScreen } from '@presentation/account/screens/AccountScreen';
+import { ChooseMethodScreen } from '@presentation/auth/screens/ChooseMethodScreen';
 import { ForgotPasswordScreen } from '@presentation/auth/screens/ForgotPasswordScreen';
 import { LoginScreen } from '@presentation/auth/screens/LoginScreen';
 import { OnboardingScreen } from '@presentation/auth/screens/OnboardingScreen';
@@ -7,7 +8,10 @@ import { RegisterScreen } from '@presentation/auth/screens/RegisterScreen';
 import { ResetPasswordOtpScreen } from '@presentation/auth/screens/ResetPasswordOtpScreen';
 import { ResetPasswordScreen } from '@presentation/auth/screens/ResetPasswordScreen';
 import { ResetPasswordSuccessScreen } from '@presentation/auth/screens/ResetPasswordSuccessScreen';
+import { SplashScreen } from '@presentation/auth/screens/SplashScreen';
+import { ValuePropsScreen } from '@presentation/auth/screens/ValuePropsScreen';
 import { VerifyEmailScreen } from '@presentation/auth/screens/VerifyEmailScreen';
+import { WelcomeScreen } from '@presentation/auth/screens/WelcomeScreen';
 import { CalendarEventDetailScreen } from '@presentation/calendar/screens/CalendarEventDetailScreen';
 import { CalendarEventFormScreen } from '@presentation/calendar/screens/CalendarEventFormScreen';
 import { RecurringExpenseFormScreen } from '@presentation/expenses/recurring/screens/RecurringExpenseFormScreen';
@@ -73,6 +77,7 @@ const useNavigationTheme = (): Theme => {
 };
 
 export const RootNavigator = (): JSX.Element => {
+  const isHydrated = useAuthStore((state) => state.isHydrated);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   // An authenticated-but-unverified user (registered, not yet through OTP)
   // gets the VerifyEmail-only branch below instead of MainTabs. `undefined`/
@@ -86,11 +91,22 @@ export const RootNavigator = (): JSX.Element => {
   // P0-4: picks a default active household when the user never chose one.
   useDefaultActiveHousehold();
 
+  // Checked before every other branch: while the persisted session hasn't
+  // been read yet (see `authStore.hydrate`), we don't know whether to show
+  // the unauthenticated, unverified, or authenticated stack, so nothing in
+  // `NavigationContainer` renders until it settles.
+  if (!isHydrated) {
+    return <SplashScreen />;
+  }
+
   return (
     <NavigationContainer theme={theme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="ValueProps" component={ValuePropsScreen} />
+            <Stack.Screen name="ChooseMethod" component={ChooseMethodScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />

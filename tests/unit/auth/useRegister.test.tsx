@@ -62,14 +62,27 @@ const settle = async (predicate: () => boolean): Promise<void> => {
 beforeEach(() => {
   vi.clearAllMocks();
   captured = undefined;
-  useAuthStore.setState({ user: null, session: null, isAuthenticated: false, isHydrated: false });
+  useAuthStore.setState({
+    user: null,
+    session: null,
+    isAuthenticated: false,
+    isHydrated: false,
+    verificationToken: null,
+    verificationExpiresAt: null,
+  });
 });
 
 describe('useRegister', () => {
   it('registers, stores the session and exposes the verification token', async () => {
     mocks.register.mockResolvedValueOnce({
       success: true,
-      value: { user, tokens, verificationToken: 'challenge' },
+      value: {
+        user,
+        tokens,
+        verificationToken: 'challenge',
+        otpExpiresAt: '2026-09-18T10:01:00.000Z',
+        otpExpiresIn: 60,
+      },
     });
     const queryClient = new QueryClient();
     let renderer: ReactTestRenderer | undefined;
@@ -101,6 +114,10 @@ describe('useRegister', () => {
     });
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
     expect(captured?.data?.verificationToken).toBe('challenge');
+    // VerifyEmailScreen reads this from the store — the navigator swap on
+    // `setAuth` means route params can't carry it across the remount.
+    expect(useAuthStore.getState().verificationToken).toBe('challenge');
+    expect(useAuthStore.getState().verificationExpiresAt).toBe('2026-09-18T10:01:00.000Z');
 
     renderer?.unmount();
   });

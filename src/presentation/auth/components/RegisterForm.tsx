@@ -56,6 +56,7 @@ export const RegisterForm = (): JSX.Element => {
         label="Crear cuenta"
         onPress={handleSubmit}
         loading={register.isPending}
+        variant="primaryTonal"
         size="lg"
         accessibilityHint="Crea tu cuenta con nombre, email y contraseña"
         testID="register-submit"

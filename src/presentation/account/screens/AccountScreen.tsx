@@ -15,7 +15,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Account'>;
  * anywhere that could sign a user out (the only `signOut` call lived inside the
  * 401 refresh interceptor). It shows who is signed in and offers logout.
  */
-export const AccountScreen = (_props: Props): JSX.Element => {
+export const AccountScreen = ({ navigation }: Props): JSX.Element => {
   const user = useAuthStore((state) => state.user);
   const logout = useLogout();
   const styles = useThemedStyles(makeStyles);
@@ -30,6 +30,13 @@ export const AccountScreen = (_props: Props): JSX.Element => {
         {user && !user.emailVerified ? (
           <View style={styles.warningBox}>
             <Text style={styles.warningText}>Tu email todavía no está verificado.</Text>
+            <Button
+              label="Verificar email"
+              onPress={() => navigation.navigate('VerifyEmail')}
+              variant="link"
+              size="sm"
+              testID="account-verify-email"
+            />
           </View>
         ) : null}
       </Card>

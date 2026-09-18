@@ -20,6 +20,9 @@ export interface AuthData {
 /** Register also hands back the OTP challenge token used to verify the email. */
 export interface RegisterData extends AuthData {
   verificationToken: string;
+  /** ISO timestamp/seconds the OTP is valid for — drives the countdown UI. Optional for backward compatibility with older backend responses. */
+  otpExpiresAt?: string;
+  otpExpiresIn?: number;
 }
 
 export interface LoginCredentials {
@@ -45,8 +48,37 @@ export interface VerifyOtpPayload {
   code: string;
 }
 
+/**
+ * `PATCH /users/me`. All fields optional per the OpenAPI request schema — the
+ * caller sends only what it wants to change. Onboarding only ever sends
+ * `displayName` today, but the type isn't narrowed to that since the backend
+ * contract accepts the full profile shape.
+ */
+export interface UpdateProfilePayload {
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  birthDate?: string;
+  countryCode?: string;
+  city?: string;
+  phoneNumber?: string;
+  avatar?: string;
+}
+
 export interface ForgotPasswordResult {
   verificationToken: string;
+  message: string;
+}
+
+/**
+ * `POST /auth/resend-verification`. Independent from `forgotPassword`'s OTP
+ * slot (separate backend fields), same non-leaking convention: an empty
+ * `verificationToken` means a nonexistent/already-verified account, still 200.
+ */
+export interface ResendVerificationResult {
+  verificationToken: string;
+  otpExpiresAt?: string;
+  otpExpiresIn?: number;
   message: string;
 }
 
@@ -70,7 +102,15 @@ export interface AuthRepository {
    * (P0-1).
    */
   fetchProfile(): Promise<AuthResult<User>>;
+  /**
+   * `PATCH /users/me`. Returns the updated profile in the same shape as
+   * `fetchProfile` (verified against the backend controller/service, which
+   * both return `userToDTO(updated)` — the OpenAPI 200 response has no body
+   * schema, so this was confirmed by reading the handler, not assumed).
+   */
+  updateProfile(payload: UpdateProfilePayload): Promise<AuthResult<User>>;
   forgotPassword(email: string): Promise<AuthResult<ForgotPasswordResult>>;
+  resendVerification(email: string): Promise<AuthResult<ResendVerificationResult>>;
   resetPassword(payload: ResetPasswordPayload): Promise<AuthResult<MessageResult>>;
   verifyEmail(token: string): Promise<AuthResult<MessageResult>>;
   verifyOtp(payload: VerifyOtpPayload): Promise<AuthResult<MessageResult>>;

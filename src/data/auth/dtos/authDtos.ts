@@ -40,6 +40,17 @@ export interface VerifyOtpRequestDto {
   code: string;
 }
 
+export interface UpdateProfileRequestDto {
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  birthDate?: string;
+  countryCode?: string;
+  city?: string;
+  phoneNumber?: string;
+  avatar?: string;
+}
+
 export interface OAuthLoginRequestDto {
   idToken: string;
 }
@@ -71,6 +82,8 @@ export interface AuthResponseDto {
 
 export interface RegisterResponseDto extends AuthResponseDto {
   verificationToken: string;
+  otpExpiresAt?: string;
+  otpExpiresIn?: number;
 }
 
 export interface RefreshResponseDto {
@@ -86,6 +99,13 @@ export interface MessageResponseDto {
 
 export interface ForgotPasswordResponseDto {
   verificationToken: string;
+  message: string;
+}
+
+export interface ResendVerificationResponseDto {
+  verificationToken: string;
+  otpExpiresAt?: string;
+  otpExpiresIn?: number;
   message: string;
 }
 

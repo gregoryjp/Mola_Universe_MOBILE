@@ -67,7 +67,7 @@ export const ResetPasswordOtpScreen = ({ navigation, route }: Props): JSX.Elemen
       <Button
         label={cooldown > 0 ? `Reenviar código (${cooldown}s)` : 'Reenviar código'}
         onPress={handleResend}
-        variant="link"
+        variant="linkNeutral"
         disabled={cooldown > 0}
         loading={resend.isPending}
         testID="reset-otp-resend"
@@ -75,7 +75,9 @@ export const ResetPasswordOtpScreen = ({ navigation, route }: Props): JSX.Elemen
       <Button
         label="Continuar"
         onPress={handleContinue}
+        variant="primaryTonal"
         size="lg"
+        style={styles.stretch}
         disabled={code.length !== CODE_LENGTH}
         accessibilityHint="Continúa hacia la nueva contraseña"
         testID="reset-otp-continue"
@@ -106,4 +108,5 @@ const makeStyles = (theme: ColorTokens) => ({
     ...typography.bodySmall,
     color: theme.error,
   },
+  stretch: { alignSelf: 'stretch' as const },
 });

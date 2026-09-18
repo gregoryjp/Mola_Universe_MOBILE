@@ -17,6 +17,9 @@ export type MainTabParamList = {
 
 export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
+  Welcome: undefined;
+  ValueProps: undefined;
+  ChooseMethod: undefined;
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;

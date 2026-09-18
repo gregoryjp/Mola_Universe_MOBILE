@@ -34,6 +34,8 @@ export const toAuthData = (dto: AuthResponseDto): AuthData => ({
 export const toRegisterData = (dto: RegisterResponseDto): RegisterData => ({
   ...toAuthData(dto),
   verificationToken: dto.verificationToken,
+  otpExpiresAt: dto.otpExpiresAt,
+  otpExpiresIn: dto.otpExpiresIn,
 });
 
 export const toTokenPair = (dto: RefreshResponseDto): RefreshedSession => ({

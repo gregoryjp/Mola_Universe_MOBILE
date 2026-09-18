@@ -37,6 +37,8 @@ beforeEach(() => {
     session: null,
     isAuthenticated: false,
     isHydrated: false,
+    verificationToken: null,
+    verificationExpiresAt: null,
   });
 });
 
@@ -92,7 +94,13 @@ describe('useAuthStore', () => {
   });
 
   it('signOut clears storage and state', async () => {
-    useAuthStore.setState({ user, session, isAuthenticated: true });
+    useAuthStore.setState({
+      user,
+      session,
+      isAuthenticated: true,
+      verificationToken: 'challenge',
+      verificationExpiresAt: '2026-09-18T10:01:00.000Z',
+    });
 
     await useAuthStore.getState().signOut();
 
@@ -101,6 +109,17 @@ describe('useAuthStore', () => {
       user: null,
       session: null,
       isAuthenticated: false,
+      verificationToken: null,
+      verificationExpiresAt: null,
+    });
+  });
+
+  it('stores the verification challenge and its backend expiry atomically', () => {
+    useAuthStore.getState().setVerificationChallenge('challenge', '2026-09-18T10:01:00.000Z');
+
+    expect(useAuthStore.getState()).toMatchObject({
+      verificationToken: 'challenge',
+      verificationExpiresAt: '2026-09-18T10:01:00.000Z',
     });
   });
 

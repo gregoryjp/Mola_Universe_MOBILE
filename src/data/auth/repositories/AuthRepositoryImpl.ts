@@ -12,7 +12,9 @@ import type {
   MessageResult,
   RegisterData,
   RegisterPayload,
+  ResendVerificationResult,
   ResetPasswordPayload,
+  UpdateProfilePayload,
   VerifyOtpPayload,
 } from '@domain/auth/repositories/AuthRepository';
 import type {
@@ -21,6 +23,7 @@ import type {
   MessageResponseDto,
   RefreshResponseDto,
   RegisterResponseDto,
+  ResendVerificationResponseDto,
   UserProfileDto,
 } from '../dtos/authDtos';
 import { toAuthData, toProfileUser, toRegisterData, toTokenPair } from '../mappers/authMappers';
@@ -81,12 +84,30 @@ export class AuthRepositoryImpl implements AuthRepository {
     return fromRaw(raw, toProfileUser);
   }
 
+  async updateProfile(payload: UpdateProfilePayload): Promise<AuthResult<User>> {
+    const raw = await apiClient.patchRaw<UserProfileDto>('/users/me', payload);
+    return fromRaw(raw, toProfileUser);
+  }
+
   async forgotPassword(email: string): Promise<AuthResult<ForgotPasswordResult>> {
     const response = await apiClient.post<ForgotPasswordResponseDto>('/auth/forgot-password', {
       email,
     });
     return toResult(response, (dto) => ({
       verificationToken: dto.verificationToken,
+      message: dto.message,
+    }));
+  }
+
+  async resendVerification(email: string): Promise<AuthResult<ResendVerificationResult>> {
+    const response = await apiClient.post<ResendVerificationResponseDto>(
+      '/auth/resend-verification',
+      { email },
+    );
+    return toResult(response, (dto) => ({
+      verificationToken: dto.verificationToken,
+      otpExpiresAt: dto.otpExpiresAt,
+      otpExpiresIn: dto.otpExpiresIn,
       message: dto.message,
     }));
   }

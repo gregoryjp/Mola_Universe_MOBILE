@@ -43,8 +43,16 @@ export const reactNativeStub = {
 
   AccessibilityInfo: {
     isScreenReaderEnabled: async (): Promise<boolean> => false,
+    isReduceMotionEnabled: async (): Promise<boolean> => false,
     addEventListener: () => ({ remove: (): void => undefined }),
     announceForAccessibility: (): void => undefined,
+  },
+
+  Easing: {
+    bezier:
+      () =>
+      (t: number): number =>
+        t,
   },
 
   Linking: {

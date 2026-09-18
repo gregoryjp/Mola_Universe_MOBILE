@@ -51,14 +51,16 @@ export const ForgotPasswordScreen = ({ navigation }: Props): JSX.Element => {
         label="Enviar código"
         onPress={handleSubmit}
         loading={forgotPassword.isPending}
+        variant="primaryTonal"
         size="lg"
+        style={styles.stretch}
         accessibilityHint="Envía un código de recuperación a tu email"
         testID="forgot-submit"
       />
       <Button
         label="Volver a iniciar sesión"
         onPress={() => navigation.navigate('Login')}
-        variant="link"
+        variant="linkNeutral"
       />
     </View>
   );
@@ -89,4 +91,5 @@ const makeStyles = (theme: ColorTokens) => ({
     ...typography.bodySmall,
     color: theme.success,
   },
+  stretch: { alignSelf: 'stretch' as const },
 });

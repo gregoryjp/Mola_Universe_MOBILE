@@ -33,6 +33,18 @@ const buildHeaders = (token: string | null): Record<string, string> => ({
   ...(token ? { Authorization: `Bearer ${token}` } : {}),
 });
 
+const unreadableHttpError = (status: number): ApiResponse<never> => ({
+  success: false,
+  error: {
+    code: status === 429 ? 'RATE_LIMITED' : 'HTTP_ERROR',
+    message:
+      status === 429
+        ? 'Too many requests. Please try again later.'
+        : `Request failed with status ${status}.`,
+    statusCode: status,
+  },
+});
+
 const request = async <T>(
   method: string,
   path: string,
@@ -59,7 +71,14 @@ const request = async <T>(
       }
     }
 
-    return (await response.json()) as ApiResponse<T>;
+    try {
+      return (await response.json()) as ApiResponse<T>;
+    } catch {
+      // Some middleware (notably express-rate-limit) answers with plain text,
+      // not the API envelope. Preserve the HTTP status instead of collapsing a
+      // valid 429 into NETWORK_ERROR just because JSON parsing failed.
+      return unreadableHttpError(response.status) as ApiResponse<T>;
+    }
   } catch (error) {
     return {
       success: false,
@@ -100,7 +119,21 @@ const rawRequest = async <T>(
       return { success: true, status: response.status, data: undefined as T };
     }
 
-    const parsed = (await response.json()) as unknown;
+    let parsed: unknown;
+    try {
+      parsed = (await response.json()) as unknown;
+    } catch {
+      const fallback = unreadableHttpError(response.status);
+      return {
+        success: false,
+        status: response.status,
+        error: fallback.error ?? {
+          code: 'HTTP_ERROR',
+          message: `Request failed with status ${response.status}.`,
+          statusCode: response.status,
+        },
+      };
+    }
     if (!response.ok) {
       const envelope = parsed as ApiResponse<unknown>;
       return {

@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient, setAccessTokenProvider, setRefreshHandler } from '@data/api/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const BASE = 'http://localhost:3000/api/v1';
 
@@ -74,5 +74,26 @@ describe('apiClient', () => {
     const result = await apiClient.get('/x');
 
     expect(result).toMatchObject({ success: false, error: { code: 'NETWORK_ERROR' } });
+  });
+
+  it('preserves the HTTP status when a rate-limit response is not JSON', async () => {
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockResolvedValueOnce({
+      status: 429,
+      json: async () => {
+        throw new SyntaxError('Unexpected token T');
+      },
+    } as unknown as Response);
+
+    const result = await apiClient.post('/auth/resend-verification', { email: 'a@b.com' });
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        code: 'RATE_LIMITED',
+        message: 'Too many requests. Please try again later.',
+        statusCode: 429,
+      },
+    });
   });
 });

@@ -63,7 +63,7 @@ export const ResetPasswordScreen = ({ navigation, route }: Props): JSX.Element =
           <Button
             label="Volver a introducir el código"
             onPress={() => navigation.goBack()}
-            variant="link"
+            variant="linkNeutral"
             testID="reset-password-back"
           />
         </>
@@ -73,7 +73,9 @@ export const ResetPasswordScreen = ({ navigation, route }: Props): JSX.Element =
         onPress={handleSubmit}
         loading={resetPassword.isPending}
         disabled={!canSubmit}
+        variant="primaryTonal"
         size="lg"
+        style={styles.stretch}
         accessibilityHint="Guarda tu nueva contraseña"
         testID="reset-password-submit"
       />
@@ -98,4 +100,5 @@ const makeStyles = (theme: ColorTokens) => ({
     ...typography.bodySmall,
     color: theme.error,
   },
+  stretch: { alignSelf: 'stretch' as const },
 });

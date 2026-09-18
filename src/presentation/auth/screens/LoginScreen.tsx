@@ -10,24 +10,46 @@ import { LoginForm } from '../components/LoginForm';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
+/**
+ * Auth composition: a real headline carries the hierarchy instead of the logo
+ * alone, the form (with its own primary CTA) sits in the middle, and the two
+ * secondary navigation actions are visually subordinate — smaller and grouped
+ * at the bottom as AA-compliant links — relative to `LoginForm`'s primary
+ * "Entrar" button.
+ *
+ * No `SafeAreaView`/`KeyboardAvoidingView` here: neither pattern exists yet on
+ * any auth screen in this module (ForgotPasswordScreen, RegisterScreen), so
+ * this stays consistent with its siblings instead of fixing the gap only here.
+ */
 export const LoginScreen = ({ navigation }: Props): JSX.Element => {
   const styles = useThemedStyles(makeStyles);
 
   return (
     <View style={styles.container}>
-      <BrandLogo width={200} />
-      <Text style={styles.subtitle}>Inicia sesión</Text>
+      <View style={styles.header}>
+        <BrandLogo width={140} />
+        <Text style={styles.headline}>Bienvenido de nuevo</Text>
+        <Text style={styles.subtitle}>Ingresa tus datos para continuar</Text>
+      </View>
+
       <LoginForm />
-      <Button
-        label="¿No tienes cuenta? Regístrate"
-        onPress={() => navigation.navigate('Register')}
-        variant="link"
-      />
-      <Button
-        label="¿Olvidaste tu contraseña?"
-        onPress={() => navigation.navigate('ForgotPassword')}
-        variant="link"
-      />
+
+      <View style={styles.secondaryActions}>
+        <Button
+          label="¿Olvidaste tu contraseña?"
+          onPress={() => navigation.navigate('ForgotPassword')}
+          variant="linkNeutral"
+          size="sm"
+          testID="login-forgot"
+        />
+        <Button
+          label="¿No tienes cuenta? Regístrate"
+          onPress={() => navigation.navigate('Register')}
+          variant="linkNeutral"
+          size="sm"
+          testID="login-register"
+        />
+      </View>
     </View>
   );
 };
@@ -35,14 +57,28 @@ export const LoginScreen = ({ navigation }: Props): JSX.Element => {
 const makeStyles = (theme: ColorTokens) => ({
   container: {
     flex: 1,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    justifyContent: 'space-between' as const,
     backgroundColor: theme.background,
-    padding: spacing.s6,
-    gap: spacing.s4,
+    paddingHorizontal: spacing.s6,
+    paddingTop: spacing.s16,
+    paddingBottom: spacing.s6,
+  },
+  header: {
+    alignItems: 'center' as const,
+    gap: spacing.s3,
+  },
+  headline: {
+    ...typography.h1,
+    color: theme.text,
+    textAlign: 'center' as const,
   },
   subtitle: {
     ...typography.body,
     color: theme.textMuted,
+    textAlign: 'center' as const,
+  },
+  secondaryActions: {
+    alignItems: 'center' as const,
+    gap: spacing.s1,
   },
 });
