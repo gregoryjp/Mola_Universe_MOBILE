@@ -1,3 +1,4 @@
+import type { HouseholdMember } from '@domain/households/entities/Household';
 import type { Task } from '@domain/tasks/entities/Task';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   useHouseholds: vi.fn(),
   usePhrase: vi.fn(),
   useCompleteTask: vi.fn(),
+  useHouseholdMembers: vi.fn(),
   navigate: vi.fn(),
 }));
 
@@ -27,6 +29,12 @@ vi.mock('@presentation/tasks/hooks/useHouseholdTasks', () => ({
 vi.mock('@presentation/households/hooks/useHouseholds', () => ({
   useHouseholds: mocks.useHouseholds,
 }));
+// Only the hook is faked: the real `memberNameById` stays under test.
+vi.mock('@presentation/households/hooks/useHouseholdMembers', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@presentation/households/hooks/useHouseholdMembers')>();
+  return { ...actual, useHouseholdMembers: mocks.useHouseholdMembers };
+});
 vi.mock('@presentation/phrases/hooks/usePhrase', () => ({ usePhrase: mocks.usePhrase }));
 vi.mock('@presentation/tasks/hooks/useTaskMutations', () => ({
   useCompleteTask: mocks.useCompleteTask,
@@ -109,6 +117,7 @@ interface GivenOptions {
   householdData?: boolean;
   householdError?: { code: string; message: string } | null;
   phrase?: string | null;
+  members?: HouseholdMember[];
 }
 
 const given = (options: GivenOptions = {}): ReactTestRenderer => {
@@ -122,6 +131,7 @@ const given = (options: GivenOptions = {}): ReactTestRenderer => {
     hasChosen: true,
   });
   mocks.useHouseholds.mockReturnValue({ data: [] });
+  mocks.useHouseholdMembers.mockReturnValue({ members: options.members ?? [] });
   mocks.usePhrase.mockReturnValue({
     phrase:
       options.phrase === undefined || options.phrase === null
@@ -180,6 +190,40 @@ describe('TasksListScreen (P0-5)', () => {
     const text = textOf(renderer);
     expect(text).toContain('Tarea del hogar');
     expect(text).toContain('Tarea personal');
+
+    renderer.unmount();
+  });
+
+  it('shows the assignee name for a task assigned to a household member', () => {
+    const renderer = given({
+      householdId: 'hh-1',
+      householdTasks: [task('t1', 'Regar plantas', { assignedTo: 'u2' })],
+      members: [
+        {
+          id: 'm1',
+          userId: 'u2',
+          name: 'Ana',
+          email: 'ana@example.com',
+          role: 'MEMBER',
+          joinedAt: '2026-09-17T09:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(textOf(renderer)).toContain('Ana');
+
+    renderer.unmount();
+  });
+
+  it('falls back to neutral copy when the assignee is not a known member', () => {
+    const renderer = given({
+      householdId: 'hh-1',
+      householdTasks: [task('t1', 'Regar plantas', { assignedTo: 'ghost' })],
+      members: [],
+    });
+
+    // The raw id must never leak into the UI.
+    expect(textOf(renderer)).not.toContain('ghost');
 
     renderer.unmount();
   });

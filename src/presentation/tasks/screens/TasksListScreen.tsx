@@ -11,6 +11,10 @@ import {
   Skeleton,
 } from '@presentation/components/ui';
 import { HouseholdSelector } from '@presentation/households/components/HouseholdSelector';
+import {
+  memberNameById,
+  useHouseholdMembers,
+} from '@presentation/households/hooks/useHouseholdMembers';
 import { PhraseBanner } from '@presentation/phrases/components/PhraseBanner';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import { Plus } from 'lucide-react-native';
@@ -53,6 +57,7 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
   const householdId = useHouseholdStore((state) => state.activeHouseholdId);
   const { tasks: householdTasks, ...household } = useHouseholdTasks();
   const { tasks: personalTasks, ...personal } = useTasksList();
+  const { members } = useHouseholdMembers(householdId);
   const completeTask = useCompleteTask();
   const [filter, setFilter] = useState<ScopeFilter>('ALL');
   const [completingId, setCompletingId] = useState<string | null>(null);
@@ -111,6 +116,7 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
             onToggleComplete={() => complete(task)}
             isCompleting={completingId === task.id}
             completionFailed={failedId === task.id}
+            assigneeName={memberNameById(members, task.assignedTo)}
             testID={`task-${task.id}`}
           />
         ))}
