@@ -27,7 +27,7 @@ const TAB_ICONS: Record<keyof MainTabParamList, ComponentType<IconProps>> = {
 };
 
 const TAB_LABELS: Record<keyof MainTabParamList, string> = {
-  Dashboard: 'Inicio',
+  Dashboard: 'Hoy',
   TasksList: 'Tareas',
   ShoppingLists: 'Compras',
   Expenses: 'Gastos',

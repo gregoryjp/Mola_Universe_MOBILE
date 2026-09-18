@@ -1,5 +1,6 @@
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
+import { Spinner } from '@presentation/components/ui';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import type { JSX } from 'react';
 import { ScrollView, Text, TouchableOpacity } from 'react-native';
@@ -36,7 +37,7 @@ const Chip = ({ label, active, onPress }: ChipProps): JSX.Element => {
 
 /** Lets the user pick the active household (or "Personal"). */
 export const HouseholdSelector = (): JSX.Element => {
-  const { data } = useHouseholds();
+  const { data, isLoading, isError } = useHouseholds();
   const activeHouseholdId = useHouseholdStore((state) => state.activeHouseholdId);
   const setActiveHousehold = useHouseholdStore((state) => state.setActiveHousehold);
   const styles = useThemedStyles(makeStyles);
@@ -52,6 +53,8 @@ export const HouseholdSelector = (): JSX.Element => {
         active={activeHouseholdId === null}
         onPress={() => setActiveHousehold(null)}
       />
+      {isLoading ? <Spinner size="sm" /> : null}
+      {isError ? <Text style={styles.error}>No se pudieron cargar tus hogares</Text> : null}
       {(data ?? []).map((household) => (
         <Chip
           key={household.id}
@@ -90,5 +93,10 @@ const makeStyles = (theme: ColorTokens) => ({
   chipTextActive: {
     ...typography.caption,
     color: theme.textInverse,
+  },
+  error: {
+    ...typography.caption,
+    color: theme.error,
+    alignSelf: 'center' as const,
   },
 });
