@@ -33,6 +33,23 @@ export const parseDueDate = (dueDate: string): Date | null => {
   return new Date(year, month - 1, day);
 };
 
+/**
+ * A local calendar date as `YYYY-MM-DD`.
+ *
+ * `Date.toISOString()` is the obvious way to build this and it is wrong for a
+ * due date: it converts to UTC first, so at 21:00 in UTC-5 it already reports
+ * tomorrow. Due dates are calendar days, not instants, so the local parts are
+ * what gets written.
+ */
+export const toIsoDate = (date: Date): string => {
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+/** Today, or `days` from today, as a local `YYYY-MM-DD`. */
+export const isoDaysFromNow = (days = 0, now: Date = new Date()): string =>
+  toIsoDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() + days));
+
 /** Whole days between today and the due date. Negative means overdue. */
 export const daysUntil = (dueDate: string, now: Date = new Date()): number | null => {
   const due = parseDueDate(dueDate);

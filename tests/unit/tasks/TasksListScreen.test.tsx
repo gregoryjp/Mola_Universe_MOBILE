@@ -409,4 +409,61 @@ describe('TasksListScreen (P0-5)', () => {
       renderer.unmount();
     });
   });
+
+  describe('creating a task from the list', () => {
+    it('opens the quick create from the + button, not the full form', () => {
+      const renderer = given({ householdId: 'hh-1' });
+
+      act(() => {
+        findByTestID(renderer, 'tasks-fab')?.props.onPress();
+      });
+
+      expect(navigation.navigate).toHaveBeenCalledWith('QuickTaskCreate', undefined);
+
+      renderer.unmount();
+    });
+
+    it('opens the quick create from the empty state', () => {
+      const renderer = given({ householdId: 'hh-1', householdTasks: [] });
+
+      act(() => {
+        findByTestID(renderer, 'tasks-empty')?.props.onAction();
+      });
+
+      expect(navigation.navigate).toHaveBeenCalledWith('QuickTaskCreate', undefined);
+
+      renderer.unmount();
+    });
+
+    // The list already knows the answer, so the quick create must not ask again.
+    it('passes the scope the user is filtering by', () => {
+      const renderer = given({ householdId: 'hh-1' });
+
+      act(() => {
+        findByTestID(renderer, 'tasks-filter-HOUSEHOLD')?.props.onPress();
+      });
+      act(() => {
+        findByTestID(renderer, 'tasks-fab')?.props.onPress();
+      });
+
+      expect(navigation.navigate).toHaveBeenCalledWith('QuickTaskCreate', { scope: 'HOUSEHOLD' });
+
+      renderer.unmount();
+    });
+
+    it('passes the personal scope when that is the filter', () => {
+      const renderer = given({ householdId: 'hh-1' });
+
+      act(() => {
+        findByTestID(renderer, 'tasks-filter-PERSONAL')?.props.onPress();
+      });
+      act(() => {
+        findByTestID(renderer, 'tasks-fab')?.props.onPress();
+      });
+
+      expect(navigation.navigate).toHaveBeenCalledWith('QuickTaskCreate', { scope: 'PERSONAL' });
+
+      renderer.unmount();
+    });
+  });
 });

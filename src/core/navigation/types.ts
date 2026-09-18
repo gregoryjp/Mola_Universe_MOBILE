@@ -1,3 +1,4 @@
+import type { TaskScope } from '@domain/tasks/entities/Task';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -31,7 +32,18 @@ export type RootStackParamList = {
   /** "Casa": groups the household capabilities by intention (see HouseholdHubScreen). */
   HouseholdHub: undefined;
   TaskDetail: { taskId: string };
-  TaskForm: undefined;
+  /**
+   * The full task form (all real fields). `title` carries a draft over from the
+   * quick create screen so opening "Más opciones" does not discard what the user
+   * already typed.
+   */
+  TaskForm: { title?: string } | undefined;
+  /**
+   * Fast path for the everyday task. `scope` is optional context passed by an
+   * entry point that knows where it was opened from (the Tareas scope filter);
+   * the screen still shows — and lets the user change — the resulting choice.
+   */
+  QuickTaskCreate: { scope?: TaskScope } | undefined;
   ShoppingItemForm: { listId: string };
   InventoryList: undefined;
   InventoryItemDetail: { itemId: string };
@@ -55,6 +67,8 @@ export type RootStackParamList = {
   MomentForm: { momentId?: string };
   Account: undefined;
   Meow: undefined;
+  /** Universal Create: the global "+" — one entry point, real destinations only. */
+  UniversalCreate: undefined;
 };
 
 /**

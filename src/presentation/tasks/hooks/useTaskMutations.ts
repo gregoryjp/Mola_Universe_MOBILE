@@ -20,6 +20,33 @@ export const useCreateTask = () => {
   });
 };
 
+/**
+ * Creates a task inside a household.
+ *
+ * A separate hook rather than a `scope` flag on `useCreateTask` because the two
+ * are genuinely different endpoints: `/users/tasks` vs
+ * `/households/:householdId/tasks`. The backend hardcodes `scope: "HOUSEHOLD"`
+ * from the path (see taskService.createHouseholdTask), so `scope` is never sent
+ * in the body — the destination decides it.
+ */
+export const useCreateHouseholdTask = () => {
+  const queryClient = useQueryClient();
+  return useMutation<
+    Task,
+    AppError,
+    { householdId: string; input: Omit<CreateTaskInput, 'scope' | 'householdId'> }
+  >({
+    mutationFn: async ({ householdId, input }) => {
+      const result = await taskRepository.createHousehold(householdId, input);
+      if (!result.success) {
+        throw new AppError(result.error.code, result.error.message, result.error.statusCode);
+      }
+      return result.value;
+    },
+    onSuccess: () => invalidateTasks(queryClient),
+  });
+};
+
 export const useCompleteTask = () => {
   const queryClient = useQueryClient();
   return useMutation<Task, AppError, { taskId: string; input?: CompleteTaskInput }>({

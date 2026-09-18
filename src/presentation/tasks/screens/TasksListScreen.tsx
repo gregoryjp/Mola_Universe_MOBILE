@@ -79,6 +79,15 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
   const openTask = (taskId: string): void => navigation.navigate('TaskDetail', { taskId });
 
   /**
+   * The list already knows which scope the user is looking at, so it hands that
+   * down instead of asking for it again. `ALL` has no opinion to pass: the quick
+   * create then falls back to the active household.
+   */
+  const openCreate = (): void => {
+    navigation.navigate('QuickTaskCreate', filter === 'ALL' ? undefined : { scope: filter });
+  };
+
+  /**
    * Feedback is immediate — the control turns into a spinner and refuses a second
    * tap — but the list itself is not rewritten by hand: the mutation invalidates
    * `['tasks']` and the row moves to its real group once the server agrees. On
@@ -202,7 +211,7 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
             title={EMPTY_TITLE[filter]}
             description="Añade la primera y aparecerá aquí agrupada por fecha."
             actionLabel="Nueva tarea"
-            onAction={() => navigation.navigate('TaskForm')}
+            onAction={openCreate}
             testID="tasks-empty"
           />
         ) : null}
@@ -236,7 +245,7 @@ export const TasksListScreen = ({ navigation }: Props): JSX.Element => {
 
       <IconButton
         icon={Plus}
-        onPress={() => navigation.navigate('TaskForm')}
+        onPress={openCreate}
         accessibilityLabel="Nueva tarea"
         variant="primary"
         size={56}

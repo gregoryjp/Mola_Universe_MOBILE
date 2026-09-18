@@ -183,7 +183,20 @@ describe('DashboardScreen — Hoy', () => {
     const renderer = given();
 
     expect(findByTestID(renderer, 'hoy-empty')).toBeDefined();
-    expect(textOf(renderer)).toContain('Hoy no tienes nada programado.');
+    expect(textOf(renderer)).toContain('Hoy está todo tranquilo');
+    expect(textOf(renderer)).toContain('No tienes tareas ni eventos para hoy.');
+
+    renderer.unmount();
+  });
+
+  it('says "nothing today" exactly once, not in two stacked blocks', () => {
+    const renderer = given();
+    const text = textOf(renderer);
+
+    // The day summary and the empty state are the same message; rendering both
+    // would tell the reader the same thing twice and pad the screen.
+    expect(text.split('Hoy está todo tranquilo')).toHaveLength(2);
+    expect(findByTestID(renderer, 'hoy-day-summary')).toBeUndefined();
 
     renderer.unmount();
   });

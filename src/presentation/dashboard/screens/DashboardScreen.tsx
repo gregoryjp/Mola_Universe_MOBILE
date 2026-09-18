@@ -5,7 +5,6 @@ import type {
   DashboardEvent,
   DashboardShoppingList,
 } from '@domain/dashboard/entities/DashboardSummary';
-import type { Task } from '@domain/tasks/entities/Task';
 import { BrandLogo } from '@presentation/components/brand/BrandLogo';
 import {
   Avatar,
@@ -15,6 +14,7 @@ import {
   QuickAction,
   SectionHeader,
   Skeleton,
+  TimelineRow,
 } from '@presentation/components/ui';
 import { useHouseholds } from '@presentation/households/hooks/useHouseholds';
 import { TaskRow } from '@presentation/tasks/components/TaskRow';
@@ -37,6 +37,16 @@ import {
 } from 'lucide-react-native';
 import type { ComponentType, JSX } from 'react';
 import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  byStart,
+  dayNarrative,
+  formatDayHeadline,
+  formatFriendlyDate,
+  formatTime,
+  greetingFor,
+  isOpenTask,
+  plural,
+} from '../daySummary';
 import { useDashboardSummary } from '../hooks/useDashboardSummary';
 
 /** Every real, reachable route this screen can navigate to — spans both the tab
@@ -64,48 +74,8 @@ interface SectionLink {
  * second copy of the Tareas and Agenda tabs.
  */
 const MAX_TASKS = 3;
-const MAX_EVENTS = 2;
+const MAX_TIMELINE = 4;
 const MAX_LISTS = 2;
-
-const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-const MONTHS = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-];
-
-/** No Intl dependency on purpose — avoids relying on Hermes ICU data. */
-const formatFriendlyDate = (date: Date): string =>
-  `${WEEKDAYS[date.getDay()]}, ${date.getDate()} de ${MONTHS[date.getMonth()]}`;
-
-const greetingFor = (hour: number): string => {
-  if (hour < 12) return 'Buenos días';
-  if (hour < 19) return 'Buenas tardes';
-  return 'Buenas noches';
-};
-
-/** "a, b y c" — no trailing comma, because Spanish does not use one. */
-const joinNatural = (parts: string[]): string => {
-  if (parts.length === 0) return '';
-  if (parts.length === 1) return parts[0] ?? '';
-  const head = parts.slice(0, -1).join(', ');
-  return `${head} y ${parts[parts.length - 1]}`;
-};
-
-const plural = (count: number, singular: string, pluralForm: string): string =>
-  `${count} ${count === 1 ? singular : pluralForm}`;
-
-const isOpenTask = (task: Task): boolean =>
-  task.status !== 'COMPLETED' && task.status !== 'CANCELLED';
 
 /**
  * The quick captures that have a real destination. There is deliberately no
@@ -183,12 +153,18 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
   const events = data?.eventsToday ?? [];
   const lists = data?.openShoppingLists ?? [];
 
-  const dayParts = [
-    openTasks.length > 0 ? plural(openTasks.length, 'tarea', 'tareas') : '',
-    events.length > 0 ? plural(events.length, 'evento', 'eventos') : '',
-    lists.length > 0 ? `${plural(lists.length, 'lista', 'listas')} de la compra` : '',
-  ].filter((part) => part !== '');
-  const daySummary = joinNatural(dayParts);
+  const narrative = dayNarrative({
+    tasks: openTasks,
+    events,
+    openShoppingLists: lists.length,
+  });
+
+  /**
+   * The temporal representation of the day: only events carry a time in this
+   * contract, so the rail holds them in clock order. Tasks are listed separately
+   * rather than given an invented hour.
+   */
+  const timeline = [...events].sort(byStart).slice(0, MAX_TIMELINE);
 
   const activeHousehold =
     activeHouseholdId === null
@@ -266,13 +242,15 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
         </View>
       ) : null}
 
-      {!isLoading && !isError ? (
+      {!isLoading && !isError && hasDayContent ? (
         <View style={styles.dayBlock}>
-          <Text style={styles.daySummary} testID="hoy-day-summary">
-            {hasDayContent ? daySummary : 'Hoy no tienes nada programado.'}
+          <Text style={styles.dayTitle} testID="hoy-day-summary">
+            {narrative.title}
           </Text>
-          {hasDayContent ? (
-            <Text style={styles.dayHint}>Esto es lo que tienes por delante.</Text>
+          {narrative.detail ? (
+            <Text style={styles.dayHint} testID="hoy-day-detail">
+              {narrative.detail}
+            </Text>
           ) : null}
         </View>
       ) : null}
@@ -305,6 +283,32 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
         ))}
       </View>
 
+      {timeline.length > 0 ? (
+        <View style={styles.section}>
+          <SectionHeader
+            title={formatDayHeadline(now)}
+            count={events.length}
+            actionLabel="Ver calendario"
+            actionAccessibilityLabel="Ver el calendario completo"
+            onAction={() => navigateTo('Calendar')}
+            testID="hoy-timeline"
+          />
+          <View style={styles.timeline}>
+            {timeline.map((event, index) => (
+              <TimelineRow
+                key={event.id}
+                time={formatTime(event.startAt)}
+                title={event.title}
+                meta={EVENT_TYPE_LABELS[event.type]}
+                isLast={index === timeline.length - 1}
+                onPress={() => navigation.navigate('CalendarEventDetail', { eventId: event.id })}
+                testID={`hoy-timeline-${event.id}`}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       {openTasks.length > 0 ? (
         <View style={styles.section}>
           <SectionHeader
@@ -322,22 +326,6 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
               onPress={() => navigation.navigate('TaskDetail', { taskId: task.id })}
               testID={`hoy-task-${task.id}`}
             />
-          ))}
-        </View>
-      ) : null}
-
-      {events.length > 0 ? (
-        <View style={styles.section}>
-          <SectionHeader
-            title="Agenda de hoy"
-            count={events.length}
-            actionLabel="Ver agenda"
-            actionAccessibilityLabel="Ver la agenda"
-            onAction={() => navigateTo('Calendar')}
-            testID="hoy-events"
-          />
-          {events.slice(0, MAX_EVENTS).map((event) => (
-            <EventRow key={event.id} event={event} />
           ))}
         </View>
       ) : null}
@@ -360,8 +348,8 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
 
       {!isLoading && !isError && !hasDayContent ? (
         <EmptyState
-          title="Tu día está despejado"
-          description="Cuando tengas tareas, eventos o listas para hoy aparecerán aquí."
+          title={narrative.title}
+          description={narrative.detail ?? 'Aquí aparecerá lo que tengas para hoy.'}
           actionLabel="Crear una tarea"
           onAction={() => navigateTo('TaskForm')}
           testID="hoy-empty"
@@ -404,19 +392,6 @@ export const DashboardScreen = ({ navigation }: Props): JSX.Element => {
         </View>
       </View>
     </ScrollView>
-  );
-};
-
-const EventRow = ({ event }: { event: DashboardEvent }): JSX.Element => {
-  const styles = useThemedStyles(makeStyles);
-
-  return (
-    <View style={styles.plainRow} testID={`hoy-event-${event.id}`}>
-      <Text style={styles.plainTitle} numberOfLines={1}>
-        {event.title}
-      </Text>
-      <Text style={styles.plainMeta}>{EVENT_TYPE_LABELS[event.type]}</Text>
-    </View>
   );
 };
 
@@ -508,7 +483,7 @@ const makeStyles = (theme: ColorTokens) => ({
   dayBlock: {
     gap: spacing.s1,
   },
-  daySummary: {
+  dayTitle: {
     ...typography.bodyLarge,
     color: theme.text,
   },
@@ -543,6 +518,10 @@ const makeStyles = (theme: ColorTokens) => ({
   section: {
     gap: spacing.s2,
   },
+  /** Tightens the rail: entries read as one day, not as separate cards. */
+  timeline: {
+    marginTop: spacing.s1,
+  },
   plainRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
@@ -559,10 +538,6 @@ const makeStyles = (theme: ColorTokens) => ({
     ...typography.body,
     color: theme.text,
     flexShrink: 1,
-  },
-  plainMeta: {
-    ...typography.caption,
-    color: theme.textMuted,
   },
   houseRow: {
     flexDirection: 'row' as const,

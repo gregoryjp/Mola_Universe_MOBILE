@@ -13,6 +13,7 @@ import { ValuePropsScreen } from '@presentation/auth/screens/ValuePropsScreen';
 import { VerifyEmailScreen } from '@presentation/auth/screens/VerifyEmailScreen';
 import { CalendarEventDetailScreen } from '@presentation/calendar/screens/CalendarEventDetailScreen';
 import { CalendarEventFormScreen } from '@presentation/calendar/screens/CalendarEventFormScreen';
+import { UniversalCreateScreen } from '@presentation/create/screens/UniversalCreateScreen';
 import { RecurringExpenseFormScreen } from '@presentation/expenses/recurring/screens/RecurringExpenseFormScreen';
 import { RecurringExpensesListScreen } from '@presentation/expenses/recurring/screens/RecurringExpensesListScreen';
 import { ExpenseDetailScreen } from '@presentation/expenses/screens/ExpenseDetailScreen';
@@ -37,6 +38,7 @@ import { SavingsScreen } from '@presentation/savings/screens/SavingsScreen';
 import { ShoppingItemFormScreen } from '@presentation/shopping/screens/ShoppingItemFormScreen';
 import { SOSActivationScreen } from '@presentation/sos/screens/SOSActivationScreen';
 import { TrustedContactsScreen } from '@presentation/sos/screens/TrustedContactsScreen';
+import { QuickTaskCreateScreen } from '@presentation/tasks/screens/QuickTaskCreateScreen';
 import { TaskDetailScreen } from '@presentation/tasks/screens/TaskDetailScreen';
 import { TaskFormScreen } from '@presentation/tasks/screens/TaskFormScreen';
 import {
@@ -122,6 +124,7 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="CreateHousehold" component={CreateHouseholdScreen} />
             <Stack.Screen name="HouseholdHub" component={HouseholdHubScreen} />
             <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
+            <Stack.Screen name="QuickTaskCreate" component={QuickTaskCreateScreen} />
             <Stack.Screen name="TaskForm" component={TaskFormScreen} />
             <Stack.Screen name="ShoppingItemForm" component={ShoppingItemFormScreen} />
             <Stack.Screen name="InventoryList" component={InventoryListScreen} />
@@ -146,6 +149,7 @@ export const RootNavigator = (): JSX.Element => {
             <Stack.Screen name="MomentForm" component={MomentFormScreen} />
             <Stack.Screen name="Account" component={AccountScreen} />
             <Stack.Screen name="Meow" component={MeowScreen} />
+            <Stack.Screen name="UniversalCreate" component={UniversalCreateScreen} />
           </>
         )}
       </Stack.Navigator>

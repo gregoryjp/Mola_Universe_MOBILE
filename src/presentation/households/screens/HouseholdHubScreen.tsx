@@ -2,6 +2,7 @@ import type { MainTabParamList, RootStackParamList } from '@core/navigation/type
 import type { ColorTokens } from '@core/theme';
 import { radius, spacing, typography, useThemedStyles } from '@core/theme';
 import { EmptyState, ScreenHeader, SectionHeader, Spinner } from '@presentation/components/ui';
+import { useHouseholdTasks } from '@presentation/tasks/hooks/useHouseholdTasks';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useHouseholdStore } from '@shared/store/householdStore';
 import {
@@ -151,6 +152,21 @@ export const HouseholdHubScreen = ({ navigation }: Props): JSX.Element => {
       : households.find((household) => household.id === activeHouseholdId);
   const hasHouseholds = households.length > 0;
 
+  /**
+   * Contextual line, not a menu entry: the hub should answer "is there anything
+   * waiting at home?" before the user picks a section. `status: PENDING` keeps
+   * `total` exact (the list endpoint filters server-side), so this never shows a
+   * count derived from an under-paginated page.
+   */
+  const pending = useHouseholdTasks({ status: 'PENDING', limit: 1 });
+  const pendingTotal = pending.data?.pages[0]?.total;
+  const contextLine =
+    pendingTotal === undefined
+      ? null
+      : pendingTotal === 0
+        ? 'No hay tareas pendientes'
+        : plural(pendingTotal, 'tarea pendiente', 'tareas pendientes');
+
   const openLink = (route: AppRoute): void => {
     if (TAB_ROUTES.includes(route)) {
       navigation.navigate('MainTabs', { screen: route as keyof MainTabParamList });
@@ -199,6 +215,17 @@ export const HouseholdHubScreen = ({ navigation }: Props): JSX.Element => {
             <HouseholdSelector />
           </View>
 
+          {contextLine !== null ? (
+            <View style={styles.section} testID="casa-context">
+              <SectionHeader title="En casa" />
+              <View style={styles.contextCard}>
+                <Text style={styles.contextText} testID="casa-context-line">
+                  {contextLine}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           {GROUPS.map((group) => (
             <View key={group.key} style={styles.section} testID={`casa-group-${group.key}`}>
               <SectionHeader title={group.title} />
@@ -245,6 +272,18 @@ const makeStyles = (theme: ColorTokens) => ({
   },
   linkList: {
     gap: spacing.s2,
+  },
+  contextCard: {
+    backgroundColor: theme.surface,
+    borderColor: theme.border,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.s4,
+    paddingVertical: spacing.s3,
+  },
+  contextText: {
+    ...typography.body,
+    color: theme.text,
   },
   linkRow: {
     flexDirection: 'row' as const,

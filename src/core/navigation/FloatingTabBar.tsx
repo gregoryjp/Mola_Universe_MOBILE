@@ -1,8 +1,8 @@
 import type { ColorTokens } from '@core/theme';
 import { radius, shadows, spacing, typography, useThemedStyles } from '@core/theme';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Calendar, House, ListTodo, ShoppingCart, Wallet } from 'lucide-react-native';
-import type { ComponentType, JSX } from 'react';
+import { Calendar, House, ListTodo, Plus, ShoppingCart, Wallet } from 'lucide-react-native';
+import { type ComponentType, Fragment, type JSX } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { MainTabParamList } from './types';
 
@@ -35,6 +35,14 @@ const TAB_LABELS: Record<keyof MainTabParamList, string> = {
 };
 
 /**
+ * The create affordance is inserted *after* the route at this index, which puts
+ * it just right of the bar's centre: three tabs, the button, then two tabs. It is
+ * not a tab — it pushes `UniversalCreate` on the parent stack, so it works from
+ * every tab without adding a sixth destination to the navigator.
+ */
+const CREATE_AFTER_INDEX = 2;
+
+/**
  * Floating tab bar from design/components/navigation.md: a rounded surface with
  * outer margins instead of a bar glued to the screen edges. It is laid out in
  * normal flow (not absolutely positioned) so it never covers screen content and
@@ -64,21 +72,34 @@ export const FloatingTabBar = ({ state, navigation }: BottomTabBarProps): JSX.El
         };
 
         return (
-          <Pressable
-            key={route.key}
-            onPress={onPress}
-            style={[styles.item, isFocused && styles.itemActive]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: isFocused }}
-            accessibilityLabel={label}
-          >
-            <Icon
-              size={24}
-              strokeWidth={2}
-              color={isFocused ? styles.iconActive.color : styles.icon.color}
-            />
-            <Text style={isFocused ? styles.labelActive : styles.label}>{label}</Text>
-          </Pressable>
+          <Fragment key={route.key}>
+            <Pressable
+              onPress={onPress}
+              style={[styles.item, isFocused && styles.itemActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isFocused }}
+              accessibilityLabel={label}
+            >
+              <Icon
+                size={24}
+                strokeWidth={2}
+                color={isFocused ? styles.iconActive.color : styles.icon.color}
+              />
+              <Text style={isFocused ? styles.labelActive : styles.label}>{label}</Text>
+            </Pressable>
+            {index === CREATE_AFTER_INDEX ? (
+              <Pressable
+                onPress={() => navigation.getParent()?.navigate('UniversalCreate')}
+                style={({ pressed }) => [styles.create, pressed ? styles.createPressed : null]}
+                accessibilityRole="button"
+                accessibilityLabel="Añadir"
+                accessibilityHint="Abre las opciones para crear una tarea, un evento y más"
+                testID="tab-create"
+              >
+                <Plus size={22} strokeWidth={2.5} color={styles.createIcon.color} />
+              </Pressable>
+            ) : null}
+          </Fragment>
         );
       })}
     </View>
@@ -116,6 +137,27 @@ const makeStyles = (theme: ColorTokens) => ({
    */
   itemActive: {
     backgroundColor: theme.surfaceAlt,
+  },
+  /**
+   * `primarySoft` behind `text`: the only pairing that clears 3:1 for the glyph
+   * in both palettes (8.36:1). A `primary` fill forces white ink, which measures
+   * 2.06:1 on this mint — the same trap as the active tab (GAP 3).
+   */
+  create: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.primarySoft,
+    borderWidth: 1,
+    borderColor: theme.primary,
+  },
+  createPressed: {
+    opacity: 0.75,
+  },
+  createIcon: {
+    color: theme.text,
   },
   icon: {
     color: theme.textMuted,

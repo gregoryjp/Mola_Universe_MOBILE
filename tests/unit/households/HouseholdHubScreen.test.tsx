@@ -9,11 +9,15 @@ vi.mock(
 
 const mocks = vi.hoisted(() => ({
   useHouseholds: vi.fn(),
+  useHouseholdTasks: vi.fn(),
   navigate: vi.fn(),
 }));
 
 vi.mock('@presentation/households/hooks/useHouseholds', () => ({
   useHouseholds: mocks.useHouseholds,
+}));
+vi.mock('@presentation/tasks/hooks/useHouseholdTasks', () => ({
+  useHouseholdTasks: mocks.useHouseholdTasks,
 }));
 // `CreateHouseholdButton` resolves its own navigation; the real package pulls
 // Flow-annotated `react-native` internals that do not parse in this env.
@@ -59,6 +63,7 @@ interface GivenOptions {
   isLoading?: boolean;
   isError?: boolean;
   error?: { message: string } | null;
+  pendingTotal?: number | undefined;
 }
 
 const given = (options: GivenOptions = {}): ReactTestRenderer => {
@@ -72,6 +77,11 @@ const given = (options: GivenOptions = {}): ReactTestRenderer => {
     isLoading: options.isLoading ?? false,
     isError: options.isError ?? false,
     error: options.error ?? null,
+  });
+  const pendingTotal = 'pendingTotal' in options ? options.pendingTotal : 3;
+  mocks.useHouseholdTasks.mockReturnValue({
+    data: pendingTotal === undefined ? undefined : { pages: [{ total: pendingTotal }] },
+    tasks: [],
   });
 
   let renderer: ReactTestRenderer | undefined;
@@ -226,6 +236,43 @@ describe('HouseholdHubScreen — Casa', () => {
 
     expect(textOf(renderer)).toContain('No se pudo cargar');
     expect(findByTestID(renderer, 'casa-empty')).toBeUndefined();
+
+    renderer.unmount();
+  });
+
+  it('answers "is anything waiting at home?" before the user picks a section', () => {
+    const renderer = given({ pendingTotal: 3 });
+
+    expect(textOf(renderer)).toContain('3 tareas pendientes');
+    // The count comes from the list endpoint's own `total`, filtered server-side,
+    // so it must not be derived from a page of the screen's own query.
+    expect(mocks.useHouseholdTasks).toHaveBeenCalledWith({ status: 'PENDING', limit: 1 });
+
+    renderer.unmount();
+  });
+
+  it('says so plainly when the household has nothing pending', () => {
+    const renderer = given({ pendingTotal: 0 });
+
+    expect(textOf(renderer)).toContain('No hay tareas pendientes');
+
+    renderer.unmount();
+  });
+
+  it('omits the contextual line while the count is unknown, instead of showing 0', () => {
+    const renderer = given({ pendingTotal: undefined });
+
+    expect(findByTestID(renderer, 'casa-context')).toBeUndefined();
+    expect(textOf(renderer)).not.toContain('tareas pendientes');
+
+    renderer.unmount();
+  });
+
+  it('does not show a household count when the user has no household', () => {
+    const renderer = given({ households: [] });
+
+    expect(findByTestID(renderer, 'casa-context')).toBeUndefined();
+    expect(findByTestID(renderer, 'casa-empty')).toBeDefined();
 
     renderer.unmount();
   });
